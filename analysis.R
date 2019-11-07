@@ -19,14 +19,14 @@ gdb_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\20m
 gdb_layers <- ogrListLayers(gdb_path)
 print(gdb_layers)
 
-edin_impl_zones <- readOGR(dsn=fp,layer="ImplementationZones")
+edin_impl_zones <- readOGR(dsn = gdb_path, layer="ImplementationZones")
 # Transform the data by applying a projection
 edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
 
 # Visualize using leaflet
 leaflet(edin_impl_zones) %>% addTiles() %>% addPolygons()
 
-edin_cons_streets <- readOGR(dsn=fp,layer="Consultation20mphStreets")
+edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets")
 # Transform the data by applying a projection
 edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 
@@ -39,6 +39,8 @@ rd <- read_csv("V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\
 m <- leaflet(rd) %>% addTiles('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', 
                               attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>') 
 # Setview to city of Edinburgh
-m %>% setView(55.9492865, 3.1868674, zoom = 8)
+m1<- m %>% setView(-3.188267, 55.953251, zoom = 12)
 # Add circles
-m %>% addCircles(~Longitude, ~Latitude, weight = 3, radius=40, color="#ffa500", stroke = TRUE, fillOpacity = 0.8) 
+m1 %>% addCircles(~Longitude, ~Latitude, weight = 3, radius=40, color="#ffa500", stroke = TRUE, fillOpacity = 0.8) 
+
+
