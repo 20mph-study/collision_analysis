@@ -43,4 +43,23 @@ m1<- m %>% setView(-3.188267, 55.953251, zoom = 12)
 # Add circles
 m1 %>% addCircles(~Longitude, ~Latitude, weight = 3, radius=40, color="#ffa500", stroke = TRUE, fillOpacity = 0.8) 
 
+#data frames of road and zone maps
+list_roads <- data.frame(edin_cons_streets)
+list_zones <- data.frame(edin_impl_zones)
+summary(list_roads)
+summary(list_zones)
+
+#data frames with (long,lat) of road and zones
+df_road <- fortify(edin_cons_streets)
+df_zones <- fortify(edin_impl_zones)
+summary(df_road)
+summary(df_zones)
+
+library(ggplot2)
+#ggplot the (long,lat) of roads
+ggplot(data = df_road, aes(x = long, y = lat, group=group)) + geom_path() 
+
+#ggplot the (long,lat) of zones
+ggplot(data = df_zones, aes(x = long, y = lat, group=group)) + geom_path() 
+
 
