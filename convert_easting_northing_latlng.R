@@ -4,6 +4,9 @@ library(tidyverse)
 library(readxl)
 library(leaflet)
 
+# Source - or guide 
+# http://www.alex-singleton.com/R-Tutorial-Materials/7-converting-coordinates.pdf
+
 # Read 2019 data
 rd <- read_excel("V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\collisions\\collisions 2019 Jan to May Edinburgh only.xls")
 
