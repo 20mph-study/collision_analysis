@@ -15,9 +15,6 @@ rd <- rd[1:100,]
 #add coordinates to make it spatial data
 coordinates(rd) <- ~Longitude + Latitude
 
-#add a buffer around the point
-pointsBuffer <- gBuffer(rd, width=.001, byid = TRUE)
-
 #### Edinburgh visualizations
 ## Read geodatabase
 gdb_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\20mph.gdb"
@@ -35,8 +32,10 @@ edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets")
 # Transform the data by applying a projection
 edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 
+#add a buffer around the point
 points_polygons <- gBuffer(rd, width=.0005, byid = TRUE)
 
+#Identify subset of roads where these points (with buffer) exist
 intersect_lines <- gIntersection(edin_cons_streets, points_polygons, byid = T)
 
 # Visualize using leaflet
