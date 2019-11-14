@@ -2,6 +2,7 @@
 library(rgdal)
 library(leaflet)
 library(tidyverse)
+library(rgeos)
 
 
 ### Visualize collisions data - 2015 data
