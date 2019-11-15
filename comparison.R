@@ -91,27 +91,3 @@ y+ geom_point(data = rd1, aes(x = Longitude, y = Latitude,group=Speed_limit))
 #plot with buffer
 y <- ggplot(data = df_road, aes(x = long, y = lat,group=group)) + geom_path() 
 y+ geom_point(data = d3, aes(x = long, y = lat,group=group))
-
-#----------------------------------------
-#3. Comparison---------------------------
-#----------------------------------------
-
-#compare collisions with road (long,lat)
-#1.with inner_join , all possible combinations ?
-
-common22 <- inner_join( d3,df_road,by =c("lat"="lat") )
-common11 <- inner_join( d3,df_road,by =c("long"="long") )
-common <- inner_join (common11,common22,by = c("long"="long.y"))
-
-common22b <- inner_join( df_road,d3,by =c("lat"="lat") )
-common11b <- inner_join( df_road,d3,by =c("long"="long") )
-commonb <- inner_join (common11b,common22b,by = c("long"="long.y"))
-
-#inner_join(d3, df_road) %>% count(group)
-
-#2.with merged
-merged_by_long <- merge(x = d3, y = df_road, by = ("long")) 
-merged_by_lat <- merge(x = d3, y = df_road, by = ("lat")) 
-merged_both <- merge(x = d3, y = df_road, by = c("lat", "long")) 
-
-#3.with %in% or ==
