@@ -50,11 +50,25 @@ proj4string(points_polygons) <- proj4string(edin_cons_streets)
 
 intersect_lines <- gIntersection(edin_cons_streets, points_polygons, byid = T)
 
+# keeps intersect lines in df
+library(raster)
+inter <- intersect(edin_cons_streets,points_polygons)
+
 # Visualize using leaflet
 leaflet() %>% addTiles() %>% addPolygons(data = points_polygons) %>% addPolygons(data = intersect_lines, color = 'Black')
 
-overlapped_incidents_roads <- over(edin_cons_streets, points_polygons, returnList=TRUE)
-#over(points_polygons, rd)
+#over for collisions
+overlapped_incidents_roads <- over(edin_cons_streets, points_polygons, returnList=FALSE)
+clean_overlapped <-  na.omit(overlapped_incidents_roads[1:29])
+names(clean_overlapped)
+
+#over for roads
+overlapped_incidents_roads_edin <- over( points_polygons, edin_cons_streets,returnList=FALSE)
+print(overlapped_incidents_roads_edin)
+
+#count
+overlapped_incidents_roads_edin%>%count(LAYER=="20mph local streets")
+
 
 library(ggplot2)
 d3 <- fortify(points_polygons)
