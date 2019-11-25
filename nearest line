@@ -57,6 +57,12 @@ edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 proj4string(points_polygons) <- proj4string(edin_cons_streets)
 proj4string(rd) <- proj4string(edin_cons_streets)
 
+#add a buffer around the point
+points_polygons <- gBuffer(rd, width=0.00032, byid = TRUE )
+
+# keeps intersect lines in df
+inter <- intersect(edin_cons_streets,points_polygons)
+
 #keep nearest line with a projected point
 new_point_sp <- snapPointsToLines(rd, edin_cons_streets, maxDist = 0.1)
 
@@ -65,6 +71,12 @@ df_nearest <- data.frame(new_point_sp)
 
 #Visualize with leaflet
 map <- leaflet() %>% addTiles() %>% addPolygons(data = edin_cons_streets)
+map_near <- map %>% addMarkers(lng =df_nearest$X, lat = df_nearest$Y, popup = df_nearest$Accident_Index)
+map3 <- map_near %>% addCircles(lng =rd1$Longitude , lat = rd1$Latitude, popup = rd1$Accident_Index,radius = 2, color = '#ff0000')
+map3
+
+#Visualize with leaflet (nearest+buffer)
+map <- leaflet() %>% addTiles() %>% addPolygons(data = inter, color = 'Black')
 map_near <- map %>% addMarkers(lng =df_nearest$X, lat = df_nearest$Y, popup = df_nearest$Accident_Index)
 map3 <- map_near %>% addCircles(lng =rd1$Longitude , lat = rd1$Latitude, popup = rd1$Accident_Index,radius = 2, color = '#ff0000')
 map3
