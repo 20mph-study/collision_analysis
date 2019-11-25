@@ -71,12 +71,31 @@ df_nearest <- data.frame(new_point_sp)
 
 #Visualize with leaflet
 map <- leaflet() %>% addTiles() %>% addPolygons(data = edin_cons_streets)
-map_near <- map %>% addMarkers(lng =df_nearest$X, lat = df_nearest$Y, popup = df_nearest$Accident_Index)
-map3 <- map_near %>% addCircles(lng =rd1$Longitude , lat = rd1$Latitude, popup = rd1$Accident_Index,radius = 2, color = '#ff0000')
+map_near <- map %>% addMarkers(lng =df_nearest$X, lat = df_nearest$Y, popup =paste("Accident index: ", df_nearest$Accident_Index, "<br>",
+                                                                                   "Speed limit: ", df_nearest$Speed_limit))
+map3 <- map_near %>% addCircles(lng =rd1$Longitude , lat = rd1$Latitude, popup = rd1$Accident_Index,radius = 5, color = 'black')
 map3
 
 #Visualize with leaflet (nearest+buffer)
 map <- leaflet() %>% addTiles() %>% addPolygons(data = inter, color = 'Black')
 map_near <- map %>% addMarkers(lng =df_nearest$X, lat = df_nearest$Y, popup = df_nearest$Accident_Index)
-map3 <- map_near %>% addCircles(lng =rd1$Longitude , lat = rd1$Latitude, popup = rd1$Accident_Index,radius = 2, color = '#ff0000')
-map3
+map3a <- map_near %>% addCircles(lng =rd1$Longitude , lat = rd1$Latitude, popup = rd1$Accident_Index,radius = 2, color = '#ff0000')
+map3a
+
+#Maps with every speed limit
+#Visualize with leaflet
+road_existing_20 <-edin_cons_streets%>% filter(edin_cons_streets$LAYER == "20mph existing streets")
+road_local_20 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "20mph local streets")
+road_main_20 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "20mph main streets")
+road_30 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "30mph")
+road_40 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "40mph ")
+road_part_time_20 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "Part time 20mph ")
+
+map3a %>% 
+  addPolygons(data = road_existing_20, color= "green")%>%
+  addPolygons(data = road_local_20,color= "red" )%>%
+  addPolygons(data = road_main_20,color= "yellow" )%>%
+  addPolygons(data = road_30,color= "blue" )%>%
+  addPolygons(data = road_40,color= "black" )%>%
+  addPolygons(data = road_part_time_20,color= "brown" )
+  
