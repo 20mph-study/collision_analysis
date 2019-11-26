@@ -92,10 +92,10 @@ road_40 <- subset(edin_cons_streets, LAYER == "40mph ")
 road_part_time_20 <- subset(edin_cons_streets, LAYER == "Part time 20mph ")
 
 map3a %>% 
-  addPolygons(data = road_existing_20, color= "green")%>%
-  addPolygons(data = road_local_20,color= "red" )%>%
-  addPolygons(data = road_main_20,color= "yellow" )%>%
-  addPolygons(data = road_30,color= "blue" )%>%
-  addPolygons(data = road_40,color= "black" )%>%
-  addPolygons(data = road_part_time_20,color= "brown" )
+  addPolylines(data = road_existing_20, color= "green")%>%
+  addPolylines(data = road_local_20,color= "red" )%>%
+  addPolylines(data = road_main_20,color= "yellow" )%>%
+  addPolylines(data = road_30,color= "blue" )%>%
+  addPolylines(data = road_40,color= "black" )%>%
+  addPolylines(data = road_part_time_20,color= "brown" )
   
