@@ -84,12 +84,12 @@ map3a
 
 #Maps with every speed limit
 #Visualize with leaflet
-road_existing_20 <-edin_cons_streets%>% filter(edin_cons_streets$LAYER == "20mph existing streets")
-road_local_20 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "20mph local streets")
-road_main_20 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "20mph main streets")
-road_30 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "30mph")
-road_40 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "40mph ")
-road_part_time_20 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "Part time 20mph ")
+road_existing_20 <- edin_cons_streets%>% subset(LAYER == "20mph existing streets")
+road_local_20 <- subset(edin_cons_streets, LAYER == "20mph local streets")
+road_main_20 <- subset(edin_cons_streets, LAYER == "20mph main streets")
+road_30 <- subset(edin_cons_streets, LAYER == "30mph")
+road_40 <- subset(edin_cons_streets, LAYER == "40mph ")
+road_part_time_20 <- subset(edin_cons_streets, LAYER == "Part time 20mph ")
 
 map3a %>% 
   addPolygons(data = road_existing_20, color= "green")%>%
