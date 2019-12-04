@@ -43,11 +43,14 @@ m1<- m %>% setView(-3.188267, 55.953251, zoom = 12)
 # Add circles
 m1 %>% addCircles(~Longitude, ~Latitude, weight = 3, radius=40, color="#ffa500", stroke = TRUE, fillOpacity = 0.8) 
 
+class(edin_cons_streets)
+class(edin_impl_zones)
 #data frames of road and zone maps
 list_roads <- data.frame(edin_cons_streets)
 list_zones <- data.frame(edin_impl_zones)
 summary(list_roads)
 summary(list_zones)
+
 
 #data frames with (long,lat) of road and zones
 df_road <- fortify(edin_cons_streets)
@@ -62,4 +65,30 @@ ggplot(data = df_road, aes(x = long, y = lat, group=group)) + geom_path()
 #ggplot the (long,lat) of zones
 ggplot(data = df_zones, aes(x = long, y = lat, group=group)) + geom_path() 
 
+head(edin_cons_streets@data)
+head(edin_impl_zones@data)
+head(edin_cons_streets@lines)
+head(edin_impl_zones@polygons)
 
+#compare (long,lat) bettween data and Edinburgh roads
+apply(df_road[1:2],1, "==",rd[4:5] )
+
+print(df_road[1:2])
+print(rd[4:5])
+gc()
+
+#Maps the attributes of shapefiles
+library(sp)
+summary(edin_cons_streets)
+spplot(edin_cons_streets,'Shape_Length')
+spplot(edin_cons_streets,'LAYER')
+spplot(edin_cons_streets,"FEATID")
+
+summary(edin_impl_zones)
+spplot(edin_impl_zones,'Shape_Area')
+spplot(edin_impl_zones,'Shape_Length')
+spplot(edin_impl_zones,"ImplementationZone")
+
+glimpse(edin_cons_streets)
+library(shapefiles)
+conver <- convert.to.simple(edin_cons_streets)
