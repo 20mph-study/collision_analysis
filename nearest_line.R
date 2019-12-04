@@ -79,7 +79,7 @@ rd1 <- rd
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~2015-2018~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-rd_18 <- read_csv(paste0(dir_path, "collisions\\collisions 2015.csv"))
+rd_18 <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2015.csv"))
 
 #Keep Edinburgh data
 rd_13a <- subset(rd_18,rd_18$`Local_Authority_(District)`==923)
