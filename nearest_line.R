@@ -17,7 +17,7 @@ dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~2013~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-rd_1 <-read_csv("V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\collisions\\collisions 2005 to 2014.csv")  
+rd_1 <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2005 to 2014.csv"))  
 
 #Keep Edinburgh data
 rd_13a <- subset(rd_1,rd_1$`Local_Authority_(District)`==923)
@@ -41,7 +41,7 @@ rd1 <- rd
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~2014~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-rd_1 <-read_csv("V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\collisions\\collisions 2005 to 2014.csv") 
+rd_1 <-read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2005 to 2014.csv")) 
 
 rd_14a <- subset(rd_1,rd_1$`Local_Authority_(District)`==923)
 #keep edin roads with speed limit 20 or 30
@@ -58,7 +58,7 @@ rd <- rd_14a[rd_14a$Date >="2014-01-01" & rd_14a$Date <= "2014-12-31", ] %>% fil
 
 
 #Read second csv file with 2014 data
-rd_b <- read_csv(paste0(dir_path, "collisions\\collisions 2014.csv"))
+rd_b <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2014.csv"))
 rd_b <- subset(rd_b,rd_b$`Local_Authority_(District)`==923)
 
 
@@ -166,7 +166,7 @@ points_polygons <- gBuffer(rd, width=0.0005, byid = TRUE )
 #Visualize with leaflet
 #map0 <- leaflet() %>% addTiles() %>% addPolygons(data = edin_cons_streets)
 #map_near0 <- map0 %>% addMarkers(lng =df_nearest$X, lat = df_nearest$Y, popup =paste("Accident index: ", df_nearest$Accident_Index, "<br>",
-                                                                                   "Speed limit: ", df_nearest$Speed_limit))
+#                                                                                "Speed limit: ", df_nearest$Speed_limit))
 #map30 <- map_near0 %>% addCircles(lng =rd1$Longitude , lat = rd1$Latitude, popup = rd1$Accident_Index,radius = 5, color = 'black')
 #map30
 
