@@ -215,21 +215,32 @@ map3 %>%
   
 #~~~~~~~~~~~~~~~~~~~ Edin_impl_zones ~~~~~~~~~~~~~~~~~~~~
 
-# Transform the data by applying a projection
-edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
-
-# Visualize using leaflet
-leaflet(edin_impl_zones) %>% addTiles() %>% addPolygons()
-
 coordinates(rd1) <- ~ Longitude + Latitude
+points_polygons <- gBuffer(rd1,width = .000005,byid=TRUE)
 proj4string(points_polygons) <- proj4string(edin_impl_zones)
+count_zones <- over(points_polygons,edin_impl_zones,returnList = FALSE)
+count_zones <- rowid_to_column(count_zones,"ID")
+rd <- rowid_to_column(rd,"index_ID")
+total_zones <- merge(rd,count_zones,by.x="index_ID",by.y="ID")
+df_zones <-data.frame(total_zones[2],total_zones[5],total_zones[6],total_zones[35])
 
-count_zones <- over( points_polygons, edin_impl_zones,returnList=FALSE)
-count_zones <-rowid_to_column(count_zones, "ID")
+edin_impl_zones <- st_as_sf(edin_impl_zones)
+#Leaflet
+zone_1 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 1)
+zone_2 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 2)
+zone_3 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 3)
+zone_4 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 4)
+zone_5 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 5)
+zone_6 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 6)
 
-glimpse(count_zones)
+map_zones <- leaflet() %>% addTiles() %>% 
+  addPolygons(data = zone_1, color= "green")%>%
+  addPolygons(data = zone_2,color= "red")%>%
+  addPolygons(data = zone_3,color= "purple")%>%
+  addPolygons(data = zone_4,color= "cyan")%>%
+  addPolygons(data = zone_5,color= "blue")%>%
+  addPolygons(data = zone_6,color= "orange")
 
-#In case we want to count
-#count_zones%>%count(ImplementationZone==1)
-
-
+map_zones %>% addMarkers(lng =df_zones$Longitude, lat = df_zones$Latitude, 
+                         popup =paste("Accident index: ", df_zones$Accident_Index, "<br>",
+                                      "Zone: ", df_zones$ImplementationZone))
