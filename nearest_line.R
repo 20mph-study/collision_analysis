@@ -9,8 +9,8 @@ library(sf)
 library(mapview)
 library(maptools)
 library(sp)
+library(readxl)
 
-##Functions
 #1.Function for keeping data of Edinburgh with speed limits 20/30/40
 filter_data <- function(data){
   data <- data %>% filter(data$Speed_limit %in% c(20,30,40)) 
@@ -61,6 +61,11 @@ rd_2015 <- filter_data(rd_2015)
 #2018 data
 rd_2018 <-read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2018.csv"))
 rd_2018 <- filter_data(rd_2018)
+
+#2019 data
+rd_2019 <- read_excel("C:\\Users\\Kyriaki Kokka\\Desktop\\20mph study collisions\\collisions\\collisions 2019 Jan to May Edinburgh only.xls")
+rd_2019 <- rd_2019%>%filter(rd_2019$`Speed Limit`  %in% c(20,30,40)) 
+
 
 #Df for pre 20mph (bind 2013-2015)
 pre_20 <-rbind(rd_2013,rd_2014,rd_2015)
