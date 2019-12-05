@@ -20,7 +20,7 @@ filter_data <- function(data){
 }
 
 #Data inputs
-##1.Data path
+##1.Data path 
 dir_path <- "C:\\Users\\Kyriaki Kokka\\Desktop\\"
 #dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
 
@@ -28,11 +28,16 @@ dir_path <- "C:\\Users\\Kyriaki Kokka\\Desktop\\"
 #Read geodatabase for Edinburgh
 gdb_path <- paste0(dir_path, "20mph study collisions\\20mph.gdb")
 gdb_layers <- ogrListLayers(gdb_path)
+
 edin_impl_zones <- readOGR(dsn = gdb_path, layer="ImplementationZones")
 edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets")
-edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
-edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 
+#Put ID column as variable 
+edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
+
+#Transform to long/lat
+edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
+edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
 
 #3.Read csv files
 #Read csv file from 2005 to 2014
@@ -64,41 +69,46 @@ pre_20 <-rbind(rd_2013,rd_2014,rd_2015)
 post_20 <-rd_2018
 
 #Data manipulation 
-#Function for the nearest line
-nearest_line <-function(data1,road_network){
+#Function for utm projection
+utm_proj <- function(df,rd_net){
   #Create planar(cartesian) projection 
   crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
   wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
   
   #Convert data to planar projection  
-  road_network <- spTransform(road_network,crs)
-  utm_data <-  spTransform(SpatialPointsDataFrame(coords = data1[4:5],proj4string = wgs84,data = data1), crs)
+  rd_net <- spTransform(road_network,crs)
+  df <-  spTransform(SpatialPointsDataFrame(coords = data1[4:5],proj4string = wgs84,data = data1), crs)
+
+  return(rd_net,df)
+}
+
+#Function for the nearest line
+nearest_line <-function(data1,road_network){
+  c(data1,road_network) <- utm_proj(data1,road_network)
   
   #Make sure our data have same projections
-  proj4string(utm_data) <- proj4string(road_network)
+  proj4string(data1) <- proj4string(road_network)
   
   #Find nearest line with maxDist=20m 
-  nearest_line_sp <- snapPointsToLines(utm_data,road_network,maxDist=20)
+  nearest_line_sp <- snapPointsToLines(data1,road_network,maxDist=20)
   
-  return(nearest_line_sp,utm_data)
+  return(nearest_line_sp)
 }
+
 #Get nearest line per year
-c(nearest_2013,utm_proj_2013) <- nearest_line(rd_2013,edin_cons_streets)
-c(nearest_2014,utm_proj_2014) <- nearest_line(rd_2014,edin_cons_streets)
-c(nearest_2015,utm_proj_2015) <- nearest_line(rd_2015,edin_cons_streets)
-c(nearest_2018,utm_proj_2018) <- nearest_line(rd_2018,edin_cons_streets)
+nearest_2013 <- nearest_line(rd_2013,edin_cons_streets)
+nearest_2014 <- nearest_line(rd_2014,edin_cons_streets)
+nearest_2015 <- nearest_line(rd_2015,edin_cons_streets)
+nearest_2018 <- nearest_line(rd_2018,edin_cons_streets)
 
 #Get nearest line for pre and post 20mph 
-c(nearest_pre,utm_proj_data) <- nearest_line(pre_20,edin_cons_streets)
-nearest_post <- nearest_line(post_20,edin_cons_streets)
+c(nearest_pre,utm_proj_pre) <- nearest_line(pre_20,edin_cons_streets)
+c(nearest_post,utm_proj_post) <- nearest_line(post_20,edin_cons_streets)
 
 #Keep nearest line in df
 nearest_pre_line <- data.frame(nearest_pre)
 nearest_post_line <- data.frame(nearest_post)
-nearest_line_2013 <- data.frame()
-
-#Put ID column as variable 
-edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
+nearest_line_2013 <- data.frame(nearest_2013)
 
 #Merge the dataframes based on the ID of the nearest line in order to connect geoinformation with stasts19 
 merged_data <- merge(nearest_pre_line,edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID")
