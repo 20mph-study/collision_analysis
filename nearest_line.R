@@ -21,11 +21,11 @@ filter_data <- function(data){
   return(data)
 }
 
+#2.Function for deleting Na points
 delete_na <- function(data, desiredCols) {
   completeVec <- complete.cases(data[, desiredCols])
   return(data[completeVec, ])
 }
-
 
 #Data inputs
 ##1.Data path 
@@ -38,7 +38,7 @@ dir_path <- "C:\\Users\\Kyriaki Kokka\\Desktop\\"
 gdb_path <- paste0(dir_path, "20mph study collisions\\20mph.gdb")
 gdb_layers <- ogrListLayers(gdb_path)
 
-#Shapefiles
+#Read shapefiles
 edin_impl_zones <- readOGR(dsn = gdb_path, layer="ImplementationZones")
 edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets")
 
@@ -52,8 +52,7 @@ edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
 #3.Read csv files
 #read all at once
 files <- list.files(path = "C:\\Users\\Kyriaki Kokka\\Desktop\\20mph study collisions\\collisions\\", pattern = "*.csv", full.names = T)
-source_data <- sapply(files, read_csv, simplify=FALSE) %>% 
-  bind_rows(.id = "id")
+source_data <- sapply(files, read_csv, simplify=FALSE) %>% bind_rows(.id = "id")
 
 #Read every year seperately
 #Read csv file from 2005 to 2014
@@ -123,15 +122,14 @@ nearest_post_line <- data.frame(nearest_post)
 #Merge the dataframes based on the ID of the nearest line in order to connect geoinformation with stasts19 
 merged_data <- merge(nearest_pre_line,edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID")
 
-#Keep the columns we need to extract information ( Accident_index, ,Layer, Speed_limit )
+#Keep the columns we need to extract information ( Accident_index,nearest_line_id ,Layer, Speed_limit )
 result_pre <- data.frame(merged_data[1],merged_data[2],merged_data[19],merged_data[39])
-glimpse(merged_data)
 
 #Count how many accidents happen per layer and per speed limit
 count1 <- aggregate(Accident_Index~LAYER,result_pre,length)
 count2 <- aggregate(Accident_Index~Speed_limit,result_pre,length) 
 
-
+#Function for leaflet visualisations
 
 #Convert data projections back to lat/long to plot with leaflet
 edin_cons_streets <- spTransform(edin_cons_streets,"+init=epsg:4326")
