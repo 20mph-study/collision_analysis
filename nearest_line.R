@@ -27,6 +27,99 @@ delete_na <- function(data, desiredCols) {
   return(data[completeVec, ])
 }
 
+#3.Function for the nearest line
+nearest_line <-function(df,road_net){
+  #Create planar(cartesian) projection 
+  crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
+  wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
+  
+  #Convert data to planar projection  
+  road_net <- spTransform(road_net,crs)
+  df <-  spTransform(SpatialPointsDataFrame(coords = df[4:5],proj4string = wgs84,data = df), crs)
+  
+  #Make sure our data have same projections
+  proj4string(df) <- proj4string(road_net)
+  
+  #Find nearest line with maxDist=20m 
+  nearest_line_sp <- snapPointsToLines(df,road_net,maxDist=20)
+  
+  return(nearest_line_sp)
+}
+
+#4.Function for leaflet visualisations
+leaflet_map <- function(final_df,road_df,edin_streets){
+  #Convert dataframes to spatial data
+  #coordinates(final_df) <- ~ X + Y
+  #coordinates(road_df) <- ~ Longitude + Latitude
+  
+  crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
+  wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
+  
+  #Convert data to planar projection  
+  edin_streets <- spTransform(edin_streets,crs)
+  road_df <-  spTransform(SpatialPointsDataFrame(coords = road_df[5:6],proj4string = wgs84,data = road_df), crs)
+  final_df <-  spTransform(SpatialPointsDataFrame(coords = final_df[4:5],proj4string = wgs84,data = final_df), crs)
+  
+  #Convert data projections back to lat/long to plot with leaflet
+  edin_streets <- spTransform(edin_streets,"+init=epsg:4326")
+  final_df <- spTransform(final_df, "+init=epsg:4326")
+  road_df <- spTransform(road_df, "+init=epsg:4326")
+  
+  edin_streets <- st_as_sf(edin_streets)
+  
+  #Same projections
+  proj4string(final_df) <- proj4string(edin_streets)
+  proj4string(road_df) <- proj4string(edin_streets)
+  
+
+  
+  #Leaflet maps of the road network , accidents and their projections
+  road_existing_20 <-edin_streets%>% filter(edin_streets$LAYER == "20mph existing streets")
+  road_local_20 <- filter(edin_streets, edin_streets$LAYER == "20mph local streets")
+  road_main_20 <- filter(edin_streets, edin_streets$LAYER == "20mph main streets")
+  road_30 <- filter(edin_streets, edin_streets$LAYER == "30mph")
+  road_40 <- filter(edin_streets, edin_streets$LAYER == "40mph")
+  road_part <- filter(edin_streets, edin_streets$LAYER == "Part time 20mph")
+  road_50 <- filter(edin_streets, edin_streets$LAYER == "50, 60 or 70mph")
+  road_trunk <- filter(edin_streets, edin_streets$LAYER == "Trunk roads")
+  
+  #Visualize
+  map <- leaflet() %>% addTiles() %>% addPolygons(data = edin_streets)
+  
+  map_near <-map %>% leaflet() %>% addTiles() %>% addMarkers(lng =final_df$X, lat = final_df$Y,
+                                                             popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
+                                                                          "Speed limit: ", final_df$Speed_limit ,"<br>",
+                                                                          "Layer: ",final_df$LAYER,"<br>",
+                                                                          "1st road class: ",final_df$X1st_Road_Class, "<br>",
+                                                                          "2nd road class: ", final_df$X2nd_Road_Class,"<br>",
+                                                                          "Road Type: ",  final_df$Road_Type))
+  
+  map3 <- map_near %>% addCircleMarkers(lng =road_df@data$Longitude , lat = road_df@data$Latitude,
+                                        popup =paste("Accident index: ", road_df@data$Accident_Index, "<br>",
+                                                     "Speed limit: ", road_df@data$Speed_limit ,"<br>",
+                                                     "1st road class: ",road_df@data$`1st_Road_Class`, "<br>",
+                                                     "2nd road class: ", road_df@data$`2nd_Road_Class`,"<br>",
+                                                     "Road Type: ", road_df@data$Road_Type ))
+  
+  map3 %>% 
+    addPolylines(data = road_existing_20, color= "green")%>%
+    addPolylines(data = road_local_20,color= "red")%>%
+    addPolylines(data = road_main_20,color= "yellow")%>%
+    addPolylines(data = road_30,color= "cyan")%>%
+    addPolylines(data = road_40,color= "blue")%>%
+    addPolylines(data = road_part,color= "black")%>%
+    addPolylines(data = road_50,color= "purple")%>%
+    addPolylines(data = road_trunk,color= "orange")
+}
+
+#5.Function to count how many accidents happen per layer and per speed limit
+count <- function(data_df){
+  count1 <- aggregate(Accident_Index~LAYER,data_df,length)
+  count2 <- aggregate(Accident_Index~Speed_limit,data_df,length)
+  print(count1)
+  print(count2)
+}
+
 #Data inputs
 ##1.Data path 
 dir_path <- "C:\\Users\\Kyriaki Kokka\\Desktop\\"
@@ -42,7 +135,7 @@ gdb_layers <- ogrListLayers(gdb_path)
 edin_impl_zones <- readOGR(dsn = gdb_path, layer="ImplementationZones")
 edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets")
 
-#Put ID column as variable 
+#Put ID column as variable to help us identify the id of each road
 edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
 
 #Transform to long/lat
@@ -79,10 +172,12 @@ rd_2018$Date <- as.Date(rd_2018$Date,format="%d/%m/%Y")
 #rd_2019 <- read_excel("C:\\Users\\Kyriaki Kokka\\Desktop\\20mph study collisions\\collisions\\collisions 2019 Jan to May Edinburgh only.xls")
 #rd_2019 <- rd_2019%>%filter(rd_2019$`Speed Limit`  %in% c(20,30,40)) 
 
+#Bind and clean the data
 edin_road_data <-rbind(rd_2013,rd_2014,rd_2015,rd_2018) 
 edin_road_data <- filter_data(edin_road_data)
 edin_road_data <-delete_na(edin_road_data,c("Longitude","Latitude"))
 
+#Create new csv file with the cleaned data  make it go to a correct path ?
 write.csv(edin_road_data, file = "Edin_Data.csv",row.names=FALSE)
 
 #Df for pre 20mph (bind 2013-2015)
@@ -91,86 +186,23 @@ pre_20 <- edin_road_data[edin_road_data$Date >="2013-01-01" & edin_road_data$Dat
 #Df for post 20mph (2018)
 post_20 <-  edin_road_data[edin_road_data$Date >="2018-01-01" & edin_road_data$Date <= "2018-12-31", ] %>% filter(!is.na(Date))
 
-#Data manipulation 
-#Function for the nearest line
-nearest_line <-function(df,road_net){
-  #Create planar(cartesian) projection 
-  crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
-  wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
-  
-  #Convert data to planar projection  
-  road_net <- spTransform(road_net,crs)
-  df <-  spTransform(SpatialPointsDataFrame(coords = df[4:5],proj4string = wgs84,data = df), crs)
-  
-  #Make sure our data have same projections
-  proj4string(df) <- proj4string(road_net)
-  
-  #Find nearest line with maxDist=20m 
-  nearest_line_sp <- snapPointsToLines(df,road_net,maxDist=20)
-  
-  return(nearest_line_sp)
-}
 
-#Get nearest line for pre and post 20mph 
+#Data manipulation
+#Get nearest line for pre and post 20mph using the nearest_line function 
 nearest_pre <- nearest_line(pre_20,edin_cons_streets)
 nearest_post <- nearest_line(post_20,edin_cons_streets)
 
 #Keep nearest line in df
-nearest_pre_line <- data.frame(nearest_pre)
-nearest_post_line <- data.frame(nearest_post)
+#nearest_pre_line <- data.frame(nearest_pre)
+#nearest_post_line <- data.frame(nearest_post)
 
 #Merge the dataframes based on the ID of the nearest line in order to connect geoinformation with stasts19 
-merged_data <- merge(nearest_pre_line,edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID")
+merged_data <- merge(data.frame(nearest_pre),edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID")
+
 
 #Keep the columns we need to extract information ( Accident_index,nearest_line_id ,Layer, Speed_limit )
-result_pre <- data.frame(merged_data[1],merged_data[2],merged_data[19],merged_data[39])
+#result_pre <- data.frame(merged_data[1],merged_data[2],merged_data[19],merged_data[39])
 
-#Count how many accidents happen per layer and per speed limit
-count1 <- aggregate(Accident_Index~LAYER,result_pre,length)
-count2 <- aggregate(Accident_Index~Speed_limit,result_pre,length) 
 
-#Function for leaflet visualisations
-
-#Convert data projections back to lat/long to plot with leaflet
-edin_cons_streets <- spTransform(edin_cons_streets,"+init=epsg:4326")
-nearest_pre <- spTransform(nearest_pre, "+init=epsg:4326")
-
-#Leaflet maps of the road network , accidents and their projections
-road_existing_20 <-edin_cons_streets%>% filter(edin_cons_streets$LAYER == "20mph existing streets")
-road_local_20 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "20mph local streets")
-road_main_20 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "20mph main streets")
-road_30 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "30mph")
-road_40 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "40mph")
-road_part <- filter(edin_cons_streets, edin_cons_streets$LAYER == "Part time 20mph")
-road_50 <- filter(edin_cons_streets, edin_cons_streets$LAYER == "50, 60 or 70mph")
-road_trunk <- filter(edin_cons_streets, edin_cons_streets$LAYER == "Trunk roads")
-
-#Visualize
-map <- leaflet() %>% addTiles() %>% addPolygons(data = edin_cons_streets)
-
-map_near <-map %>% leaflet() %>% addTiles() %>% addMarkers(lng =merged_data$X, lat = merged_data$Y,
-                                                    popup =paste("Accident index: ", merged_data$Accident_Index, "<br>",
-                                                                 "Speed limit: ", merged_data$Speed_limit ,"<br>",
-                                                                 "Layer: ",merged_data$LAYER,"<br>",
-                                                                 "1st road class: ",merged_data$X1st_Road_Class, "<br>",
-                                                                 "2nd road class: ", merged_data$X2nd_Road_Class,"<br>",
-                                                                 "Road Type: ",  merged_data$Road_Type))
-
-map3 <- map_near %>% addCircleMarkers(lng =rd_final@data$Longitude , lat = rd_final@data$Latitude,
-                                      popup =paste("Accident index: ", rd_final@data$Accident_Index, "<br>",
-                                                   "Speed limit: ", rd_final@data$Speed_limit ,"<br>",
-                                                   "1st road class: ",rd_final@data$`1st_Road_Class`, "<br>",
-                                                   "2nd road class: ", rd_final@data$`2nd_Road_Class`,"<br>",
-                                                   "Road Type: ", rd_final@data$Road_Type ))
-
-map3 %>% 
-  addPolylines(data = road_existing_20, color= "green")%>%
-  addPolylines(data = road_local_20,color= "red")%>%
-  addPolylines(data = road_main_20,color= "yellow")%>%
-  addPolylines(data = road_30,color= "cyan")%>%
-  addPolylines(data = road_40,color= "blue")%>%
-  addPolylines(data = road_part,color= "black")%>%
-  addPolylines(data = road_50,color= "purple")%>%
-  addPolylines(data = road_trunk,color= "orange")
-  
+leaflet_map(merged_data,edin_road_data,edin_cons_streets)
 
