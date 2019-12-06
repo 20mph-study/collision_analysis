@@ -15,7 +15,8 @@ library(readxl)
 filter_data <- function(data){
   data <- data %>% filter(data$Speed_limit %in% c(20,30,40)) 
   data <- data %>% filter(data$`Local_Authority_(District)` == 923)
-  data <- na.omit(data[1:31])#remove NA obs
+  data <- as.Date(data$Date,format="%d/%m/%Y")
+  #data <- na.omit(data[1:31])#remove NA obs
   return(data)
 }
 
@@ -40,62 +41,63 @@ edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
 
 #3.Read csv files
+
+#read all at once
+library(readr)
+files <- list.files(path = "C:\\Users\\Kyriaki Kokka\\Desktop\\20mph study collisions\\collisions\\", pattern = "*.csv", full.names = T)
+source_data <- sapply(files, read_csv, simplify=FALSE) %>% 
+  bind_rows(.id = "id")
+
+#Read every year seperately
 #Read csv file from 2005 to 2014
 rd_source <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2005 to 2014.csv"))  
 rd_source$Date <- as.Date(rd_source$Date,format="%d/%m/%Y")
 
 #2013 data
 rd_2013 <- rd_source[rd_source$Date >="2013-01-01" & rd_source$Date <= "2013-12-31", ] %>% filter(!is.na(Date))
-rd_2013 <- filter_data(rd_2013)
 
 #2014 data
 rd_2014 <- rd_source[rd_source$Date >="2014-01-01" & rd_source$Date <= "2014-12-31", ] %>% filter(!is.na(Date))
 rd_2014b <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2014.csv"))
 rd_2014 <- rbind(rd_2014,rd_2014b)
-rd_2014 <- filter_data(rd_2014)
 
 #2015 data
 rd_2015 <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2015.csv"))
-rd_2015 <- filter_data(rd_2015)
 
 #2018 data
-rd_2018 <-read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2018.csv"))
-rd_2018 <- filter_data(rd_2018)
+rd_2018 <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2018.csv"))
 
 #2019 data
-rd_2019 <- read_excel("C:\\Users\\Kyriaki Kokka\\Desktop\\20mph study collisions\\collisions\\collisions 2019 Jan to May Edinburgh only.xls")
-rd_2019 <- rd_2019%>%filter(rd_2019$`Speed Limit`  %in% c(20,30,40)) 
+#rd_2019 <- read_excel("C:\\Users\\Kyriaki Kokka\\Desktop\\20mph study collisions\\collisions\\collisions 2019 Jan to May Edinburgh only.xls")
+#rd_2019 <- rd_2019%>%filter(rd_2019$`Speed Limit`  %in% c(20,30,40)) 
 
+edin_road_data <-rbind(rd_2013,rd_2014,rd_2015,rd_2018) 
+edin_road_data <- filter_data(edin_road_data)
+
+write.csv(edin_road_data, file = "Edin_Data.csv",row.names=FALSE)
 
 #Df for pre 20mph (bind 2013-2015)
-pre_20 <-rbind(rd_2013,rd_2014,rd_2015)
+pre_20 <- edin_road_data[edin_road_data$Date >="2013-01-01" & edin_road_data$Date <= "2015-12-31", ] %>% filter(!is.na(Date))
 
 #Df for post 20mph (2018)
-post_20 <-rd_2018
+post_20 <-  edin_road_data[edin_road_data$Date >="2018-01-01" & edin_road_data$Date <= "2018-12-31", ] %>% filter(!is.na(Date))
 
 #Data manipulation 
-#Function for utm projection
-utm_proj <- function(df,rd_net){
+#Function for the nearest line
+nearest_line <-function(df,road_net){
   #Create planar(cartesian) projection 
   crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
   wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
   
   #Convert data to planar projection  
-  rd_net <- spTransform(road_network,crs)
-  df <-  spTransform(SpatialPointsDataFrame(coords = data1[4:5],proj4string = wgs84,data = data1), crs)
-
-  return(rd_net,df)
-}
-
-#Function for the nearest line
-nearest_line <-function(data1,road_network){
-  c(data1,road_network) <- utm_proj(data1,road_network)
+  road_net <- spTransform(road_net,crs)
+  df <-  spTransform(SpatialPointsDataFrame(coords = df[4:5],proj4string = wgs84,data = df), crs)
   
   #Make sure our data have same projections
-  proj4string(data1) <- proj4string(road_network)
+  proj4string(df) <- proj4string(road_net)
   
   #Find nearest line with maxDist=20m 
-  nearest_line_sp <- snapPointsToLines(data1,road_network,maxDist=20)
+  nearest_line_sp <- snapPointsToLines(df,road_net,maxDist=20)
   
   return(nearest_line_sp)
 }
@@ -107,8 +109,8 @@ nearest_2015 <- nearest_line(rd_2015,edin_cons_streets)
 nearest_2018 <- nearest_line(rd_2018,edin_cons_streets)
 
 #Get nearest line for pre and post 20mph 
-c(nearest_pre,utm_proj_pre) <- nearest_line(pre_20,edin_cons_streets)
-c(nearest_post,utm_proj_post) <- nearest_line(post_20,edin_cons_streets)
+nearest_pre <- nearest_line(pre_20,edin_cons_streets)
+nearest_post <- nearest_line(post_20,edin_cons_streets)
 
 #Keep nearest line in df
 nearest_pre_line <- data.frame(nearest_pre)
