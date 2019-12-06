@@ -1,0 +1,155 @@
+---
+title: "Collision_analysis"
+output: html_document
+---
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+# Load libraries
+library(rgdal)
+library(leaflet)
+library(tidyverse)
+library(rgeos)
+library(raster)
+library(ggplot2)
+library(sf)
+library(mapview)
+library(maptools)
+library(sp)
+library(readxl)
+library(readr)
+
+#1.Function for keeping data of Edinburgh with speed limits 20/30/40
+filter_data <- function(data){
+  data <- data %>% filter(data$Speed_limit %in% c(20,30,40)) 
+  data <- data %>% filter(data$`Local_Authority_(District)` == 923)
+  #data$Date <- as.Date(data$Date,format="%d/%m/%Y")
+  #data <- na.omit(data[1:31])#remove NA obs
+  return(data)
+}
+
+#2.Function for deleting Na points
+delete_na <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+```
+
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE} 
+#Data inputs
+##1.Data path 
+dir_path <- "C:\\Users\\Kyriaki Kokka\\Desktop\\"
+#dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
+
+#2.Gis 
+#Read geodatabase for Edinburgh
+#Path
+gdb_path <- paste0(dir_path, "20mph study collisions\\20mph.gdb")
+gdb_layers <- ogrListLayers(gdb_path)
+
+#Read shapefiles
+edin_impl_zones <- readOGR(dsn = gdb_path, layer="ImplementationZones")
+edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets")
+
+#Put ID column as variable 
+edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
+
+#Transform to long/lat
+edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
+edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
+```
+
+##Initial experimentation of the Edinburgh road network and zones
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE} 
+spplot(edin_cons_streets,'LAYER')
+```
+
+###Edinburgh city per zones
+
+Zone          | Area
+------------- | -------------
+1             | a)City Center, b) Rural west
+2             | North 
+3             | South central/East
+4             | North West 
+5             | West
+6             | South 
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE} 
+spplot(edin_impl_zones,"ImplementationZone")
+```
+
+#### Summary/Statistics of the road network attributes 
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+summary(edin_cons_streets)
+```
+
+#### Summary/Statistics of the zone attributes
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+summary(edin_impl_zones)
+```
+
+#### Visualization of the road and accidents 
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+df_road <- fortify(edin_cons_streets)
+y <- ggplot(data = df_road, aes(x = long, y = lat,group=group)) + geom_path() 
+y
+#y+ geom_point(data = rd1, aes(x = Longitude, y = Latitude,group=Speed_limit))
+```
+
+### Description of dataset
+
+>We use Stats19 data for the city of Edinburgh from 2013 to 2018. We split the data into two groups according the year. First group,named as pre 20mph, includes data from 2013 to 2015 and the second group,named as post 20mph includes data from 2018 and part of 2019.We clean the data ,keeping observations only for Edinburgh. Also we select accidents with speed limits of our interest namely 20mph,30mph and 40mph to reduce the size of the dataset. We have also excluded the not known variables of the longitude and the latitude.
+
+
+
+
+####Summary / Statistics of the dataset
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+#3.Read csv files
+#Read every year seperately
+#Read csv file from 2005 to 2014
+rd_source <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2005 to 2014.csv"))  
+rd_source$Date <- as.Date(rd_source$Date,format="%d/%m/%Y")
+
+#2013 data
+rd_2013 <- rd_source[rd_source$Date >="2013-01-01" & rd_source$Date <= "2013-12-31", ] %>% filter(!is.na(Date))
+
+#2014 data
+rd_2014 <- rd_source[rd_source$Date >="2014-01-01" & rd_source$Date <= "2014-12-31", ] %>% filter(!is.na(Date))
+rd_2014b <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2014.csv"))
+rd_2014 <- rbind(rd_2014,rd_2014b)
+
+#2015 data
+rd_2015 <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2015.csv"))
+rd_2015$Date <- as.Date(rd_2015$Date,format="%d/%m/%Y")
+
+#2018 data
+rd_2018 <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2018.csv"))
+rd_2018$Date <- as.Date(rd_2018$Date,format="%d/%m/%Y")
+
+#2019 data
+#rd_2019 <- read_excel("C:\\Users\\Kyriaki Kokka\\Desktop\\20mph study collisions\\collisions\\collisions 2019 Jan to May Edinburgh only.xls")
+#rd_2019 <- rd_2019%>%filter(rd_2019$`Speed Limit`  %in% c(20,30,40)) 
+
+edin_road_data <-rbind(rd_2013,rd_2014,rd_2015,rd_2018) 
+edin_road_data <- filter_data(edin_road_data)
+edin_road_data <-delete_na(edin_road_data,c("Longitude","Latitude"))
+
+library(Hmisc)
+describe(edin_road_data$Speed_limit)
+summary(edin_road_data)
+
+```
+
+```{r}
+
+```
+
