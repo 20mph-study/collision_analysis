@@ -44,7 +44,7 @@ leaflet_map <- function(final_df,road_df,edin_streets){
   
   #Convert data projections back to lat/long to plot with leaflet
   edin_streets <- spTransform(edin_streets,"+init=epsg:4326")
-
+  
   #Same projections
   proj4string(final_df) <- proj4string(edin_streets)
   proj4string(road_df) <- proj4string(edin_streets)
