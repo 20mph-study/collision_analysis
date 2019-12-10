@@ -144,7 +144,7 @@ edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
 #3.Read csv files
 #read all at once
 files <- list.files(path = "C:\\Users\\Kyriaki Kokka\\Desktop\\20mph study collisions\\collisions\\", pattern = "*.csv", full.names = T)
-source_data <- sapply(files, read_csv, simplify=FALSE) %>% bind_rows(.id = "id")
+source_data <- sapply(files, read_csv, simplify=FALSE) %>% bind_rows(.id = "id") 
 
 #Read every year seperately
 #Read csv file from 2005 to 2014
