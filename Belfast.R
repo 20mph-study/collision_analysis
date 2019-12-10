@@ -116,7 +116,7 @@ wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0") 
 bel <- belf_data
 road_net <- spTransform(belfast_road_data,crs)
 #coordinates(belf_data) <- ~ Latitude + Longitude
-belf_data <-  spTransform(SpatialPointsDataFrame(coords = rbind(belf_data$Longitude,belf_data$Latitude), proj4string = wgs84,data = belf_data), crs)
+bel <-  spTransform(SpatialPointsDataFrame(coords = rbind(bel$Longitude,bel$Latitude), proj4string = wgs84,data = bel), crs)
 
 #Make sure our data have same projections
 proj4string(df) <- proj4string(road_net)
