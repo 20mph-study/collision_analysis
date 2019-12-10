@@ -29,8 +29,6 @@ delete_na <- function(data, desiredCols) {
 
 # Load data from the network drive for Belfast road network
 belfast_road_data <- readOGR('V:/Studies/MOVED/HealthImpact/data/20mph study collisions/20mph Speed Limit Streets/20mph_Speed_Limit_Streets.shp')
-
-
 # Tranform the data by applying a projection
 belfast_road_data <- spTransform(belfast_road_data, "+init=epsg:4326")
 
@@ -42,15 +40,15 @@ bel <- read_excel(filename)
 belf_data <- read_excel(filename, sheet = 2)
 colnames(belf_data) <- colnames(bel)
 
-belfast_road_data@data
-names(belfast_road_data)
-summary(belfast_road_data)
-
 belf_data <- belf_data %>% filter(belf_data$LGDNAME == "Belfast City") 
 belf_data <- belf_data %>% filter(belf_data$a_speed %in% c(20,30,40)) 
 belf_data$a_date <- as.Date(belf_data$a_date,format="%d/%m/%Y")
 belf_data <- belf_data[belf_data$a_date >="2013-01-01" & belf_data$a_date <= "2015-12-31", ] %>% filter(!is.na(a_date))
 belf_data <- delete_na(belf_data,c("a_gd1","a_gd2"))
+
+
+
+
 
 #3.Function for the nearest line
 nearest_line <-function(df,road_net){
@@ -72,15 +70,12 @@ nearest_line <-function(df,road_net){
 }
 
 
-
-
 convert_latlong <-function(rd){
   # Load libraries
   library(rgdal)
   library(tidyverse)
   library(readxl)
   library(leaflet)
-  
   
   # Let's rename columns to latitude and longitude
   rd <- rd %>% rename("Latitude" = "a_gd1", "Longitude" = "a_gd2")
@@ -99,13 +94,10 @@ convert_latlong <-function(rd){
   
   # Convert Northing/Easting to Lat/Lng
   rd <- spTransform(rd, latlong)
-  return(rd@data)
+  return(rd)
 }
 
-
-belf_data <- convert_latlong(belf_data)
-
-
+belf_data_converted <- convert_latlong(belf_data)
 #belf_mapping <- nearest_line(belf_data,belfast_road_data)
 
 
@@ -123,3 +115,42 @@ proj4string(df) <- proj4string(road_net)
 
 #Find nearest line with maxDist=20m 
 nearest_line_sp <- snapPointsToLines(df,road_net,maxDist=20)
+
+dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
+
+#2.Gis 
+#Read geodatabase for Edinburgh
+#Path
+gdb_path <- paste0(dir_path, "20mph study collisions\\Belfast Small Areas")
+gdb_layers <- ogrListLayers(gdb_path)
+print(gdb_layers)
+belf_impl_zones <- readOGR(dsn = gdb_path, layer="SA2011")
+belf_cons_streets <- shapefile("V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\Belfast Small Areas\\SA2011.shp")
+#belf_impl_zones <- st_as_sf(belf_impl_zones)
+
+
+belf_impl_zones_try <- belf_impl_zones[belf_impl_zones@data$SA2011 == c("N00000176","N00000177","N00000178","N00000179","N00000180","N00000181"),]
+belf_impl_zones_try <- spTransform(belf_impl_zones_try, "+init=epsg:4326")
+belf_impl_zones_try <- st_as_sf(belf_impl_zones_try)
+
+leaflet(belf_impl_zones_try) %>% addTiles() %>% addPolylines()
+
+gdb_path <- paste0(dir_path, "20mph study collisions\\Belfast Output Areas")
+gdb_layers <- ogrListLayers(gdb_path)
+print(gdb_layers)
+belf_impl_zones <- readOGR(dsn = gdb_path, layer="SA2011")
+belf_cons_streets <- readOGR(dsn = gdb_path,layer="ESRI Shapefile")
+belf_impl_zones <- spTransform(belf_impl_zones, "+init=epsg:4326")
+
+library(raster)
+s <- shapefile("V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\Belfast Output Areas\\SOA2011.shp")
+s <- spTransform(s, "+init=epsg:4326")
+
+leaflet(s) %>% addTiles() %>% addPolygons()
+
+ss <- shapefile("V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\output borders\\SOA2011.shp")
+ss <- spTransform(ss, "+init=epsg:4326")
+
+
+s@data
+
