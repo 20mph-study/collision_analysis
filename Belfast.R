@@ -27,29 +27,6 @@ delete_na <- function(data, desiredCols) {
   return(data[completeVec, ])
 }
 
-# Load data from the network drive for Belfast road network
-belfast_road_data <- readOGR('V:/Studies/MOVED/HealthImpact/data/20mph study collisions/20mph Speed Limit Streets/20mph_Speed_Limit_Streets.shp')
-# Tranform the data by applying a projection
-belfast_road_data <- spTransform(belfast_road_data, "+init=epsg:4326")
-
-# Visualize using leaflet
-leaflet(belfast_road_data) %>% addTiles() %>% addPolygons()
-
-filename <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\Belfast\\Collisions 1998-2017.xls"
-bel <- read_excel(filename)
-belf_data <- read_excel(filename, sheet = 2)
-colnames(belf_data) <- colnames(bel)
-
-belf_data <- belf_data %>% filter(belf_data$LGDNAME == "Belfast City") 
-belf_data <- belf_data %>% filter(belf_data$a_speed %in% c(20,30,40)) 
-belf_data$a_date <- as.Date(belf_data$a_date,format="%d/%m/%Y")
-belf_data <- belf_data[belf_data$a_date >="2013-01-01" & belf_data$a_date <= "2015-12-31", ] %>% filter(!is.na(a_date))
-belf_data <- delete_na(belf_data,c("a_gd1","a_gd2"))
-
-
-
-
-
 #3.Function for the nearest line
 nearest_line <-function(df,road_net){
   #Create planar(cartesian) projection 
@@ -97,39 +74,31 @@ convert_latlong <-function(rd){
   return(rd)
 }
 
-belf_data_converted <- convert_latlong(belf_data)
-#belf_mapping <- nearest_line(belf_data,belfast_road_data)
+#-----------------------------------------------------------------------------------------------------------------------------------------------
 
+#2.Gis 
+#Read geodatabase for Belfast
 
-crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
-wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
+# Load data from the network drive for Belfast road network
+belfast_road_data <- readOGR('V:/Studies/MOVED/HealthImpact/data/20mph study collisions/20mph Speed Limit Streets/20mph_Speed_Limit_Streets.shp')
+# Tranform the data by applying a projection
+belfast_road_data <- spTransform(belfast_road_data, "+init=epsg:4326")
 
-#Convert data to planar projection  
-bel <- belf_data
-road_net <- spTransform(belfast_road_data,crs)
-#coordinates(belf_data) <- ~ Latitude + Longitude
-bel <-  spTransform(SpatialPointsDataFrame(coords = rbind(bel$Longitude,bel$Latitude), proj4string = wgs84,data = bel), crs)
-
-#Make sure our data have same projections
-proj4string(df) <- proj4string(road_net)
-
-#Find nearest line with maxDist=20m 
-nearest_line_sp <- snapPointsToLines(df,road_net,maxDist=20)
+# Visualize using leaflet
+leaflet(belfast_road_data) %>% addTiles() %>% addPolygons()
 
 dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
 
-#2.Gis 
-#Read geodatabase for Edinburgh
-#Path
 gdb_path <- paste0(dir_path, "20mph study collisions\\Belfast Small Areas")
 gdb_layers <- ogrListLayers(gdb_path)
 print(gdb_layers)
 belf_impl_zones <- readOGR(dsn = gdb_path, layer="SA2011")
 belf_cons_streets <- shapefile("V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\Belfast Small Areas\\SA2011.shp")
 #belf_impl_zones <- st_as_sf(belf_impl_zones)
+belf_impl_zones <- spTransform(belf_impl_zones, "+init=epsg:4326")
+leaflet(belf_impl_zones) %>% addTiles() %>% addPolylines() %>% addMarkers(lat = 54.5973, lng = 5.9301)
 
-
-belf_impl_zones_try <- belf_impl_zones[belf_impl_zones@data$SA2011 == c("N00000176","N00000177","N00000178","N00000179","N00000180","N00000181"),]
+belf_impl_zones_try <- belf_impl_zones[belf_impl_zones@data$SA2011 %in% c("N00000176","N00000177","N00000178","N00000179","N00000180","N00000181"),]
 belf_impl_zones_try <- spTransform(belf_impl_zones_try, "+init=epsg:4326")
 belf_impl_zones_try <- st_as_sf(belf_impl_zones_try)
 
@@ -151,6 +120,50 @@ leaflet(s) %>% addTiles() %>% addPolygons()
 ss <- shapefile("V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\output borders\\SOA2011.shp")
 ss <- spTransform(ss, "+init=epsg:4326")
 
+#---------------------------------------------------------------------------------------------------------------------
 
-s@data
+
+filename <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\Belfast\\Collisions 1998-2017.xls"
+bel <- read_excel(filename)
+belf_data <- read_excel(filename, sheet = 2)
+colnames(belf_data) <- colnames(bel)
+
+belf_data <- belf_data %>% filter(belf_data$LGDNAME == "Belfast City") 
+belf_data <- belf_data %>% filter(belf_data$a_speed %in% c(20,30,40)) 
+belf_data$a_date <- as.Date(belf_data$a_date,format="%d/%m/%Y")
+belf_data <- belf_data[belf_data$a_date >="2013-01-01" & belf_data$a_date <= "2015-12-31", ] %>% filter(!is.na(a_date))
+belf_data <- delete_na(belf_data,c("a_gd1","a_gd2"))
+
+#Create new csv file with the cleaned data
+write.csv(belf_data, file ="V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\collisions\\Belf_data.csv",row.names=FALSE)
+
+dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
+
+
+
+#Read filtered data for Belfast 20/30/40mph
+belf_road_data <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\Belf_data.csv"))
+
+belf_data_converted <- convert_latlong(belf_road_data)
+#belf_mapping <- nearest_line(belf_data,belfast_road_data)
+
+crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
+wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
+
+#Convert data to planar projection  
+bel <- belf_data
+road_net <- spTransform(belfast_road_data,crs)
+#coordinates(belf_data) <- ~ Latitude + Longitude
+bel <-  spTransform(SpatialPointsDataFrame(coords = rbind(bel$Longitude,bel$Latitude), proj4string = wgs84,data = bel), crs)
+
+#Make sure our data have same projections
+proj4string(df) <- proj4string(road_net)
+
+
+
+dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
+
+
+
+
 
