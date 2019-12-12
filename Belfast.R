@@ -89,15 +89,15 @@ belfast_road_data <- spTransform(belfast_road_data, "+init=epsg:4326")
 leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() 
 
 #Output Areas 
-gdb_path_out <- paste0(dir_path, "20mph study collisions\\belf out")
+gdb_path_out <- paste0(dir_path, "Belfast Output areas\\SOA2011.shp")
 gdb_layers <- ogrListLayers(gdb_path_out)
 print(gdb_layers)
 
-belf_impl_zones_out <- readOGR(dsn = gdb_path_out, layer="OA_ni")
+belf_impl_zones_out <- readOGR(dsn = gdb_path_out, layer="SOA2011")
 #leaflet(belf_impl_zones) %>% addTiles() %>% addPolygons()
 belf_impl_zones_out <- spTransform(belf_impl_zones_out, "+init=epsg:4326")
 inter <- intersect(belfast_road_data, belf_impl_zones_out)
-control_zones_out <- unique(inter@data$OA_CODE)
+control_zones_out <- unique(inter@data$SOA_CODE)
 print(control_zones_out)
 leaflet(inter) %>% addTiles()
 
