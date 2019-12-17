@@ -1,0 +1,203 @@
+---
+title: "Belfast markdown"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r,echo=FALSE, warning=FALSE,message=FALSE}
+# Load libraries
+library(rgdal)
+library(leaflet)
+library(tidyverse)
+library(rgeos)
+library(raster)
+library(ggplot2)
+library(sf)
+library(mapview)
+library(maptools)
+library(sp)
+library(readxl)
+library(readr)
+```
+##Belfast road network changed to 20mph
+
+```{r,echo=FALSE, warning=FALSE,message=FALSE}
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+#1.GIS 
+
+# Define network dir path
+dir_path <- 'V:Studies\\MOVED\\HealthImpact\\data\\20mph study collisions\\'
+#Read geodatabase for Belfast
+
+#Road data 
+# Load data from the network drive for Belfast road network
+belfast_road_data <- readOGR(paste0(dir_path, '20mph Speed Limit Streets\\20mph_Speed_Limit_Streets.shp'))
+# Tranform the data by applying a projection
+belfast_road_data <- spTransform(belfast_road_data, "+init=epsg:4326")
+# Visualize using leaflet
+leaflet(belfast_road_data) %>% addTiles() %>% addPolygons()
+
+```
+##Belfast city center zones
+
+```{r,echo=FALSE, warning=FALSE,message=FALSE}
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+#Output Areas 
+gdb_path_out <- paste0(dir_path, "OA_ni-ESRI_format\\OA_ni.shp")
+gdb_layers <- ogrListLayers(gdb_path_out)
+print(gdb_layers)
+
+belf_impl_zones_out <- readOGR(dsn = gdb_path_out, layer="OA_ni")
+belf_impl_zones_out <- spTransform(belf_impl_zones_out, "+init=epsg:4326")
+belf_impl_zones_out <- belf_impl_zones_out[belf_impl_zones_out@data$OA_CODE %in% c("95GG390015","95GG200003","95GG350003","95GG350004",
+                                                                                   "95GG390013","95GG350001","95GG210002","95GG400007",
+                                                                                   "95GG390012","95GG390011","95GG350005"),]
+leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons()
+
+```
+
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+#READ DATA
+#PSNI data
+#Belfast data 
+filename <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\Belfast\\Collisions 1998-2017.xls"
+bel <- read_excel(filename)
+belf_data <- read_excel(filename, sheet = 2)
+colnames(belf_data) <- colnames(bel)
+
+belf_data <- belf_data %>% filter(belf_data$LGDNAME == "Belfast City") 
+belf_data <- belf_data %>% filter(belf_data$a_speed %in% c(20,30,40)) 
+belf_data$a_date <- as.Date(belf_data$a_date,format="%d/%m/%Y")
+belf_data <- belf_data[belf_data$a_date >="2013-01-01" & belf_data$a_date <= "2015-12-31", ] %>% filter(!is.na(a_date))
+
+coord <- belf_data %>%
+  st_as_sf(coords = c("a_gd1","a_gd2"), crs = 29903) %>%
+  st_transform(4326) %>%
+  st_coordinates() %>%
+  as_tibble()
+
+belf_data <- data.frame(belf_data,coord)
+
+#Create new csv file with the cleaned data
+write.csv(belf_data, file ="V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\Belf_data.csv",row.names=FALSE)
+```
+
+##Time series Analysis
+
+```{r,echo=FALSE, warning=FALSE,message=FALSE}
+
+
+
+```
+
+
+#Mapping accidents with roads
+
+```{r,echo=FALSE, warning=FALSE,message=FALSE}
+#Nearest line
+df <- belf_data
+road_net <- belfast_road_data
+
+#Create planar(cartesian) projection 
+crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
+wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
+  
+#Convert data to planar projection  
+road_net <- spTransform(road_net,crs)
+df <-  spTransform(SpatialPointsDataFrame(coords = df[25:26],proj4string = wgs84,data = df), crs)
+  
+#Make sure our data have same projections
+proj4string(df) <- proj4string(road_net)
+  
+#Find nearest line with maxDist=20m 
+nearest_line_sp <- snapPointsToLines(df,road_net,maxDist=5)
+
+belfast_road_data@data <-rowid_to_column(belfast_road_data@data, "ID")
+nearest_line_sp <- spTransform(nearest_line_sp,"+init=epsg:4326")
+
+#Merge the dataframes based on the ID of the nearest line in order to connect geoinformation with stasts19 
+merged <- merge(data.frame(nearest_line_sp), belfast_road_data@data,by.x = "nearest_line_id" ,by.y = "ID")
+
+#Plot results
+leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>% addCircleMarkers(data = merged,lng = merged$X.1,lat=merged$Y.1) %>% 
+                                                                addMarkers(lng = merged$X, lat = merged$Y, 
+                                                                           popup = paste("Accident index: ", merged$a_ID, "<br>",
+                                                                                         "Speed limit: ", merged$a_speed ))
+
+```
+
+##Mapping accidents with zones
+
+```{r,echo=FALSE, warning=FALSE,message=FALSE}
+#Link every accident with a zone
+
+#Create planar(cartesian) projection 
+crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
+wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
+
+#Convert data to planar projection  
+belf_impl_zones_out <- spTransform(belf_impl_zones_out,crs)
+utm_data <-  spTransform(SpatialPointsDataFrame(coords = belf_data[25:26],proj4string = wgs84,data = belf_data), crs)
+
+#Make sure our data have same projections
+proj4string(utm_data) <- proj4string(belf_impl_zones_out)
+
+#add a buffer around the point
+points_polygons <- gBuffer(utm_data, width=5, byid = TRUE )
+count_zones <- over(points_polygons,belf_impl_zones_out,returnList = FALSE)
+count_zones <- rowid_to_column(count_zones,"ID")
+belf_data <- rowid_to_column(belf_data,"index_ID")
+total_zones <- merge(belf_data,count_zones,by.x="index_ID",by.y="ID")
+df_zones <-data.frame(total_zones[2],total_zones[5],total_zones[34],total_zones[35])
+
+#Convert data projections back to lat/long to plot with leaflet
+belf_impl_zones_out <- spTransform(belf_impl_zones_out,"+init=epsg:4326")
+#total_zones <- spTransform(total_zones, "+init=epsg:4326")
+belf_impl_zones_out <- st_as_sf(belf_impl_zones_out)
+#df_na <- na.omit(df_zones[1:4]) # check how many are missing
+
+total_zones <- delete_na(total_zones,c("X_COORD" ,"Y_COORD"))
+
+leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons()
+
+```
+##Count tables per year
+###2013
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#Count function
+count <- function(data_df){
+  count1 <- aggregate(Accident_Index~LAYER,data_df,length)
+  count2 <- aggregate(Accident_Index~Speed_limit,data_df,length)
+  print(count1)
+  print(count2)
+}
+
+count(merged_pre[merged_pre$Date >="2013-01-01" & merged_pre$Date <= "2015-12-31", ])
+```
+###2014
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+count(merged_pre[merged_pre$Date >="2014-01-01" & merged_pre$Date <= "2014-12-31", ])
+
+```
+###2015
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+count(merged_pre[merged_pre$Date >="2015-01-01" & merged_pre$Date <= "2015-12-31", ])
+```
+
+###2018
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+count(merged_post[merged_post$Date >="2018-01-01" & merged_post$Date <= "2018-12-31", ])
+#count(merged_pre[merged_pre$Date >="2013-01-01" & merged_pre$Date <= "2013-12-31", ])
+
+```
+
+
