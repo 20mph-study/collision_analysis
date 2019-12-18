@@ -4,7 +4,7 @@ output: html_document
 ---
 
 
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
+```{r,echo=FALSE,warning=FALSE,message=FALSE,comment = FALSE}
 # Load libraries
 library(rgdal)
 library(leaflet)
@@ -20,6 +20,7 @@ library(readxl)
 library(readr)
 library(grid)
 library(gridExtra)
+library(xtable)
 
 #1.Function for keeping data of Edinburgh with speed limits 20/30/40
 filter_data <- function(data){
@@ -62,6 +63,7 @@ edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 spplot(edin_cons_streets,'LAYER')
 leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
 ```
+
 ##Edinburgh's control zones
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
@@ -69,6 +71,9 @@ leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
 edin_impl_zones <- readOGR(dsn = gdb_path, layer="ImplementationZones")
 #Transform to long/lat
 edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
+#Change zone 1
+edin_impl_zones@data$ImplementationZone <- as.integer(edin_impl_zones@data$ImplementationZone)
+edin_impl_zones@data[6,]$ImplementationZone <- 7
 #Visualize with leaflet
 spplot(edin_impl_zones,"ImplementationZone")
 leaflet(edin_impl_zones) %>% addTiles() %>% addPolygons()
@@ -109,21 +114,31 @@ rd_2018$Date <- as.Date(rd_2018$Date,format="%d/%m/%Y")
 edin_road_data <-rbind(rd_2013,rd_2014,rd_2015,rd_2018) 
 edin_road_data <- filter_data(edin_road_data)
 edin_road_data <-delete_na(edin_road_data,c("Longitude","Latitude"))
+edin_road_data$Accident_Severity <- as.character(edin_road_data$Accident_Severity)
+edin_road_data$Accident_Severity[edin_road_data$Accident_Severity == 1] <- "fatal"
+edin_road_data$Accident_Severity[edin_road_data$Accident_Severity == 2] <- "Serious"
+edin_road_data$Accident_Severity[edin_road_data$Accident_Severity == 3] <- "Slight"
+
 data <- edin_road_data
 edin_road_data <-rowid_to_column(edin_road_data, "ID")
 df <- data
+data <- rowid_to_column(data,"index_ID")
 ```
 
-##Time series analysis
+>Time series analysis
 
->We explore seasonal trends in accidents by day of the year and time of the day:
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-library(ggplot2)
-library(reshape2)
-meltdf <- melt(df, id = c("Date","Speed_limit","Accident_Index"))
-ggplot(meltdf, aes(x = Date,y = Accident_Index, colour = Speed_limit, group = Speed_limit))+ geom_line() 
+ggplot(edin_road_data) +
+ aes(x = Date, colour = Speed_limit) +
+ geom_histogram(bins = 30L, fill = "#0c4c8a") +
+ scale_color_distiller(palette = "Greens") +
+ theme_minimal()
 
+ggplot(edin_road_data) +
+ aes(x = Date, weight = Speed_limit) +
+ geom_bar(fill = "#0c4c8a") +
+ theme_minimal()
 
 ```
 
@@ -218,7 +233,9 @@ leaflet_map <- function(final_df,road_df,edin_streets){
 count <- function(data_df){
   count1 <- aggregate(Accident_Index~LAYER,data_df,length)
   count2 <- aggregate(Accident_Index~Speed_limit,data_df,length)
+  print(" ")
   print(count1)
+  print(" ")
   print(count2)
 }
 ```
@@ -231,60 +248,62 @@ nearest_road <- nearest_line(edin_road_data,edin_cons_streets)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
 ```
 
+>Mapping accidents with roads
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #Merge the dataframes based on the ID of the nearest line in order to connect geoinformation with stasts19 
 mergedDf <- merge(data.frame(nearest_road),edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID")
 ```
 
-#Mapping accidents with roads
+>Mapping accidents with roads: 2013
 
-###2013
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-
 leaflet_map(mergedDf[mergedDf$Date >="2013-01-01" & mergedDf$Date <= "2013-12-31", ],edin_road_data[edin_road_data$Date >="2013-01-01" & edin_road_data$Date <= "2013-12-31", ],edin_cons_streets)
 count(mergedDf[mergedDf$Date >="2013-01-01" & mergedDf$Date <= "2013-12-31", ])
 ```
-###2014
+
+>Mapping accidents with roads: 2014
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$Date >="2014-01-01" & mergedDf$Date <= "2014-12-31", ],edin_road_data[edin_road_data$Date >="2014-01-01" & edin_road_data$Date <= "2014-12-31", ],edin_cons_streets)
 count(mergedDf[mergedDf$Date >="2014-01-01" & mergedDf$Date <= "2014-12-31", ])
 ```
-###2015
+
+>Mapping accidents with roads: 2015
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$Date >="2015-01-01" & mergedDf$Date <= "2015-12-31", ],edin_road_data[edin_road_data$Date >="2015-01-01" & edin_road_data$Date <= "2015-12-31", ],edin_cons_streets)
 count(mergedDf[mergedDf$Date >="2015-01-01" & mergedDf$Date <= "2015-12-31", ])
 ```
 
-###2018
+>Mapping accidents with roads: 2018
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2018-12-31", ],edin_road_data[edin_road_data$Date >="2018-01-01" & edin_road_data$Date <= "2018-12-31", ],edin_cons_streets)
 count(mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2018-12-31", ])
 ```
-###Count pre 20mph
-```{r}
+
+>Count pre 20mph
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
 count(mergedDf[mergedDf$Date >="2013-01-01" & mergedDf$Date <= "2015-12-31", ])
 ```
-###Count post 20mph
-```{r}
+
+>Count post 20mph
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
 count(mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2018-12-31", ])
 ```
 
-##Output: column for layer
+>Output column: Layer
+
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 head(mergedDf[,c(3,20,39)])
 ```
 
-##Mapping zones with accidents
+##Mapping accidents with zones
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-
-edin_impl_zones <- readOGR(dsn = gdb_path, layer="ImplementationZones")
-data <- rowid_to_column(data,"index_ID")
-
 #Create planar(cartesian) projection 
 crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
 wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
@@ -296,7 +315,7 @@ utm_data <-  spTransform(SpatialPointsDataFrame(coords = data[5:6],proj4string =
 proj4string(utm_data) <- proj4string(edin_impl_zones)
 
 #add a buffer around the point
-points_polygons <- gBuffer(utm_data, width=5, byid = TRUE )
+points_polygons <- gBuffer(utm_data, width=6, byid = TRUE )
 count_zones <- over(points_polygons,edin_impl_zones,returnList = FALSE)
 count_zones <- rowid_to_column(count_zones,"ID")
 
@@ -311,8 +330,8 @@ utm_data <- spTransform(utm_data, "+init=epsg:4326")
 #df_na <- na.omit(df_zones[1:4]) # check how many are missing
 ```
 
-#Zone visualisations per year
-###2013
+>Mapping accidents with zones: 2013
+
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 
 edin_impl_zones <- st_as_sf(edin_impl_zones)
@@ -323,6 +342,7 @@ zone_3 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 3)
 zone_4 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 4)
 zone_5 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 5)
 zone_6 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 6)
+zone_7 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 7)
 
 #Visualize
 map_zones <- leaflet() %>% addTiles() %>% 
@@ -331,8 +351,12 @@ map_zones <- leaflet() %>% addTiles() %>%
   addPolygons(data = zone_3,color= "purple")%>%
   addPolygons(data = zone_4,color= "cyan")%>%
   addPolygons(data = zone_5,color= "blue")%>%
-  addPolygons(data = zone_6,color= "orange")
+  addPolygons(data = zone_6,color= "orange")%>%
+  addPolygons(data = zone_7,color= "black")
 
+map_zones <- map_zones %>% addLegend("bottomright",colors =c("green",  "red","purple", "cyan", "blue","orange","black"),
+                      labels= c("1:City Centre", "2:North","3:South Central/East","4:North West","5:West", "6:South","7:Rural West"),
+                      title= "Control zones",opacity = 1) %>% setView(lng = -3.188267 , lat = 55.953251, zoom = 11)
 
 total <- total_zones[total_zones$Date >="2013-01-01" & total_zones$Date <= "2013-12-31", ]
 
@@ -341,7 +365,9 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
                                       "Zone: ", total$ImplementationZone))
 
 ```
-###2014
+
+>Mapping accidents with zones: 2014
+
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$Date >="2014-01-01" & total_zones$Date <= "2014-12-31", ]
 
@@ -351,7 +377,9 @@ map_zones %>%
              popup =paste("Accident index: ", total$Accident_Index, "<br>",
                           "Zone: ", total$ImplementationZone))
 ``` 
-###2015
+
+>Mapping accidents with zones: 2015
+
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$Date >="2015-01-01" & total_zones$Date <= "2015-12-31", ]
 
@@ -359,7 +387,9 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
 ```
-###2018
+
+>Mapping accidents with zones: 2018
+
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$Date >="2018-01-01" & total_zones$Date <= "2018-12-31", ]
 
@@ -369,9 +399,8 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
 ```
 
 
-##Output: Zone column 
+>Output column: Implementation Zone
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 head(df_zones)
 ```
-
