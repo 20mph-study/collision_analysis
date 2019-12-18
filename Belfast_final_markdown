@@ -17,8 +17,16 @@ library(maptools)
 library(sp)
 library(readxl)
 library(readr)
+
+#Function for deleting Na points
+delete_na <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
 ```
-##Belfast road network changed to 20mph
+
+>Belfast road network changed to 20mph
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, comment=FALSE}
 #1.GIS 
@@ -37,14 +45,14 @@ belfast_road_data@data <-rowid_to_column(belfast_road_data@data, "ID")
 leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>% setView(lng = -5.926437 , lat = 54.607868, zoom = 14)
 
 ```
-##Belfast city center zones
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
+>Belfast city center zones
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 #Output Areas 
 gdb_path_out <- paste0(dir_path, "OA_ni-ESRI_format\\OA_ni.shp")
 gdb_layers <- ogrListLayers(gdb_path_out)
-print(gdb_layers)
 
 belf_impl_zones_out <- readOGR(dsn = gdb_path_out, layer="OA_ni")
 belf_impl_zones_out <- spTransform(belf_impl_zones_out, "+init=epsg:4326")
@@ -54,7 +62,6 @@ belf_impl_zones_out <- belf_impl_zones_out[belf_impl_zones_out@data$OA_CODE %in%
 leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons()
 
 ```
-
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #READ DATA
@@ -103,7 +110,7 @@ ggplot(belf_data) +
  theme_minimal()
 ```
 
-#Mapping accidents with roads
+>Mapping accidents with roads
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 #Nearest line
@@ -124,15 +131,15 @@ proj4string(df) <- proj4string(road_net)
 #Find nearest line with maxDist=20m 
 nearest_line_sp <- snapPointsToLines(df,road_net,maxDist=5)
 
-#belfast_road_data@data <-rowid_to_column(belfast_road_data@data, "ID")
+belfast_road_data@data <-rowid_to_column(belfast_road_data@data, "ID")
 nearest_line_sp <- spTransform(nearest_line_sp,"+init=epsg:4326")
 
-#Merge the dataframes based on the ID of the nearest line in order to connect geoinformation with stasts19 
+#Merge the dataframes based on the ID of the nearest line in order to connect geoinformation
 merged <- merge(data.frame(nearest_line_sp), belfast_road_data@data,by.x = "nearest_line_id" ,by.y = "ID")
 ```
 
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 count <- function(data_df){
   count2 <- aggregate(a_ID~a_speed,data_df,length)
   print(count2)
@@ -150,7 +157,7 @@ leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>%
                           addMarkers(lng = total$X, lat = total$Y, 
                                       popup = paste("Accident index: ", total$a_ID, "<br>",
                                                     "Speed limit: ", total$a_speed ))
-nrow(total[total$a_date >="2013-01-01" & total$a_date <= "2013-12-31", ])
+#nrow(total[total$a_date >="2013-01-01" & total$a_date <= "2013-12-31", ])
 count(total[total$a_date >="2013-01-01" & total$a_date <= "2013-12-31", ])
 ```
 
@@ -164,10 +171,9 @@ leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>%
                           addMarkers(lng = total$X, lat = total$Y, 
                                       popup = paste("Accident index: ", total$a_ID, "<br>",
                                                     "Speed limit: ", total$a_speed ))
-nrow(total[total$a_date >="2014-01-01" & total$a_date <= "2014-12-31", ])
+#nrow(total[total$a_date >="2014-01-01" & total$a_date <= "2014-12-31", ])
 count(total[total$a_date >="2014-01-01" & total$a_date <= "2014-12-31", ])
 ```
-
 
 >Mapping accidents with roads: 2015
 
@@ -179,7 +185,7 @@ leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>%
                           addMarkers(lng = total$X, lat = total$Y, 
                                       popup = paste("Accident index: ", total$a_ID, "<br>",
                                                     "Speed limit: ", total$a_speed ))
-nrow(total[total$a_date >="2015-01-01" & total$a_date <= "2015-12-31", ])
+#nrow(total[total$a_date >="2015-01-01" & total$a_date <= "2015-12-31", ])
 count(total[total$a_date >="2015-01-01" & total$a_date <= "2015-12-31", ])
 ```
 
@@ -193,7 +199,7 @@ leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>%
                           addMarkers(lng = total$X, lat = total$Y, 
                                       popup = paste("Accident index: ", total$a_ID, "<br>",
                                                     "Speed limit: ", total$a_speed ))
-nrow(total[total$a_date >="2018-01-01" & total$a_date <= "2018-12-31", ])
+#nrow(total[total$a_date >="2018-01-01" & total$a_date <= "2018-12-31", ])
 count(total[total$a_date >="2018-01-01" & total$a_date <= "2018-12-31", ])
 ```
 
@@ -207,17 +213,16 @@ leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>%
                           addMarkers(lng = total$X, lat = total$Y, 
                                       popup = paste("Accident index: ", total$a_ID, "<br>",
                                                     "Speed limit: ", total$a_speed ))
-nrow(total[total$a_date >="2019-01-01" & total$a_date <= "2019-12-31", ])
+#nrow(total[total$a_date >="2019-01-01" & total$a_date <= "2019-12-31", ])
 count(total[total$a_date >="2019-01-01" & total$a_date <= "2019-12-31", ])
 ```
 
 >Output column: Changed to 20 mph
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 head(merged[,c(25,13,36,40)])
 ```
 
->Mapping accidents with zones
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #Link every accident with a zone
@@ -246,9 +251,13 @@ belf_impl_zones_out <- spTransform(belf_impl_zones_out,"+init=epsg:4326")
 belf_impl_zones_out <- st_as_sf(belf_impl_zones_out)
 #df_na <- na.omit(df_zones[1:4]) # check how many are missing
 
-#total_zones <- delete_na(total_zones,c("X_COORD" ,"Y_COORD"))
+total_zones <- delete_na(total_zones,c("X_COORD" ,"Y_COORD"))
+total_zones$a_type <- as.character(total_zones$a_type )
+total_zones$a_type [total_zones$a_type  == 1] <- "fatal collision"
+total_zones$a_type [total_zones$a_type  == 2] <- "Serious collision"
+total_zones$a_type [total_zones$a_type  == 3] <- "Slight collision"
 
-leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons()
+
 
 ```
 
@@ -260,7 +269,8 @@ leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons() %>%
                          setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>% 
                           addMarkers(lng = total$X, lat = total$Y, 
                                       popup = paste("Accident index: ", total$a_ID, "<br>",
-                                                    "Speed limit: ", total$a_speed ))
+                                                    "Speed limit: ", total$a_speed, "<br>",
+                                                    "Accident severity: " , total$a_type ))
 
 ```
 
@@ -272,7 +282,8 @@ leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons() %>%
                          setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>% 
                           addMarkers(lng = total$X, lat = total$Y, 
                                       popup = paste("Accident index: ", total$a_ID, "<br>",
-                                                    "Speed limit: ", total$a_speed ))
+                                                    "Speed limit: ", total$a_speed , "<br>",
+                                                    "Accident severity: " , total$a_type ))
 ```
 
 >Mapping accidents with zones: 2015
@@ -283,7 +294,8 @@ leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons() %>%
                          setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>% 
                           addMarkers(lng = total$X, lat = total$Y, 
                                       popup = paste("Accident index: ", total$a_ID, "<br>",
-                                                    "Speed limit: ", total$a_speed ))
+                                                    "Speed limit: ", total$a_speed, "<br>",
+                                                    "Accident severity: " , total$a_type  ))
 ```
 
 >Mapping accidents with zones: 2018
@@ -294,7 +306,8 @@ leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons() %>%
                          setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>% 
                           addMarkers(lng = total$X, lat = total$Y, 
                                       popup = paste("Accident index: ", total$a_ID, "<br>",
-                                                    "Speed limit: ", total$a_speed ))
+                                                    "Speed limit: ", total$a_speed , "<br>",
+                                                    "Accident severity: " , total$a_type ))
 
 ```
 
@@ -306,7 +319,8 @@ leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons() %>%
                          setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>% 
                           addMarkers(lng = total$X, lat = total$Y, 
                                       popup = paste("Accident index: ", total$a_ID, "<br>",
-                                                    "Speed limit: ", total$a_speed ))
+                                                    "Speed limit: ", total$a_speed, "<br>",
+                                                    "Accident severity: " , total$a_type  ))
 ```
 
 >Output column : Output Area code ( OA_code)
