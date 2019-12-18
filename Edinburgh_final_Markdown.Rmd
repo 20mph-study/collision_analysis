@@ -1,5 +1,5 @@
 ---
-title: "Collision_analysis"
+title: "Edinburgh Markdown"
 output: html_document
 ---
 
@@ -50,7 +50,7 @@ gdb_layers <- ogrListLayers(gdb_path)
 
 ```
 
-##Edinburgh's road network
+>Edinburgh's road network
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
 #Read shapefile
@@ -64,7 +64,7 @@ spplot(edin_cons_streets,'LAYER')
 leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
 ```
 
-##Edinburgh's control zones
+>Edinburgh's control zones
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
 #Read shapefile
@@ -115,9 +115,9 @@ edin_road_data <-rbind(rd_2013,rd_2014,rd_2015,rd_2018)
 edin_road_data <- filter_data(edin_road_data)
 edin_road_data <-delete_na(edin_road_data,c("Longitude","Latitude"))
 edin_road_data$Accident_Severity <- as.character(edin_road_data$Accident_Severity)
-edin_road_data$Accident_Severity[edin_road_data$Accident_Severity == 1] <- "fatal"
-edin_road_data$Accident_Severity[edin_road_data$Accident_Severity == 2] <- "Serious"
-edin_road_data$Accident_Severity[edin_road_data$Accident_Severity == 3] <- "Slight"
+edin_road_data$Accident_Severity[edin_road_data$Accident_Severity == 1] <- "fatal collision"
+edin_road_data$Accident_Severity[edin_road_data$Accident_Severity == 2] <- "Serious collision"
+edin_road_data$Accident_Severity[edin_road_data$Accident_Severity == 3] <- "Slight collision"
 
 data <- edin_road_data
 edin_road_data <-rowid_to_column(edin_road_data, "ID")
@@ -126,7 +126,6 @@ data <- rowid_to_column(data,"index_ID")
 ```
 
 >Time series analysis
-
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 ggplot(edin_road_data) +
@@ -233,13 +232,10 @@ leaflet_map <- function(final_df,road_df,edin_streets){
 count <- function(data_df){
   count1 <- aggregate(Accident_Index~LAYER,data_df,length)
   count2 <- aggregate(Accident_Index~Speed_limit,data_df,length)
-  print(" ")
   print(count1)
-  print(" ")
   print(count2)
 }
 ```
-
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #Data manipulation
@@ -247,8 +243,6 @@ count <- function(data_df){
 nearest_road <- nearest_line(edin_road_data,edin_cons_streets)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
 ```
-
->Mapping accidents with roads
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #Merge the dataframes based on the ID of the nearest line in order to connect geoinformation with stasts19 
@@ -300,8 +294,6 @@ count(mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2018-12-31", ])
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 head(mergedDf[,c(3,20,39)])
 ```
-
-##Mapping accidents with zones
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #Create planar(cartesian) projection 
@@ -397,7 +389,6 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
 ```
-
 
 >Output column: Implementation Zone
 
