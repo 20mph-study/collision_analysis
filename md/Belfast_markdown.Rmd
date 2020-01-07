@@ -26,6 +26,8 @@ delete_na <- function(data, desiredCols) {
   return(data[completeVec, ])
 }
 
+source('../functions/localSnapPointsToLines.R')
+
 ```
 
 >Belfast road network changed to 20mph
@@ -139,7 +141,7 @@ df <-  spTransform(SpatialPointsDataFrame(coords = df[26:27],proj4string = wgs84
 proj4string(df) <- proj4string(road_net)
   
 #Find nearest line with maxDist=20m 
-nearest_line_sp <- snapPointsToLines(df,road_net,maxDist=10)
+nearest_line_sp <- localSnapPointsToLines(df, road_net, maxDist=10, withAttr = T)
 
 #belfast_road_data@data <-rowid_to_column(belfast_road_data@data, "ID")
 nearest_line_sp <- spTransform(nearest_line_sp,"+init=epsg:4326")
