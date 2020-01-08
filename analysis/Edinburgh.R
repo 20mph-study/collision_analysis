@@ -31,8 +31,6 @@ delete_na <- function(data, desiredCols) {
 #files <- list.files(path = "C:\\Users\\Kyriaki Kokka\\Desktop\\20mph study collisions\\collisions\\", pattern = "*.csv", full.names = T)
 #source_data <- sapply(files, read_csv, simplify=FALSE) %>% bind_rows(.id = "id") 
 
-
-
 #Read every year seperately
 #Read csv file from 2005 to 2014
 rd_source <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2005 to 2014.csv"))  
@@ -64,5 +62,5 @@ edin_road_data <-rbind(rd_2013,rd_2014,rd_2015,rd_2018)
 edin_road_data <- filter_data(edin_road_data)
 edin_road_data <-delete_na(edin_road_data,c("Longitude","Latitude"))
 
-#Create new csv file with the cleaned data  make it go to a correct path ?
+#Create new csv file with the cleaned data
 write.csv(edin_road_data, file ="V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\collisions\\Edin_data.csv",row.names=FALSE)

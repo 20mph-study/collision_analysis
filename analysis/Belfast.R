@@ -21,6 +21,7 @@ filter_data <- function(data){
   return(data)
 }
 
+#2.Delete NA values
 delete_na <- function(data, desiredCols) {
   completeVec <- complete.cases(data[, desiredCols])
   return(data[completeVec, ])
@@ -45,6 +46,7 @@ nearest_line <-function(df,road_net){
   return(nearest_line_sp)
 }
 
+#4.Convert easting/northing to lng/lat
 convert_latlong <-function(rd){
   # Load libraries
   library(rgdal)
@@ -75,21 +77,18 @@ convert_latlong <-function(rd){
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 
 #2.Gis 
-
-# Define network dir path
-dir_path <- 'V:Studies\\MOVED\\HealthImpact\\data\\20mph study collisions\\'
 #Read geodatabase for Belfast
 
 #Road data 
 # Load data from the network drive for Belfast road network
-belfast_road_data <- readOGR(paste0(dir_path, '20mph Speed Limit Streets\\20mph_Speed_Limit_Streets.shp'))
+belfast_road_data <- readOGR('V:/Studies/MOVED/HealthImpact/data/20mph study collisions/20mph Speed Limit Streets/20mph_Speed_Limit_Streets.shp')
 # Tranform the data by applying a projection
 belfast_road_data <- spTransform(belfast_road_data, "+init=epsg:4326")
 # Visualize using leaflet
 leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() 
 
 #Output Areas 
-gdb_path_out <- paste0(dir_path, "OA_ni-ESRI_format\\OA_ni.shp")
+gdb_path_out <- paste0(dir_path, "20mph study collisions\\belf out")
 gdb_layers <- ogrListLayers(gdb_path_out)
 print(gdb_layers)
 
@@ -101,6 +100,7 @@ control_zones_out <- unique(inter@data$OA_CODE)
 print(control_zones_out)
 leaflet(inter) %>% addTiles()
 
+#Output areas for belfast city center
 belf_impl_zones_out <- belf_impl_zones_out[belf_impl_zones_out@data$OA_CODE %in% c("95GG390015","95GG200003","95GG350003","95GG350004",
                                                                                    "95GG390013","95GG350001","95GG210002","95GG400007",
                                                                                    "95GG390012","95GG290015","95GG390011","95SS100003",
@@ -109,6 +109,7 @@ belf_impl_zones_out <- belf_impl_zones_out[belf_impl_zones_out@data$OA_CODE %in%
 belf_impl_zones_out <- spTransform(belf_impl_zones_out, "+init=epsg:4326")
 leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons()
 
+#Small Areas
 dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
 gdb_path_small <- paste0(dir_path, "20mph study collisions\\Belfast Small Areas")
 gdb_layers <- ogrListLayers(gdb_path_small)
@@ -120,6 +121,7 @@ small_control_zones <- unique(inter_small@data$SA2011)
 #print(small_control_zones)
 #leaflet(inter_small) %>% addTiles() %>% addPolygons(popup = inter_small$SA2011)
 
+#Small areas for Belfast City Center
 belf_impl_zones_small <- belf_impl_zones_small[belf_impl_zones_small$SA2011 %in% c("N00001416", "N00001131", "N00001351", "N00001352",
                                                                                    "N00001418","N00001350", "N00001155", "N00001439", 
                                                                                    "N00001417","N00001273"),]
@@ -135,23 +137,91 @@ bel <- read_excel(filename)
 belf_data <- read_excel(filename, sheet = 2)
 colnames(belf_data) <- colnames(bel)
 
+#Check and plot all the data
+source_data <- belf_data
+coord <- source_data%>%
+  st_as_sf(coords = c("a_gd1","a_gd2"), crs = 27700) %>%
+  st_transform(4326) %>%
+  st_coordinates() %>%
+  as_tibble()
+belf_data <- data.frame(source_data,coord)
+
+#coordinates(source_data) <- ~ X + Y
+#proj4string(source_data) <- proj4string(belfast_road_data)
+
+
+
 belf_data <- belf_data %>% filter(belf_data$LGDNAME == "Belfast City") 
 belf_data <- belf_data %>% filter(belf_data$a_speed %in% c(20,30,40)) 
 belf_data$a_date <- as.Date(belf_data$a_date,format="%d/%m/%Y")
 belf_data <- belf_data[belf_data$a_date >="2013-01-01" & belf_data$a_date <= "2015-12-31", ] %>% filter(!is.na(a_date))
 belf_data <- delete_na(belf_data,c("a_gd1","a_gd2"))
 
+coord <- belf_data%>%
+  st_as_sf(coords = c("a_gd1","a_gd2"), crs = 27700) %>%
+  st_transform(4326) %>%
+  st_coordinates() %>%
+  as_tibble()
+
+belf_data <- data.frame(belf_data,coord)
+
+b <- belf_data
+coordinates(b) <- ~ X + Y
+proj4string(b) <- proj4string(belf_impl_zones)
+
+leaflet(belfast_road_data) %>% addTiles() %>% addMarkers(lng=b$X,lat=b$Y)
+
+
+
 #Create new csv file with the cleaned data
 write.csv(belf_data, file ="V:\\Studies\\MOVED\\HealthImpact\\Data\\20mph study collisions\\collisions\\Belf_data.csv",row.names=FALSE)
 
 dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
+
 
 #Read filtered data for Belfast 20/30/40mph
 belf_road_data <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\Belf_data.csv"))
 
 #belf_data_converted <- convert_latlong(belf_road_data)
 
+nearest <-nearest_line(rd,belfast_road_data)
+
 rd <- belf_road_data
+
+coord <- rd%>%
+  st_as_sf(coords = c("a_gd1","a_gd2"), crs = 27700) %>%
+  st_transform(4326) %>%
+  st_coordinates() %>%
+  as_tibble()
+
+rd <- data.frame(rd,coord)
+
+leaflet(belfast_road_data) %>% addTiles() %>% addMarkers(lng=rd$X,lat=rd$Y) 
+
+
+
+
+#-------------------------------------plot all the data----------------------------------------------------------
+rd <- belf_road_data
+
+coord <- rd%>%
+  st_as_sf(coords = c("a_gd1","a_gd2"), crs = 27700) %>%
+  st_transform(4326) %>%
+  st_coordinates() %>%
+  as_tibble()
+
+rd <- data.frame(rd,coord)
+
+leaflet(belfast_road_data) %>% addTiles() %>% addMarkers(lng=rd$X,lat=rd$Y) 
+
+
+
+
+
+
+
+
+
 #------------------------------Convert to long/lat--------------------------------------------------------------
 
 # Load libraries
@@ -184,7 +254,7 @@ rd <- spTransform(rd, latlong)
 
 rd <- st_as_sf(rd)
 # Plot
- leaflet(rd) %>% addTiles() 
+leaflet(rd) %>% addTiles() 
 # Setview to city of Edinburgh
 
 # Add circles
@@ -323,3 +393,12 @@ bel <-  spTransform(SpatialPointsDataFrame(coords = rbind(bel$Longitude,bel$Lati
 
 #Make sure our data have same projections
 proj4string(df) <- proj4string(road_net)
+
+
+
+dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
+
+
+
+
+
