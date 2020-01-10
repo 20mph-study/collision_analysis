@@ -168,7 +168,7 @@ nearest_line <-function(df,road_net){
   proj4string(df) <- proj4string(road_net)
   
   #Find nearest line with maxDist=6m 
-  nearest_line_sp <- snapPointsToLines(df,road_net,maxDist=6)
+  nearest_line_sp <- localSnapPointsToLines(df,road_net,maxDist=6,withAttrs=TRUE)
   
   return(nearest_line_sp)
 }
@@ -244,10 +244,10 @@ count <- function(data_df){
 }
 
 count_pre <- function(data_df){
-  count1 <- aggregate(Accident_Index~LAYER,data_df,length)
-  count2 <- aggregate(Accident_Index~Speed_limit,data_df,length)
-  print(count1)
-  print(count2)
+  count1 <-  aggregate(Accident_Index~LAYER,data_df,length)
+  count2 <-  aggregate(Accident_Index~Speed_limit,data_df,length)
+  #print(count1)
+  #print(count2)
   return(count1)
 }
 
@@ -278,58 +278,45 @@ mergedDf <- rename(mergedDf,c("Longitude.x" = "Longitude","Latitude.x"="Latitude
 
 ```
 
->Mapping accidents with roads: 2013
+>Mapping accidents with roads: 2013/14
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2013", ],edin_road_data[edin_road_data$year == "2013", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2013", ])
+count(mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2014-7-30", ])
 ```
 
->Mapping accidents with roads: 2014
+>Mapping accidents with roads: 2014/15
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2014", ],edin_road_data[edin_road_data$year == "2014", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2014", ])
+count(mergedDf[mergedDf$Date >="2014-07-31" & mergedDf$Date <= "2015-7-30", ])
 ```
 
->Mapping accidents with roads: 2015
+>Mapping accidents with roads: 2015/16
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2015", ],edin_road_data[edin_road_data$year == "2015", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2015", ])
+count(mergedDf[mergedDf$Date >="2015-07-31" & mergedDf$Date <= "2016-7-20", ])
 ```
 
->Mapping accidents with roads: 2016
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-leaflet_map(mergedDf[mergedDf$year == "2016", ],edin_road_data[edin_road_data$year == "2016", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2016", ])
-```
-
->Mapping accidents with roads: 2018
+>Mapping accidents with roads: 2018/2019
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2018", ],edin_road_data[edin_road_data$year == "2018", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2018", ])
-```
-
->Mapping accidents with roads: 2019
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-leaflet_map(mergedDf[mergedDf$year == "2019", ],edin_road_data[edin_road_data$year == "2019", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2019", ])
+count_pre(mergedDf[mergedDf$year == "2018", ]) + count_pre(mergedDf[mergedDf$year == "2019", ])
 ```
 
 >Count pre 20mph
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-pre_20 <- count_pre(mergedDf[mergedDf$year == c("2013","2014","2015","2016"), ])
+pre_20 <- count_pre(mergedDf[mergedDf$year == "2013", ]) + count_pre(mergedDf[mergedDf$year == "2014", ]) + count_pre(mergedDf[mergedDf$year == "2015", ])  
+pre_20
 ```
 
 >Count post 20mph
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-count(mergedDf[mergedDf$year == c("2018","2019"), ])
+count_pre(mergedDf[mergedDf$year == "2018", ]) + count_pre(mergedDf[mergedDf$year == "2019", ])
 ```
 
 >Output column: Layer
@@ -341,40 +328,62 @@ head(mergedDf[,c(1,20,40)])
 >Table: Average annual road traffic collision rates in the city of Edinburgh (road network)
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-#type <- c("Streets at 30mph","Streets at 20mph","Streets at 30mph changed to 20mph","Streets at 40mph","All streets")
-#collisions_pre_20mph <- c("610","336","1325","198","2469")
-#collisions_post_20mph <- c("158","71","290","51","570")
-#rate_pre_20mph <- c("0.247","0.136","0.537","0.080","1")
-#rate_post_20mph <- c("0.277","0.125","0.509","0.089","1")
-#diff_in_rates <- c("0.03","-0.011","-0.028","0.009","0")
-#percentage_diff_in_rates <- c("3 %" ,"-1.1 %","2.8 %","0.9 %","0 ")
-#df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates)
+type <- c("Streets at 30mph","Streets at 20mph","Streets at 30mph changed to 20mph","Streets at 40mph","All streets")
+collisions_pre_20mph <- c("606","351","1273","214","2444")
+collisions_post_20mph <- c("223","98","400","89","810")
+rate_pre_20mph <- c("0.25","0.14","0.52","0.09","1")
+rate_post_20mph <- c("0.28","0.12","0.49","0.11","1")
+diff_in_rates <- c("-0.03","0.02","0.03","-0.02","0")
+percentage_diff_in_rates <- c("-12 %" ," 14.3 %"," 5,8 %","-22.2 %"," ")
+df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates)
 
-#kable(df) %>%
-#  kable_styling(bootstrap_options = c("striped", "hover"))
+kable(df) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
 >Table: Average annual road traffic collision rates in the city of Edinburgh (Stats19)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-#type <- c("Streets at 20mph","Streets at 30mph","Streets at 40mph","All streets")
-#collisions_pre_20mph <- c("98","2232","194","2524")
-#collisions_post_20mph <- c("316","211","57","584")
-#rate_pre_20mph <- c("0.039","0.884","0.077","1")
-#rate_post_20mph <- c("0.541","0.361","0.098","1")
-#diff_in_rates <- c("0.502","-0.523","0.021","0")
-#percentage_diff_in_rates <- c("50.2 %" ,"52.3 %","2.1 %","0 ")
-#df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates)
+type <- c("Streets at 20mph","Streets at 30mph","Streets at 40mph","All streets")
+collisions_pre_20mph <- c("96","2088","211","2395")
+collisions_post_20mph <- c("428","309","99","836")
+rate_pre_20mph <- c("0.04","0.87","0.09","1")
+rate_post_20mph <- c("0.51","0.37","0.12","1")
+diff_in_rates <- c("-0.47","0.50","-0.03","0")
+percentage_diff_in_rates <- c("1175 %" ,"57.47 %","-33.3 %"," ")
+df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates)
 
-#kable(df) %>%
- # kable_styling(bootstrap_options = c("striped", "hover"))
+kable(df) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
-> Effect estimate
+> Effect estimate (GIS)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
+Tax_year <- c("Annual number of collisions"," ","Effect estimate ")
+Y_2013_14 <- c("976"," "," 58.05")
+Y_2014_15 <- c("901"," "," ")
+Y_2015_16 <- c("567"," "," ")
+Y_2018_19 <- c("810"," "," ")
+df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2018_19)
 
+kable(df) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
 
+```
+
+> Effect estimate (Stats19)
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+Tax_year <- c("Annual number of collisions"," ","Effect estimate ")
+Y_2013_14 <- c("1000"," "," 27.85")
+Y_2014_15 <- c("927"," "," ")
+Y_2015_16 <- c("580"," "," ")
+Y_2018_19 <- c("836"," "," ")
+df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2018_19)
+
+kable(df) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
 
@@ -467,7 +476,7 @@ count_impl(total[total$year == "2015", ])
 
 >Mapping accidents with implementation zones: 2016
 
-```{r}
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$year == "2016", ]
 
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
@@ -489,7 +498,7 @@ count_impl(total[total$year == "2018", ])
 
 >Mapping accidents with implementation zones: 2019
 
-```{r}
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$year == "2019", ]
 
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
@@ -522,26 +531,26 @@ buffer_data <-function(data,zone){
 }
 ```
 
-> Control zone 1a:City center -> George St/Harbour, Aberdeen 
+> Control zone 1a:City center --> George St/Harbour, Aberdeen 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_1 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_1,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910"))
-leaflet(control_zone_1) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude)
+leaflet(control_zone_1) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude) %>% setView(lng = -2.099075 , lat = 57.149651, zoom = 11)
 buffer_data(con_data,control_zone_1)
 
 ```
 
-> Control zone 1b:Rural west -> Tay Bridgehead & St Andrews
+> Control zone 1b:Rural west --> Tay Bridgehead & St Andrews
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_7 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_7,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("925"))
-leaflet(control_zone_7) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude)
+leaflet(control_zone_7) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude) %>% setView(lng = -2.8833 , lat = 56.3833, zoom = 11)
 buffer_data(con_data,control_zone_7)
 ```
 
-> Control zone 3:South central -> Dundee
+> Control zone 3:South central --> Dundee
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_3 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_3,]
@@ -559,21 +568,21 @@ leaflet(control_zone_4) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = con
 buffer_data(con_data,control_zone_4)
 ```
 
-> Control zone 5:West -> Glasqow Kelvin
+> Control zone 5:West --> Glasgow Kelvin
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_5 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_5,]        
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("926"))
-leaflet(control_zone_5) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude)
+leaflet(control_zone_5) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude) %>% setView(lng = -4.25763 , lat = 55.86515, zoom = 11)
 buffer_data(con_data,control_zone_5)
 ```
 
-> Control zone 6:South -> Paisley
+> Control zone 6:South --> Paisley
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_6 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_6,]    
-con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("935"))
-leaflet(control_zone_6) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude)
+con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("926"))
+leaflet(control_zone_6) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude)
 buffer_data(con_data,control_zone_6)
 ```
 
