@@ -1,6 +1,8 @@
 ---
 title: "Belfast markdown"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=FALSE}
@@ -246,14 +248,12 @@ count(total[total$year == "2019", ])
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 pre <- count_pre(merged[merged$year >="2013" & merged$year <= "2016", ])
-pre
 ```
 
 > Count post 20mph
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 post <- count(merged[merged$year >="2018" & merged$year <= "2019", ])
-post
 ```
 
 > Table: Average annual road traffic collision rates in the city of Belfast (GIS)
