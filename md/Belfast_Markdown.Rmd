@@ -1,8 +1,10 @@
 ---
-  title: "Belfast markdown"
-output: html_document
+title: "Belfast markdown"
+output: html_notebook
 ---
-```{r}
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=FALSE}
+
 # Load libraries
 library(rgdal)
 library(leaflet)
