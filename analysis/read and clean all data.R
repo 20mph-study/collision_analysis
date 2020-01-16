@@ -75,8 +75,8 @@ rd_2019 <- data.frame(rd_2019,coord)
 
 #rename columns
 rd_2019 <- rename(rd_2019,c("Reference.Number"="Accident_Index" ,   "Speed.Limit" = "Speed_limit",
-                                           "Grid.Ref..Northing"="Location_Northing_OSGR", "Grid.Ref..Easting"= "Location_Easting_OSGR",
-                                           "Accident.Year"="year",  "X"="Longitude",   "Y"="Latitude"))
+                            "Grid.Ref..Northing"="Location_Northing_OSGR", "Grid.Ref..Easting"= "Location_Easting_OSGR",
+                            "Accident.Year"="year",  "X"="Longitude",   "Y"="Latitude"))
 
 #Create one dataset for all data
 edin_road_data <-rbind(rd_2013,rd_2014,rd_2015,rd_2016,rd_2018)
@@ -143,13 +143,6 @@ belf_data <- belf_data %>% filter(belf_data$LGDNAME == "Belfast City")
 
 #Create new csv file with control zone data
 write.csv(belf_control_data, file = paste0(dir_path, "20mph study collisions\\Belfast\\Belfast_control_data.csv"),row.names=FALSE)
-<<<<<<< HEAD:read and clean all data.R
-
-#Create new csv file with the selected Belfast data
-write.csv(belf_data, file = paste0(dir_path, "20mph study collisions\\Belfast\\Belfast_data.csv"),row.names=FALSE)
-
-=======
->>>>>>> 0681d3c6d7c9ff40ba879a4599c35451837b935a:analysis/read and clean all data.R
 
 #Create new csv file with the selected Belfast data
 write.csv(belf_data, file = paste0(dir_path, "20mph study collisions\\Belfast\\Belfast_data.csv"),row.names=FALSE)
