@@ -143,7 +143,7 @@ merged <- merge(data.frame(nearest_line_sp), belfast_road_data@data,by.x = "near
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 count <- function(data_df){
   count2 <- aggregate(a_ID~a_speed,data_df,length)
-  print(count2)
+  return(count2)
 }
 
 count_pre <- function(data_df){
