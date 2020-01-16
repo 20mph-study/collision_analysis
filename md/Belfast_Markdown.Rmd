@@ -2,8 +2,7 @@
   title: "Belfast markdown"
 output: html_document
 ---
-  
-  ```{r, echo=FALSE, warning=FALSE, message=FALSE}
+```{r}
 # Load libraries
 library(rgdal)
 library(leaflet)
@@ -40,7 +39,7 @@ dir_path <- "../data"
 
 #Road data 
 # Load data from the network drive for Belfast road network
-belfast_road_data <- readOGR(paste0(dir_path, 'Belf shapefiles/20mph Speed Limit Streets/20mph_Speed_Limit_Streets.shp'), verbose = FALSE)
+belfast_road_data <- readOGR(paste0(dir_path, '/20mph Speed Limit Streets/20mph_Speed_Limit_Streets.shp'), verbose = FALSE)
 # Tranform the data by applying a projection
 belfast_road_data <- spTransform(belfast_road_data, "+init=epsg:4326")
 belfast_road_data@data <-rowid_to_column(belfast_road_data@data, "ID")
@@ -52,7 +51,7 @@ leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>% setView(lng = -5
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #Output Areas 
-gdb_path_out <- paste0(dir_path, "Belf shapefiles/OA_ni-ESRI_format/OA_ni.shp")
+gdb_path_out <- paste0(dir_path, "/OA_ni-ESRI_format/OA_ni.shp")
 gdb_layers <- ogrListLayers(gdb_path_out)
 
 belf_impl_zones <- readOGR(dsn = gdb_path_out, layer="OA_ni", verbose = FALSE)
@@ -76,11 +75,11 @@ leaflet(belf_control_zones) %>% addTiles() %>% addPolygons()
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #READ DATA
 #PSNI data
-belf_data <- read_csv( paste0(dir_path, "Belf dataset/Belfast/Belfast_data.csv"))
+belf_data <- read_csv( paste0(dir_path, "/Belfast/Belfast_data.csv"))
 belf_data <- delete_na(belf_data,c("X","Y"))
 belf_data <- belf_data %>% mutate(year = format(as.Date(belf_data$a_date, format="%m/%d/%Y"),"%Y"))
 
-belf_control_data <- read_csv( paste0(dir_path, "Belf dataset/Belfast/Belfast_control_data.csv"))
+belf_control_data <- read_csv( paste0(dir_path, "/Belfast/Belfast_control_data.csv"))
 belf_control_data <- delete_na(belf_control_data,c("X","Y"))
 belf_control_data <- belf_control_data %>% mutate(year = format(as.Date(belf_control_data$a_date, format="%m/%d/%Y"),"%Y"))
 #belf_data %>% group_by(year) %>% summarise()
@@ -488,6 +487,6 @@ updated_dataset <-updated_dataset[,-c(31:57)]
 head(updated_dataset[,c(1,13,29,30,31)])
 #final_dataset
 #Create new csv file with the cleaned data
-write.csv(updated_dataset, file = paste0(dir_path, "Belf dataset/Belfast/final_Belfast_data.csv"),row.names=FALSE)
+write.csv(updated_dataset, file = paste0(dir_path, "/Belfast/final_Belfast_data.csv"),row.names=FALSE)
 
 ```
