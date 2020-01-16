@@ -3,7 +3,6 @@ title: "Edinburgh Markdown"
 output: html_document
 ---
 
-
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 # Load libraries
 library(rgdal)
@@ -41,16 +40,13 @@ delete_na <- function(data, desiredCols) {
   return(data[completeVec, ])
 }
 
-#source('../functions/localSnapPointsToLines.R')
+source('../functions/localSnapPointsToLines.R')
 
 ##1.Data path 
-#dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
-dir_path <- "C:\\Users\\Kyriaki Kokka\\Desktop\\"
-#dir_path <- "../data/"
-
+dir_path <- "../data"
 ```
 
->Edinburgh's road network
+> Edinburgh's road network
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
 #Data inputs
@@ -58,7 +54,7 @@ dir_path <- "C:\\Users\\Kyriaki Kokka\\Desktop\\"
 #2.Gis 
 #Read geodatabase for Edinburgh
 #Path
-gdb_path <- paste0(dir_path, "20mph study collisions\\20mph.gdb")
+gdb_path <- paste0(dir_path, "Edin shapefiles/20mph.gdb")
 gdb_layers <- ogrListLayers(gdb_path)
 
 #Read shapefile
@@ -74,7 +70,7 @@ spplot(edin_cons_streets,'LAYER',col.regions = col)
 leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
 ```
 
->Edinburgh's implementation zones
+> Edinburgh's implementation zones
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #Read shapefile
@@ -91,21 +87,21 @@ spplot(edin_impl_zones,"ImplementationZone",col.regions = my.palette, cuts = 7)
 leaflet(edin_impl_zones) %>% addTiles() %>% addPolygons()
 ```
 
->Edinburgh's control zones
+> Edinburgh's control zones
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #Read control zones codes
-control_1 <- read.delim(paste0(dir_path, "20mph study collisions\\control_zone_codes\\controlzone1.txt"),stringsAsFactor = FALSE,header = FALSE)
-control_3 <- read.delim(paste0(dir_path, "20mph study collisions\\control_zone_codes\\controlzone3.txt"),stringsAsFactor = FALSE,header = FALSE)
+control_1 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone1.txt"),stringsAsFactor = FALSE,header = FALSE)
+control_3 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone3.txt"),stringsAsFactor = FALSE,header = FALSE)
 control_3 <- c(control_3[,1],control_3[,2],control_3[,3],control_3[,4],control_3[,5],control_3[,6],control_3[,7],control_3[,8],control_3[,9])
-control_4 <- read.delim(paste0(dir_path, "20mph study collisions\\control_zone_codes\\controlzone4.txt"),stringsAsFactor = FALSE,header = FALSE)
-control_5 <- read.delim(paste0(dir_path, "20mph study collisions\\control_zone_codes\\controlzone5.txt"),stringsAsFactor = FALSE,header = FALSE)
-control_6 <- read.delim(paste0(dir_path, "20mph study collisions\\control_zone_codes\\controlzone6.txt"),stringsAsFactor = FALSE,header = FALSE)
-control_7 <- read.delim(paste0(dir_path, "20mph study collisions\\control_zone_codes\\controlzone7.txt"),stringsAsFactor = FALSE,header = FALSE)
+control_4 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone4.txt"),stringsAsFactor = FALSE,header = FALSE)
+control_5 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone5.txt"),stringsAsFactor = FALSE,header = FALSE)
+control_6 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone6.txt"),stringsAsFactor = FALSE,header = FALSE)
+control_7 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone7.txt"),stringsAsFactor = FALSE,header = FALSE)
 control_all <- c(control_1,control_3,control_4,control_5,control_6,control_7)
 
 #Path for control zones
-control_gdb_path <- paste0(dir_path, "20mph study collisions\\control zones")
+control_gdb_path <- paste0(dir_path, "Edin shapefiles/SG_DataZoneBdry_2011")
 control_gdb_layers <- ogrListLayers(control_gdb_path)
 
 #Read data
@@ -121,10 +117,10 @@ leaflet(control_zone_all) %>% addTiles() %>% addPolygons()
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
 #Read data
-edin_road_data <- read_csv(paste0(dir_path, "20mph study collisions\\cleaned datasets\\edin_road_data.csv"))
-control_zone_data <- read_csv(paste0(dir_path, "20mph study collisions\\cleaned datasets\\edin_control_data.csv"))
-casualties_data <- read_csv(paste0(dir_path, "20mph study collisions\\cleaned datasets\\edin_casualties_data.csv"))
-rd_2019 <- read_csv(paste0(dir_path, "20mph study collisions\\cleaned datasets\\data2019.csv"))
+edin_road_data <- read_csv(paste0(dir_path, "/Edin dataset/edin_road_data.csv"))
+control_zone_data <- read_csv(paste0(dir_path, "/Edin dataset/edin_control_data.csv"))
+casualties_data <- read_csv(paste0(dir_path, "/Edin dataset/edin_casualties_data.csv"))
+rd_2019 <- read_csv(paste0(dir_path, "/Edin dataset/data2019.csv"))
 
 edin_road_data <- edin_road_data %>% mutate(year = format(as.Date(edin_road_data$Date, format="%m/%d/%Y"),"%Y"))
 edin_road_data <- rbind.fill(edin_road_data,rd_2019)
@@ -137,7 +133,7 @@ df <- data
 data <- rowid_to_column(data,"index_ID")
 ```
 
->Time series analysis
+> Time series analysis
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 ggplot(edin_road_data) +
@@ -161,80 +157,6 @@ ggplot(edin_road_data) +
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #Functions for the analysis
-# Create a copy of a function that DOES NOT identify the class of points, and restrict the function to stop working with attrs for points
-# Source: https://rdrr.io/cran/maptools/src/R/point_line_distance.R
-
-localSnapPointsToLines <- function( points, lines, maxDist=NA, withAttrs=TRUE, idField=NA) {
-  
-  if (rgeosStatus()) {
-    if (!requireNamespace("rgeos", quietly = TRUE))
-      stop("package rgeos required for snapPointsToLines")
-  } else
-    stop("rgeos not installed")
-  
-  if (is(points, "SpatialPoints") && missing(withAttrs))
-    withAttrs = FALSE
-  
-  # if (is(points, "SpatialPoints") && withAttrs==TRUE)
-  #   stop("A SpatialPoints object has no attributes! Please set withAttrs as FALSE.")
-  
-  d = rgeos::gDistance(points, lines, byid=TRUE) 
-  
-  if(!is.na(maxDist)){
-    distToLine <- apply(d, 2, min, na.rm = TRUE)  
-    validPoints <- distToLine <= maxDist  # indicates which points are within maxDist of a line
-    distToPoint <- apply(d, 1, min, na.rm = TRUE)
-    validLines <- distToPoint <= maxDist 
-    
-    # Drop elements beyond maxdist
-    points <- points[validPoints, ]
-    lines = lines[validLines, ]
-    d  = d[ validLines,  validPoints, drop = FALSE]
-    distToLine <- distToLine[validPoints]
-    
-    # If no points are within maxDist return an empty SpatialPointsDataFrame object 
-    if(!any(validPoints)){
-      if(is.na(idField)){
-        idCol = character(0)
-      } else {
-        idCol = lines@data[,idField][0]
-      }
-      newCols = data.frame(nearest_line_id  = idCol, snap_dist = numeric(0))
-      if(withAttrs) df <- cbind(points@data, newCols) else df <- newCols
-      res <- SpatialPointsDataFrame(points, data=df, 
-                                    proj4string=CRS(proj4string(points)), match.ID = FALSE)
-      return(res)
-    }
-    
-  } else { # If no maxDist arg still calculate distToLine so it can be returned
-    distToLine = apply(d, 2, min, na.rm = TRUE)
-  }
-  
-  nearest_line_index = apply(d, 2, which.min) # Position of each nearest line in lines object 
-  
-  coordsLines = coordinates(lines)  
-  coordsPoints = coordinates(points)  
-  
-  # Get coordinates of nearest points lying on nearest lines
-  mNewCoords = vapply(1:length(points), 
-                      function(x) 
-                        nearestPointOnLine(coordsLines[[nearest_line_index[x]]][[1]], 
-                                           coordsPoints[x,]), FUN.VALUE=c(0,0))
-  
-  # Recover lines' Ids (If no id field has been specified, take the sp-lines id)
-  if (!is.na(idField)) { 
-    nearest_line_id = lines@data[,idField][nearest_line_index] 
-  }  else {
-    nearest_line_id = sapply(slot(lines, "lines"), function(i) slot(i, "ID"))[nearest_line_index] 
-  }
-  # Create data frame and sp points
-  if (withAttrs) df = cbind(points@data, data.frame(nearest_line_id, snap_dist = distToLine)) 
-  else df = data.frame(nearest_line_id, snap_dist = distToLine, row.names=names(nearest_line_index))
-  
-  SpatialPointsDataFrame(coords=t(mNewCoords), data=df, 
-                         proj4string=CRS(proj4string(points)))
-}
-
 #Function for the nearest line
 nearest_line <-function(df,road_net){
   #Create planar(cartesian) projection 
@@ -340,6 +262,7 @@ count_post <- function(data_df){
 count_impl <- function(data_df){
   count1 <- aggregate(Accident_Index~ImplementationZone,data_df,length)
   print(count1)
+  return(count1)
 }
 ```
 
@@ -353,31 +276,30 @@ nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #Merge the dataframes based on the ID of the nearest line in order to connect geoinformation with stasts19
 #Then merge Casualty severity column with collisions dataset
-mergedDf1 <- merge(data.frame(nearest_road),edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID")
-#mergedDf1$Accident_Index <- as.character(mergedDf1$Accident_Index)
-casualties_data$Accident_Index <- as.character(casualties_data$Accident_Index)
-casualties_data <- rbind.fill(casualties_data,rd_2019)
-casualties_data <- casualties_data[,-c(3:8)]
-mergedDf <- merge(mergedDf1,casualties_data)
-
+mergedDf <- unique(merge(data.frame(nearest_road),edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID"))
+casualties_data <- unique(rbind.fill(casualties_data,rd_2019))
+mergedDf <- unique(merge(mergedDf,casualties_data))
 mergedDf$Casualty_Severity <- as.character(mergedDf$Casualty_Severity)
 mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 1] <- "Fatal"
 mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 2] <- "Serious"
 mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 3] <- "Slight"
+
+acc_sev <- aggregate(data=mergedDf,Casualty_Severity ~ . ,FUN=paste)
+mergedDf <- unique(rbind.fill(acc_sev,rd_2019))
+
 mergedDf <- rename(mergedDf,c("Longitude.x" = "Longitude","Latitude.x"="Latitude","year.x"="year","Speed_limit.x"="Speed_limit","Date.x"="Date"))
 ```
 
->Mapping accidents with roads: 2013
+> Mapping accidents with roads: 2013
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2013", ],edin_road_data[edin_road_data$year == "2013", ],edin_cons_streets)
 count(mergedDf[mergedDf$year == "2013", ])
-count(mergedDf1[mergedDf1$year == "2013", ])
 p13 <- count_pre(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
 pre13 <- count_post(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
 ```
 
->Mapping accidents with roads: 2014
+> Mapping accidents with roads: 2014
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2014", ],edin_road_data[edin_road_data$year == "2014", ],edin_cons_streets)
@@ -386,7 +308,7 @@ p14 <- count_pre(mergedDf[mergedDf$Date >= "2014-07-31" & mergedDf$Date <= "2015
 pre14 <- count_post(mergedDf[mergedDf$Date >= "2014-07-31" & mergedDf$Date <= "2015-07-30" ,])
 ```
 
->Mapping accidents with roads: 2015
+> Mapping accidents with roads: 2015
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2015", ],edin_road_data[edin_road_data$year == "2015", ],edin_cons_streets)
@@ -395,28 +317,28 @@ p15 <- count_pre(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016
 pre15 <- count_post(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-20" ,])
 ```
 
->Mapping accidents with roads: 2016
+> Mapping accidents with roads: 2016
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2016", ],edin_road_data[edin_road_data$year == "2016", ],edin_cons_streets)
 count(mergedDf[mergedDf$year == "2016", ])
 ```
 
->Mapping accidents with roads: 2018
+> Mapping accidents with roads: 2018
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2018", ],edin_road_data[edin_road_data$year == "2018", ],edin_cons_streets)
 count(mergedDf[mergedDf$year == "2018", ])
 ```
 
->Mapping accidents with roads: 2019
+> Mapping accidents with roads: 2019
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2019", ],edin_road_data[edin_road_data$year == "2019", ],edin_cons_streets)
 count(mergedDf[mergedDf$year == "2019", ])
 ```
 
->Count pre 20mph 
+> Count pre 20mph 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #No 2016
@@ -426,7 +348,7 @@ pre
 p
 ```
 
->Count post 20mph
+> Count post 20mph
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 post0 <- count_pre(mergedDf[mergedDf$year == "2018", ]) 
@@ -438,13 +360,13 @@ post
 po
 ```
 
->Output column: Layer
+> Output column: Layer
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 head(mergedDf[,c(3,20,40)])
 ```
 
->Table: Average annual road traffic collision rates in the city of Edinburgh (GIS)
+> Table: Average annual road traffic collision rates in the city of Edinburgh (GIS)
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 s1 <- pre[pre$LAYER == "20mph main streets",2] + pre[pre$LAYER == "20mph local streets",2]
@@ -466,7 +388,7 @@ colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-
 kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
->Table: Average annual road traffic collision rates in the city of Edinburgh (Stats19)
+> Table: Average annual road traffic collision rates in the city of Edinburgh (Stats19)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 type <- c("Streets at 20mph","Streets at 30mph","Streets at 40mph","All streets")
@@ -567,7 +489,7 @@ utm_data <- spTransform(utm_data, "+init=epsg:4326")
 #df_na <- na.omit(df_zones[1:4]) # check how many are missing
 ```
 
->Mapping accidents with implementation zones: 2013
+> Mapping accidents with implementation zones: 2013
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 
@@ -600,23 +522,23 @@ total <- total_zones[total_zones$year == "2013", ]
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
-count_impl(total[total$year == "2013", ])
+s_13 <- count_impl(total[total$year == "2013", ])
 ```
 
->Mapping accidents with implementation zones: 2014
+> Mapping accidents with implementation zones: 2014
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$year == "2014", ]
 
 map_zones %>%
-  setView(lng = -3.188267 , lat = 55.953251, zoom = 11)%>%
+  setView(lng = -3.188267 , lat = 55.953251, zoom = 11) %>%
   addMarkers(lng =total$Longitude, lat = total$Latitude, 
              popup =paste("Accident index: ", total$Accident_Index, "<br>",
                           "Zone: ", total$ImplementationZone))
-count_impl(total[total$year == "2014", ])
+s_14 <- count_impl(total[total$year == "2014", ])
 ``` 
 
->Mapping accidents with implementation zones: 2015
+> Mapping accidents with implementation zones: 2015
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$year == "2015", ]
@@ -624,10 +546,10 @@ total <- total_zones[total_zones$year == "2015", ]
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
-count_impl(total[total$year == "2015", ])
+s_15 <- count_impl(total[total$year == "2015", ])
 ```
 
->Mapping accidents with implementation zones: 2016
+> Mapping accidents with implementation zones: 2016
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$year == "2016", ]
@@ -635,10 +557,10 @@ total <- total_zones[total_zones$year == "2016", ]
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
-count_impl(total[total$year == "2016", ])
+s_16 <- count_impl(total[total$year == "2016", ])
 ```
 
->Mapping accidents with implementation zones: 2018
+> Mapping accidents with implementation zones: 2018
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$year == "2018", ]
@@ -646,10 +568,10 @@ total <- total_zones[total_zones$year == "2018", ]
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
-count_impl(total[total$year == "2018", ])
+s_18 <- count_impl(total[total$year == "2018", ])
 ```
 
->Mapping accidents with implementation zones: 2019
+> Mapping accidents with implementation zones: 2019
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$year == "2019", ]
@@ -657,16 +579,23 @@ total <- total_zones[total_zones$year == "2019", ]
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
-count_impl(total[total$year == "2019", ])
+s_19 <- count_impl(total[total$year == "2019", ])
 ```
 
->Output column: Implementation Zone
+> Output column: Implementation Zone
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 head(df_zones)
 ```
 
->Count accidents in control zones
+> Total accidents per zone
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+s <- s_13 + s_14 + s_15 + s_16 + s_18 + s_19 
+s$ImplementationZone <- s_13$ImplementationZone 
+s
+```
+
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 buffer_data <-function(data,zone){
@@ -678,9 +607,8 @@ buffer_data <-function(data,zone){
   data <-  spTransform(SpatialPointsDataFrame(coords = data[4:5],proj4string = wgs84,data = data), crs)
   
   proj4string(data) <- proj4string(zone)
-  points <- gBuffer(data, width=6, byid = TRUE )
-  count <- over(points,zone,returnList = FALSE)
-  return(nrow(unique(count)))
+  counts2 <- rgeos::gWithin(data, zone, byid=TRUE)
+  return(length(counts2[counts2 == TRUE]))
 }
 ```
 
@@ -739,7 +667,7 @@ leaflet(control_zone_6) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = co
 buffer_data(con_data,control_zone_6)
 ```
 
->Updated dataset for Edinburgh
+> Updated dataset for Edinburgh
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #final_dataset
