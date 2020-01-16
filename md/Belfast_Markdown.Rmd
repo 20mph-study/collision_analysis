@@ -488,6 +488,6 @@ updated_dataset <-updated_dataset[,-c(31:57)]
 head(updated_dataset[,c(1,13,29,30,31)])
 #final_dataset
 #Create new csv file with the cleaned data
-write.csv(updated_dataset, file = paste0(dir_path, "20mph study collisions\\cleaned datasets\\final_Belfast_data.csv"),row.names=FALSE)
+write.csv(updated_dataset, file = paste0(dir_path, "Belf dataset/Belfast/final_Belfast_data.csv"),row.names=FALSE)
 
 ```
