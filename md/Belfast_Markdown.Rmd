@@ -193,12 +193,13 @@ total <- merged[merged$year >= "2015" & merged$year <= "2016", ]
 c <- c(nrow(total[total$a_date >="2015-07-31" & total$a_date <= "2016-07-20", ]))
 
 total <- total[total$year == "2015",]
-leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>%
+leaflet(belfast_road_data) %>% addTiles() %>% addPolylines(group = 'roads') %>%
   setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
   addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1) %>% 
   addMarkers(lng = total$X, lat = total$Y, 
              popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ))
+                           "Speed limit: ", total$a_speed ), group = 'incidents') %>% addLayersControl(overlayGroups = c('roads', 'incidents'),
+    options = layersControlOptions(collapsed = FALSE))
 count(total[total$year == "2015", ])
 ```
 
