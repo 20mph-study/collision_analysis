@@ -427,9 +427,9 @@ zone_7 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 7)
 
 #Visualize
 map_zones <- leaflet() %>% addTiles() %>% 
-  addPolygons(data = zone_1, color= "green")%>%
-  addPolygons(data = zone_2,color= "red")%>%
-  addPolygons(data = zone_3,color= "purple")%>%
+  addPolygons(data = zone_1, color= "green",group = " zone 1 ")%>%
+  addPolygons(data = zone_2,color= "red",group = " zone 2 ")%>%
+  addPolygons(data = zone_3,color= "purpl",group = " zon  ") %>%
   addPolygons(data = zone_4,color= "cyan")%>%
   addPolygons(data = zone_5,color= "blue")%>%
   addPolygons(data = zone_6,color= "orange")%>%
