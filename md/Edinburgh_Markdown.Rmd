@@ -244,6 +244,7 @@ pre15 <- count_post(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2016", ],edin_road_data[edin_road_data$year == "2016", ],edin_cons_streets)
 count(mergedDf[mergedDf$year == "2016", ])
+
 ```
 
 > Mapping accidents with roads: 2018
@@ -291,38 +292,48 @@ head(mergedDf[,c(3,20,40)])
 > Table: Average annual road traffic collision rates in the city of Edinburgh (GIS)
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#count streets that have changed from 30 to 20mph
 s1 <- pre[pre$LAYER == "20mph main streets",2] + pre[pre$LAYER == "20mph local streets",2]
 s2 <- post[post$LAYER == "20mph main streets",2] + post[post$LAYER == "20mph local streets",2]
 
-s <-sum(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],s2,pre[pre$LAYER == "40mph",2])
-summ <-sum(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],s2,post[post$LAYER == "40mph",2])
+#sum all streets pre and post
+sum_pre <-sum(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],s1,pre[pre$LAYER == "40mph",2])
+sum_post <-sum(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],s2,post[post$LAYER == "40mph",2])
+
+#create column pre and post
+collisions_pre_20mph <- c(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],s1,pre[pre$LAYER == "40mph",2],sum_pre)
+collisions_post_20mph <- c(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],s2,post[post$LAYER == "40mph",2],sum_post)
+
+#rate per year
+rate_pre_20mph <- round(collisions_pre_20mph/3,2)
+rate_post_20mph <- round(collisions_post_20mph/1,2)
+
+diff_in_rates <- - rate_pre_20mph + rate_post_20mph
+percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph * 100,2) 
 
 type <- c("Streets at 30mph","Streets at 20mph","Streets at 30mph changed to 20mph","Streets at 40mph","All streets")
-collisions_pre_20mph <- c(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],s1,pre[pre$LAYER == "40mph",2],s)
-collisions_post_20mph <- c(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],s2,post[post$LAYER == "40mph",2],summ)
-rate_pre_20mph <- round(collisions_pre_20mph/s,2)
-rate_post_20mph <- round(collisions_post_20mph/summ,2)
-diff_in_rates <- rate_pre_20mph - rate_post_20mph
-percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph * 100,2) 
 df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates)
 colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
-
 kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
 > Table: Average annual road traffic collision rates in the city of Edinburgh (Stats19)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-type <- c("Streets at 20mph","Streets at 30mph","Streets at 40mph","All streets")
-summ2 <-sum(p[p$Speed_limit == 20,2],p[p$Speed_limit == 30,2],p[p$Speed_limit == 40,2])
-summ3 <-sum(po[po$Speed_limit == 20,2],po[po$Speed_limit == 30,2],po[po$Speed_limit == 40,2])
 
-collisions_pre_20mph <- c(p[p$Speed_limit == 20,2],p[p$Speed_limit == 30,2],p[p$Speed_limit == 40,2],summ2)
-collisions_post_20mph <- c(po[po$Speed_limit == 20,2],po[po$Speed_limit == 30,2],po[po$Speed_limit == 40,2],summ3)
-rate_pre_20mph <- round(collisions_pre_20mph/summ2,2)
-rate_post_20mph <- round(collisions_post_20mph/summ3,2)
-diff_in_rates <- rate_pre_20mph - rate_post_20mph
+sum_pre_2 <-sum(p[p$Speed_limit == 20,2],p[p$Speed_limit == 30,2],p[p$Speed_limit == 40,2])
+sum_post_2 <-sum(po[po$Speed_limit == 20,2],po[po$Speed_limit == 30,2],po[po$Speed_limit == 40,2])
+
+collisions_pre_20mph <- c(p[p$Speed_limit == 20,2],p[p$Speed_limit == 30,2],p[p$Speed_limit == 40,2],sum_pre_2)
+collisions_post_20mph <- c(po[po$Speed_limit == 20,2],po[po$Speed_limit == 30,2],po[po$Speed_limit == 40,2],sum_post_2)
+
+rate_pre_20mph <- round(collisions_pre_20mph/3,2)
+rate_post_20mph <- round(collisions_post_20mph/1,2)
+
+diff_in_rates <- - rate_pre_20mph + rate_post_20mph
 percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2)
+
+type <- c("Streets at 20mph","Streets at 30mph","Streets at 40mph","All streets")
 df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates)
 colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
 
@@ -604,4 +615,3 @@ head(updated_dataset[,c(1,18,32,35)])
 write.csv(updated_dataset, file = paste0(dir_path, "final_Edinburgh_data.csv"),row.names=FALSE)
 
 ```
-
