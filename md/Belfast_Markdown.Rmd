@@ -163,10 +163,10 @@ a <- c(nrow(total[total$a_date >="2013-07-31" & total$a_date <= "2014-12-30", ])
 total <- total[total$year == "2013", ]
 leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines(group = 'roads') %>%
   setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents linked to a road') %>% 
+  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
   addMarkers(lng = total$X, lat = total$Y, 
              popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
+                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
     options = layersControlOptions(collapsed = FALSE))
 count(total[total$year == "2013", ])
 ```
@@ -180,10 +180,10 @@ b <- c(nrow(total[total$a_date >="2014-07-31" & total$a_date <= "2015-12-30", ])
 total <- total[total$year == "2014",]
 leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines(group = 'roads') %>%
   setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents linked to a road') %>% 
+  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
   addMarkers(lng = total$X, lat = total$Y, 
              popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
+                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
     options = layersControlOptions(collapsed = FALSE))
 count(total[total$year == "2014", ])
 ```
@@ -197,10 +197,10 @@ c <- c(nrow(total[total$a_date >="2015-07-31" & total$a_date <= "2016-07-20", ])
 total <- total[total$year == "2015",]
 leaflet(belfast_road_data) %>% addTiles() %>% addPolylines(group = 'roads') %>%
   setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents linked to a road') %>% 
+  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
   addMarkers(lng = total$X, lat = total$Y, 
              popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
+                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
     options = layersControlOptions(collapsed = FALSE))
 count(total[total$year == "2015", ])
 ```
@@ -211,10 +211,10 @@ count(total[total$year == "2015", ])
 total <- merged[merged$year == "2016", ]
 leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines(group = 'roads') %>%
   setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents linked to a road') %>% 
+  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
   addMarkers(lng = total$X, lat = total$Y, 
              popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
+                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
     options = layersControlOptions(collapsed = FALSE))
 count(total[total$year == "2016", ])
 ```
@@ -228,10 +228,10 @@ d <- c(nrow(total[total$a_date >="2018-03-06" & total$a_date <= "2019-12-31", ])
 total <- total[total$year == "2018",]
 leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines(group = 'roads') %>%
   setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents linked to a road') %>% 
+  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
   addMarkers(lng = total$X, lat = total$Y, 
              popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
+                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
     options = layersControlOptions(collapsed = FALSE))
 count(total[total$year == "2018", ])
 ```
@@ -242,10 +242,10 @@ count(total[total$year == "2018", ])
 total <- merged[merged$year == "2019" , ]
 leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines(group = 'roads') %>%
   setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents linked to a road') %>% 
+  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
   addMarkers(lng = total$X, lat = total$Y, 
              popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
+                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads','incidents linked to a road', 'incidents'),
     options = layersControlOptions(collapsed = FALSE))
 count(total[total$year == "2019", ])
 ```
@@ -267,8 +267,6 @@ post
 > Table: Average annual road traffic collision rates in the city of Belfast (GIS)
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-type <- c("Streets changed to 20mph"," Existing streets,not changed","All streets")
-
 sum_pre <- pre[pre$a_speed == 20,2] + pre[pre$a_speed == 30,2] + pre[pre$a_speed == 40,2]
 sum_post <- post[post$a_speed == 20,2] + post[post$a_speed == 30,2] 
 
@@ -281,13 +279,15 @@ post_not_changed <- sum2 - sum_post
 collisions_pre_20mph <- c(sum_pre, pre_not_changed, sum1)
 collisions_post_20mph <- c(sum_post, post_not_changed, sum2)
 
-rate_pre_20mph <- round(collisions_pre_20mph / sum1, 3)
-rate_post_20mph <- round(collisions_post_20mph / sum2, 3)
-diff_in_rates <- rate_pre_20mph - rate_post_20mph
-percentage_diff_in_rates <- round(diff_in_rates / rate_pre_20mph * 100, 3)
+rate_pre_20mph <- round(collisions_pre_20mph / 3, 2)
+rate_post_20mph <- round(collisions_post_20mph / 1, 2)
+
+diff_in_rates <- - rate_pre_20mph + rate_post_20mph
+percentage_diff_in_rates <- round(diff_in_rates / rate_pre_20mph * 100, 2)
+
+type <- c("Streets changed to 20mph"," Existing streets,not changed","All streets")
 df <- data.frame(type, collisions_pre_20mph, collisions_post_20mph, rate_pre_20mph, rate_post_20mph, diff_in_rates, percentage_diff_in_rates)
 colnames(df)=c("Type", "collisions pre-20mph", "collisions post-20mph", "rate pre-20mph", "rate post-20mph", "diff in rates", "Perc.diff.rates")
-
 kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Belfast (GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
