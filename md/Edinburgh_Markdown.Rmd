@@ -352,7 +352,7 @@ d <- sum(po[,2])
 e <- 0
 
 sum1 <- (a+b+c)/3
-sum2 <- (d+e) / 2
+sum2 <- d
 unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
 secular_trend <- ((a-b)/a  + (b-c)/b)/2
 f <- ( unadjusted_estimate - secular_trend ) * 100
@@ -376,10 +376,9 @@ a <- sum(p13[1:5,2])
 b <- sum(p14[1:5,2])
 c <- sum(p15[1:5,2])
 d <- sum(post[1:5,2])
-e <- 0
 
 sum1 <- (a+b+c)/3
-sum2 <- (d+e) / 2
+sum2 <- d
 unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
 secular_trend <- ((a-b)/a  + (b-c)/b)/2
 f <- ( unadjusted_estimate - secular_trend ) * 100
@@ -615,3 +614,4 @@ head(updated_dataset[,c(1,18,32,35)])
 write.csv(updated_dataset, file = paste0(dir_path, "final_Edinburgh_data.csv"),row.names=FALSE)
 
 ```
+
