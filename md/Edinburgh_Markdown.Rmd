@@ -611,7 +611,7 @@ updated_dataset <- merge(merged_1,total_zones_1,by.x="Accident_Index",by.y="Acci
 updated_dataset <-updated_dataset[,-c(2,3,36)]
 head(updated_dataset[,c(1,18,32,35)])
 #Create new csv file with the cleaned data
-write.csv(updated_dataset, file = paste0(dir_path, "final_Edinburgh_data.csv"),row.names=FALSE)
+write.csv(updated_dataset, file = paste0(dir_path, "/final_Edinburgh_data.csv"),row.names=FALSE)
 
 ```
 
