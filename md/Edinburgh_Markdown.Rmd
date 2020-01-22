@@ -309,10 +309,10 @@ rate_pre_20mph <- round(collisions_pre_20mph/3,2)
 rate_post_20mph <- round(collisions_post_20mph/1,2)
 
 diff_in_rates <- - rate_pre_20mph + rate_post_20mph
-percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph * 100,2) 
+percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2) 
 
 type <- c("Streets at 30mph","Streets at 20mph","Streets at 30mph changed to 20mph","Streets at 40mph","All streets")
-df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates)
+df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates*100)
 colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
 kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
@@ -334,7 +334,7 @@ diff_in_rates <- - rate_pre_20mph + rate_post_20mph
 percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2)
 
 type <- c("Streets at 20mph","Streets at 30mph","Streets at 40mph","All streets")
-df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates)
+df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates * 100)
 colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
 
 kable(df,caption = "Table 2: Average annual road traffic collision rates in the city of Edinburgh (Stats19)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
