@@ -494,11 +494,15 @@ merged_1 <- merged[,-c(1,29:35,38:40,42:47)]
 total_zones_1 <- total_zones[,-c(29:33)]
 updated_dataset <- merge(merged_1,total_zones_1,by.x="a_ID",by.y="a_ID")
 updated_dataset <-updated_dataset[,-c(31:57)]
+updated_dataset <- rename(updated_dataset,c("Police_Force.x"="Police_Force", "a_type.x" = "a_type", "a_veh.x"="a_veh","a_cas.x"="a_cas",
+                                        "a_date.x"="a_date","a_day.x"="a_day","a_time.x"="a_time","a_gd1.x"="a_gd1","a_gd2.x"="a_gd2","LGDNAME.x"="LGDNAME",
+                                        "a_ctype.x"="a_ctype","a_speed.x"="a_speed","a_jdet.x"="a_jdet","a_jcont.x"="a_jcont","a_pedhum.x"="a_pedhum",
+                                        "a_pedphys.x" ="a_pedphys","a_light.x" ="a_light","a_weat.x"="a_weat","a_roadsc.x"="a_roadsc","a_speccs.x"="a_speccs",                                         "a_chaz.x" ="a_chaz","a_scene.x"="a_scene","Urban_Rural.x"="Urban_Rural","X.x"="X","Y.x"="Y","year.x"="year"))
 head(updated_dataset[,c(1,13,29,30,31)])
-
+updated_dataset$a_time <- as.character(updated_dataset$a_time)
+control_data_df <- control_data_df[,-c(28:32)]
 #final_dataset
 final_df <- rbind.fill(updated_dataset,control_data_df)
 #Create new csv file with the cleaned data
 write.csv(final_df, file = paste0(dir_path, "/Belfast/final_Belfast_data.csv"),row.names=FALSE)
-
 ```
