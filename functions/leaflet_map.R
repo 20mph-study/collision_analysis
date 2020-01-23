@@ -29,7 +29,7 @@ leaflet_map <- function(final_df,road_df,edin_streets){
   
   #Visualize
   map <- leaflet() %>% addTiles() %>% addPolylines(data = edin_streets)
-  #map <- map %>%  addLegend("bottomright",colors =c("green",  "red", "yellow", "cyan", "blue","black","purple","orange"),
+  #map <- map %>%  addLegend("bottomright",colors =c("green",  "red", "yellow", "#41b6c4", "#081d58","#252525","#6a51a3","#ec7014"),
   #labels= c("existing 20mph", "local 20mph","main 20 mph","30mph","40mph", "part time 20mph","50,60 or 70mph","Trunk roads"),
   #title= "Road network",opacity = 1)
   map_near <-map %>% leaflet() %>% addTiles() %>% addMarkers(lng =final_df$X, lat = final_df$Y,
@@ -44,19 +44,19 @@ leaflet_map <- function(final_df,road_df,edin_streets){
                                                      "Casualty severity: ",road_df$Casualty_Severity ), group = 'all incidents')
   
   
-  map3 <- map3 %>% addLegend("bottomright",colors =c("green",  "red", "yellow", "cyan", "blue","black","purple","orange"),
+  map3 <- map3 %>% addLegend("bottomright",colors =c("#41ab5d",  "#fc4e2a", "#ffeda0",  "#1d91c0", "#081d58","#252525","#6a51a3","#ec7014"),
                              labels= c("existing 20mph", "local 20mph","main 20 mph","30mph","40mph", "part time 20mph","50,60 or 70mph","Trunk roads"),
                              title= "Road network",opacity = 1)
   
   map3 %>%
     setView(lng = -3.188267 , lat = 55.953251, zoom = 11)%>%
-    addPolylines(data = road_existing_20, color= "green", group = 'existing 20mph' ) %>%
-    addPolylines(data = road_local_20,color= "red" , group = 'local 20mph' ) %>%
-    addPolylines(data = road_main_20,color= "yellow" , group = 'main 20mph')%>%
-    addPolylines(data = road_30,color= "cyan" , group = '30mph')%>%
-    addPolylines(data = road_40,color= "blue" , group = '40mph')%>%
-    addPolylines(data = road_part,color= "black" , group = 'part time 20mph')%>%
-    addPolylines(data = road_50,color= "purple" , group = '50,60 or 70mph')%>%
-    addPolylines(data = road_trunk,color= "orange", group = 'Trunk roads') %>% addLayersControl(overlayGroups = c( 'existing 20mph','local 20mph','main 20mph','30mph','40mph','part time 20mph','50,60 or 70mph','Trunk roads','incidents linked to a road','all incidents'),
+    addPolylines(data = road_existing_20, color= "#41ab5d", group = 'existing 20mph' ) %>%
+    addPolylines(data = road_local_20,color= "#fc4e2a" , group = 'local 20mph' ) %>%
+    addPolylines(data = road_main_20,color= "#ffeda0" , group = 'main 20mph')%>%
+    addPolylines(data = road_30,color= "#1d91c0" , group = '30mph')%>%
+    addPolylines(data = road_40,color= "#081d58" , group = '40mph')%>%
+    addPolylines(data = road_part,color= "#252525" , group = 'part time 20mph')%>%
+    addPolylines(data = road_50,color= "#6a51a3" , group = '50,60 or 70mph')%>%
+    addPolylines(data = road_trunk,color= "#ec7014", group = 'Trunk roads') %>% addLayersControl(overlayGroups = c( 'existing 20mph','local 20mph','main 20mph','30mph','40mph','part time 20mph','50,60 or 70mph','Trunk roads','incidents linked to a road','all incidents'),
                                                                                                 options = layersControlOptions(collapsed = FALSE))
 }
