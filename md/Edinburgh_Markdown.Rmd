@@ -102,7 +102,7 @@ edin_road_network <- edin_road_network[edin_road_network@data$LAYER  %in% c("20m
 edin_road_network <- spTransform(edin_road_network,"+init=epsg:4326")
 #nearest_road2 <- nearest_line(edin_road_data,edin_road_network)
 
-leaflet(edin_road_network) %>% addTiles() %>% addPolylines(popup=edin_road_network$LAYER)
+#leaflet(edin_road_network) %>% addTiles() %>% addPolylines(popup=edin_road_network$LAYER)
 
 #Visualize with leaflet
 #col = c("#bf812d","#80cdc1","#d6604d","#525252","#1a9850","#cab2d6","#e6f598","#4393c3")
