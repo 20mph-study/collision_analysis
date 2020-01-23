@@ -92,10 +92,22 @@ edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets", ve
 edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
 #Transform to long/lat
 edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
+
+edin_road_network <- edin_cons_streets
+
+#edin_road_network@data$LAYER <- as.character(edin_road_network@data$LAYER)
+#edin_road_network <- st_as_sf(edin_road_network)
+edin_road_network <- edin_road_network[edin_road_network@data$LAYER  %in% c("20mph existing streets", "20mph local streets","20mph main streets","30mph"),]
+
+edin_road_network <- spTransform(edin_road_network,"+init=epsg:4326")
+#nearest_road2 <- nearest_line(edin_road_data,edin_road_network)
+
+leaflet(edin_road_network) %>% addTiles() %>% addPolylines(popup=edin_road_network$LAYER)
+
 #Visualize with leaflet
-col = c("#bf812d","#80cdc1","#d6604d","#525252","#1a9850","#cab2d6","#e6f598","#4393c3")
+#col = c("#bf812d","#80cdc1","#d6604d","#525252","#1a9850","#cab2d6","#e6f598","#4393c3")
 #my.palette <- brewer.pal(n = 8, name = "Set3")
-spplot(edin_cons_streets,'LAYER',col.regions = col)
+#spplot(edin_cons_streets,'LAYER',col.regions = col)
 leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
 ```
 
@@ -147,9 +159,12 @@ leaflet(control_zone_all) %>% addTiles() %>% addPolygons()
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
 #Read data
 edin_road_data <- read_csv(paste0(dir_path, "/edin_road_data.csv"))
+edin_road_data <- edin_road_data %>% filter(edin_road_data$Speed_limit %in% c(20,30)) 
 control_zone_data <- read_csv(paste0(dir_path, "/edin_control_data.csv"))
+control_zone_data <- control_zone_data %>% filter(control_zone_data$Speed_limit %in% c(20,30)) 
 casualties_data <- read_csv(paste0(dir_path, "/edin_casualties_data.csv"))
 rd_2019 <- read_csv(paste0(dir_path, "/data2019.csv"))
+rd_2019 <- rd_2019 %>% filter(rd_2019$Speed_limit %in% c(20,30)) 
 
 edin_road_data <- edin_road_data %>% mutate(year = format(as.Date(edin_road_data$Date, format="%m/%d/%Y"),"%Y"))
 edin_road_data <- rbind.fill(edin_road_data,rd_2019)
@@ -187,14 +202,19 @@ ggplot(edin_road_data) +
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #Data manipulation
 #Get nearest line for pre and post 20mph using the nearest_line function 
-nearest_road <- nearest_line(edin_road_data,edin_cons_streets)
+
+#nearest_road <- nearest_line(edin_road_data,edin_cons_streets)
+#nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
+nearest_road <- nearest_line(edin_road_data,edin_road_network)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
+
 ```
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #Merge the dataframes based on the ID of the nearest line in order to connect geoinformation with stasts19
 #Then merge Casualty severity column with collisions dataset
-mergedDf <- unique(merge(data.frame(nearest_road),edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID"))
+mergedDf_original <- unique(merge(data.frame(nearest_road),edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID"))
+mergedDf <- unique(merge(data.frame(nearest_road),edin_road_network@data,by.x = "nearest_line_id" ,by.y = "ID"))
 mer <- mergedDf [mergedDf$year == "2019",]
 mergedDf <- merge(mergedDf,casualties_data)
 
@@ -297,12 +317,12 @@ s1 <- pre[pre$LAYER == "20mph main streets",2] + pre[pre$LAYER == "20mph local s
 s2 <- post[post$LAYER == "20mph main streets",2] + post[post$LAYER == "20mph local streets",2]
 
 #sum all streets pre and post
-sum_pre <-sum(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],s1,pre[pre$LAYER == "40mph",2])
-sum_post <-sum(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],s2,post[post$LAYER == "40mph",2])
+sum_pre <-sum(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],s1)
+sum_post <-sum(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],s2)
 
 #create column pre and post
-collisions_pre_20mph <- c(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],s1,pre[pre$LAYER == "40mph",2],sum_pre)
-collisions_post_20mph <- c(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],s2,post[post$LAYER == "40mph",2],sum_post)
+collisions_pre_20mph <- c(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],s1,sum_pre)
+collisions_post_20mph <- c(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],s2,sum_post)
 
 #rate per year
 rate_pre_20mph <- round(collisions_pre_20mph/3,2)
@@ -311,7 +331,7 @@ rate_post_20mph <- round(collisions_post_20mph/1,2)
 diff_in_rates <- - rate_pre_20mph + rate_post_20mph
 percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2) 
 
-type <- c("Streets at 30mph","Streets at 20mph","Streets at 30mph changed to 20mph","Streets at 40mph","All streets")
+type <- c("Streets at 30mph","Streets at 20mph","Streets at 30mph changed to 20mph","All streets")
 df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates*100)
 colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
 kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
@@ -321,11 +341,11 @@ kable(df,caption = "Table 1: Average annual road traffic collision rates in the 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 
-sum_pre_2 <-sum(p[p$Speed_limit == 20,2],p[p$Speed_limit == 30,2],p[p$Speed_limit == 40,2])
-sum_post_2 <-sum(po[po$Speed_limit == 20,2],po[po$Speed_limit == 30,2],po[po$Speed_limit == 40,2])
+sum_pre_2 <-sum(p[p$Speed_limit == 20,2],p[p$Speed_limit == 30,2])
+sum_post_2 <-sum(po[po$Speed_limit == 20,2],po[po$Speed_limit == 30,2])
 
-collisions_pre_20mph <- c(p[p$Speed_limit == 20,2],p[p$Speed_limit == 30,2],p[p$Speed_limit == 40,2],sum_pre_2)
-collisions_post_20mph <- c(po[po$Speed_limit == 20,2],po[po$Speed_limit == 30,2],po[po$Speed_limit == 40,2],sum_post_2)
+collisions_pre_20mph <- c(p[p$Speed_limit == 20,2],p[p$Speed_limit == 30,2],sum_pre_2)
+collisions_post_20mph <- c(po[po$Speed_limit == 20,2],po[po$Speed_limit == 30,2],sum_post_2)
 
 rate_pre_20mph <- round(collisions_pre_20mph/3,2)
 rate_post_20mph <- round(collisions_post_20mph/1,2)
@@ -333,7 +353,7 @@ rate_post_20mph <- round(collisions_post_20mph/1,2)
 diff_in_rates <- - rate_pre_20mph + rate_post_20mph
 percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2)
 
-type <- c("Streets at 20mph","Streets at 30mph","Streets at 40mph","All streets")
+type <- c("Streets at 20mph","Streets at 30mph","All streets")
 df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates * 100)
 colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
 
@@ -541,8 +561,8 @@ buffer_data <-function(data,zone){
   data <-  spTransform(SpatialPointsDataFrame(coords = data[4:5],proj4string = wgs84,data = data), crs)
   
   proj4string(data) <- proj4string(zone)
-  counts2 <- rgeos::gWithin(data, zone, byid=TRUE)
-  return(length(counts2[counts2 == TRUE]))
+  counts2 <- raster::intersect(data,zone) 
+  return(counts2@data)
 }
 ```
 
@@ -551,9 +571,10 @@ buffer_data <-function(data,zone){
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_1 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_1,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910"))
-leaflet(control_zone_1) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude) %>% setView(lng = -2.099075 , lat = 57.149651, zoom = 11)
-buffer_data(con_data,control_zone_1)
-
+control_zone_1a_df <- data.frame(buffer_data(con_data,control_zone_1))
+control_zone_1a_df <- cbind(Control_zone = "1a", control_zone_1a_df)
+leaflet(control_zone_1) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_1a_df$Longitude, lat = control_zone_1a_df$Latitude) %>% setView(lng = -2.099075 , lat = 57.149651, zoom = 11)
+nrow(control_zone_1a_df)
 ```
 
 > Control zone 1b:Rural west --> Tay Bridgehead & St Andrews
@@ -561,8 +582,10 @@ buffer_data(con_data,control_zone_1)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_7 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_7,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("925"))
-leaflet(control_zone_7) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude) %>% setView(lng = -2.8833 , lat = 56.3833, zoom = 11)
-buffer_data(con_data,control_zone_7)
+control_zone_1b_df <- data.frame(buffer_data(con_data,control_zone_7))
+control_zone_1b_df <- cbind(Control_zone = "1b", control_zone_1b_df)
+leaflet(control_zone_7) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_1b_df$Longitude, lat = control_zone_1b_df$Latitude) %>% setView(lng = -2.8833 , lat = 56.3833, zoom = 11)
+nrow(control_zone_1b_df)
 ```
 
 > Control zone 3:South central --> Dundee
@@ -570,8 +593,10 @@ buffer_data(con_data,control_zone_7)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_3 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_3,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("918"))
-leaflet(control_zone_3) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude)
-buffer_data(con_data,control_zone_3)
+control_zone_3_df <- data.frame(buffer_data(con_data,control_zone_3))
+control_zone_3_df <- cbind(Control_zone = "3", control_zone_3_df)
+leaflet(control_zone_3) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_3_df$Longitude, lat = control_zone_3_df$Latitude)
+nrow(control_zone_3_df)
 ```
 
 > Control zone 4:North west -> Renfrew North, Renfrew South & Gallowhill, Paisley North West
@@ -579,8 +604,10 @@ buffer_data(con_data,control_zone_3)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_4 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_4,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("935"))
-leaflet(control_zone_4) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude)
-buffer_data(con_data,control_zone_4)
+control_zone_4_df <- data.frame(buffer_data(con_data,control_zone_4))
+control_zone_4_df <- cbind(Control_zone = "4", control_zone_4_df)
+leaflet(control_zone_4) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_4_df$Longitude, lat = control_zone_4_df$Latitude)
+nrow(control_zone_4_df)
 ```
 
 > Control zone 5:West --> Glasgow Kelvin
@@ -588,8 +615,10 @@ buffer_data(con_data,control_zone_4)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_5 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_5,]        
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("926"))
-leaflet(control_zone_5) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude) %>% setView(lng = -4.25763 , lat = 55.86515, zoom = 11)
-buffer_data(con_data,control_zone_5)
+control_zone_5_df <- data.frame(buffer_data(con_data,control_zone_5))
+control_zone_5_df <- cbind(Control_zone = "5", control_zone_5_df)
+leaflet(control_zone_5) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_5_df$Longitude, lat = control_zone_5_df$Latitude) %>% setView(lng = -4.25763 , lat = 55.86515, zoom = 12)
+nrow(control_zone_5_df)
 ```
 
 > Control zone 6:South --> Paisley
@@ -597,18 +626,23 @@ buffer_data(con_data,control_zone_5)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_6 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_6,]    
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("935"))
-leaflet(control_zone_6) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = con_data$Longitude, lat = con_data$Latitude)
-buffer_data(con_data,control_zone_6)
+control_zone_6_df <- data.frame(buffer_data(con_data,control_zone_6))
+control_zone_6_df <- cbind(Control_zone = "6", control_zone_6_df)
+leaflet(control_zone_6) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_6_df$Longitude, lat = control_zone_6_df$Latitude)
+nrow(control_zone_5_df)
 ```
 
 > Updated dataset for Edinburgh
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #final_dataset
+#control zones data
+control_zones_df <-rbind(control_zone_1a_df,control_zone_1b_df,control_zone_3_df,control_zone_4_df,control_zone_5_df,control_zone_6_df)
 merged_1 <- mergedDf[,-c(34:38,39)]
 total_zones_1 <- total_zones[,-c(1,3:34)]
 updated_dataset <- merge(merged_1,total_zones_1,by.x="Accident_Index",by.y="Accident_Index")
 updated_dataset <-updated_dataset[,-c(2,3,36)]
+final_df <- rbind.fill(updated_dataset,control_zones_df,by.x="Accident_Index",by.y="Accident_Index")
 head(updated_dataset[,c(1,18,32,35)])
 #Create new csv file with the cleaned data
 write.csv(updated_dataset, file = paste0(dir_path, "/final_Edinburgh_data.csv"),row.names=FALSE)
