@@ -309,7 +309,7 @@ po
 head(mergedDf[,c(3,20,40)])
 ```
 
-> Table: Average annual road traffic collision rates in the city of Edinburgh (GIS)
+> Table: Average annual road traffic collision rates in the city of Edinburgh ( GIS )
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #count streets that have changed from 30 to 20mph
@@ -337,7 +337,7 @@ colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-
 kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
-> Table: Average annual road traffic collision rates in the city of Edinburgh (Stats19)
+> Table: Average annual road traffic collision rates in the city of Edinburgh ( Stats19 )
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 
@@ -361,7 +361,7 @@ kable(df,caption = "Table 2: Average annual road traffic collision rates in the 
 
 ```
 
-> Effect estimate (GIS)
+> Effect estimate ( GIS )
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 Tax_year <- c("Annual number of collisions"," ","Effect estimate ")
@@ -369,7 +369,6 @@ a <- sum(pre13[,2])
 b <- sum(pre14[,2])
 c <- sum(pre15[,2])
 d <- sum(po[,2])
-e <- 0
 
 sum1 <- (a+b+c)/3
 sum2 <- d
@@ -388,14 +387,14 @@ colnames(df)=c("Tax year", "2013/14","2014/15","2015/16", "2018/19")
 kable(df,caption = "Effect estimate(GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
-> Effect estimate (Stats19)
+> Effect estimate ( Stats19 )
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 Tax_year <- c("Annual number of collisions"," ","Effect estimate ")
-a <- sum(p13[1:5,2])
-b <- sum(p14[1:5,2])
-c <- sum(p15[1:5,2])
-d <- sum(post[1:5,2])
+a <- sum(p13[,2])
+b <- sum(p14[,2])
+c <- sum(p15[,2])
+d <- sum(post[,2])
 
 sum1 <- (a+b+c)/3
 sum2 <- d
@@ -466,7 +465,6 @@ map_zones <- leaflet() %>% addTiles() %>%
   addPolygons(data = zone_7,color= "black",group = " zone 7 ") %>% 
 addLayersControl(overlayGroups = c( " zone 1 "," zone 2 "," zone 3 "," zone 4 "," zone 5 "," zone 6 "," zone 7 "),
                                     options = layersControlOptions(collapsed = FALSE))
-
 map_zones <- map_zones %>% addLegend("bottomright",colors =c("green",  "red","purple", "cyan", "blue","orange","black"),
                       labels= c("1(1a):City Centre", "2:North","3:South Central/East","4:North West","5:West", "6:South","7(1b):Rural West"),
                       title= "Implementation zones",opacity = 1) %>% setView(lng = -3.188267 , lat = 55.953251, zoom = 11)
@@ -573,7 +571,7 @@ control_zone_1 <- edin_control_zone[edin_control_zone@data$DataZone %in%  contro
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910"))
 control_zone_1a_df <- data.frame(buffer_data(con_data,control_zone_1))
 control_zone_1a_df <- cbind(Control_zone = "1a", control_zone_1a_df)
-leaflet(control_zone_1) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_1a_df$Longitude, lat = control_zone_1a_df$Latitude) %>% setView(lng = -2.099075 , lat = 57.149651, zoom = 11)
+leaflet(control_zone_1) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_1a_df$Longitude, lat = control_zone_1a_df$Latitude) %>% setView(lng = -2.099075 , lat = 57.149651, zoom = 13)
 nrow(control_zone_1a_df)
 ```
 
@@ -629,7 +627,7 @@ con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(Dis
 control_zone_6_df <- data.frame(buffer_data(con_data,control_zone_6))
 control_zone_6_df <- cbind(Control_zone = "6", control_zone_6_df)
 leaflet(control_zone_6) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_6_df$Longitude, lat = control_zone_6_df$Latitude)
-nrow(control_zone_5_df)
+nrow(control_zone_6_df)
 ```
 
 > Updated dataset for Edinburgh
@@ -637,15 +635,16 @@ nrow(control_zone_5_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #final_dataset
 #control zones data
-control_zones_df <-rbind(control_zone_1a_df,control_zone_1b_df,control_zone_3_df,control_zone_4_df,control_zone_5_df,control_zone_6_df)
+control_zones_df <-rbind.fill(control_zone_1a_df,control_zone_1b_df,control_zone_3_df,control_zone_4_df,control_zone_5_df,control_zone_6_df)
 merged_1 <- mergedDf[,-c(34:38,39)]
 total_zones_1 <- total_zones[,-c(1,3:34)]
 updated_dataset <- merge(merged_1,total_zones_1,by.x="Accident_Index",by.y="Accident_Index")
 updated_dataset <-updated_dataset[,-c(2,3,36)]
-final_df <- rbind.fill(updated_dataset,control_zones_df,by.x="Accident_Index",by.y="Accident_Index")
+final_df <- rbind.fill(updated_dataset,control_zones_df)
+final_df <- final_df[,-c(33:34,40:45)]
 head(updated_dataset[,c(1,18,32,35)])
 #Create new csv file with the cleaned data
-write.csv(updated_dataset, file = paste0(dir_path, "/final_Edinburgh_data.csv"),row.names=FALSE)
+write.csv(final_df, file = paste0(dir_path, "/final_Edinburgh_data.csv"),row.names=FALSE)
 
 ```
 

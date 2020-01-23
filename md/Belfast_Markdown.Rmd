@@ -22,6 +22,7 @@ library(readxl)
 library(readr)
 library(knitr)
 library(kableExtra)
+library(plyr)
 
 #Function for deleting Na points
 delete_na <- function(data, desiredCols) {
@@ -82,9 +83,11 @@ leaflet(belf_control_zones) %>% addTiles() %>% addPolygons()
 belf_data <- read_csv( paste0(dir_path, "/Belfast/Belfast_data.csv"))
 belf_data <- delete_na(belf_data,c("X","Y"))
 belf_data <- belf_data %>% mutate(year = format(as.Date(belf_data$a_date, format="%m/%d/%Y"),"%Y"))
+belf_data <- belf_data %>% filter(belf_data$a_speed %in% c(20,30)) 
 
 belf_control_data <- read_csv( paste0(dir_path, "/Belfast/Belfast_control_data.csv"))
 belf_control_data <- delete_na(belf_control_data,c("X","Y"))
+belf_control_data <- belf_control_data %>% filter(belf_control_data$a_speed %in% c(20,30)) 
 belf_control_data <- belf_control_data %>% mutate(year = format(as.Date(belf_control_data$a_date, format="%m/%d/%Y"),"%Y"))
 #belf_data %>% group_by(year) %>% summarise()
 ```
@@ -128,7 +131,7 @@ df <-  spTransform(SpatialPointsDataFrame(coords = df[25:26],proj4string = wgs84
 #Make sure our data have same projections
 proj4string(df) <- proj4string(road_net)
 
-#Find nearest line with maxDist=20m 
+#Find nearest line with maxDist=10m 
 nearest_line_sp <- localSnapPointsToLines(df,road_net,maxDist=10,withAttrs = T)
 
 #belfast_road_data@data <-rowid_to_column(belfast_road_data@data, "ID")
@@ -264,10 +267,11 @@ post <- count(merged[merged$year >="2018" & merged$year <= "2019", ])
 post
 ```
 
-> Table: Average annual road traffic collision rates in the city of Belfast (GIS)
+> Table: Average annual road traffic collision rates in the city of Belfast ( GIS )
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-sum_pre <- pre[pre$a_speed == 20,2] + pre[pre$a_speed == 30,2] + pre[pre$a_speed == 40,2]
+
+sum_pre <- pre[pre$a_speed == 20,2] + pre[pre$a_speed == 30,2] 
 sum_post <- post[post$a_speed == 20,2] + post[post$a_speed == 30,2] 
 
 sum1 <- c(nrow(belf_data[belf_data$year >= "2013" & belf_data$year <= "2016",]))
@@ -291,12 +295,9 @@ colnames(df)=c("Type", "collisions pre-20mph", "collisions post-20mph", "rate pr
 kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Belfast (GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
-> Effect estimate (GIS)
+> Effect estimate ( GIS )
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-Tax_year <- c("Annual number of collisions in roads changed to 20mph"," ","Effect estimate ")
-e <- 0
-
 sum1 <- (a+b+c)/3
 sum2 <- d
 unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
@@ -308,16 +309,16 @@ Y_2014_15 <- c(b," "," ")
 Y_2015_16 <- c(c," "," ")
 Y_2018_19 <- c(d," "," ")
 
+Tax_year <- c("Annual number of collisions in roads changed to 20mph"," ","Effect estimate ")
 df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2018_19)
 colnames(df)=c("Tax year", "2013/14","2014/15","2015/16", "2018/19")
-
 kable(df,caption = "Effect estimate(GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
 > Output column: Changed to 20 mph
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-head(merged[,c(25,13,36,41)])
+head(merged[,c(25,13,36,37,41)])
 ```
 
 
@@ -457,13 +458,9 @@ s_19 <- buffer_data(total,belf_impl_zones_out)
 s_13 + s_14 + s_15 + s_16 + s_18 + s_19 
 ```
 
-> Count accidents in Control Zone : City Center --> Central (Ards)
+> Count accidents in Control Zone : City Center --> Central ( Ards )
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-
-
-leaflet(belf_control_zones) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = belf_control_data$X,  lat = belf_control_data$Y) %>% setView(lng = -5.69092, lat = 54.59236, zoom = 13)
-
 buffer_control_data <-function(data,zone){
   #Create planar(cartesian) projection 
   crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
@@ -473,15 +470,18 @@ buffer_control_data <-function(data,zone){
   data <-  spTransform(SpatialPointsDataFrame(coords = data[25:26],proj4string = wgs84,data = data), crs)
   
   proj4string(data) <- proj4string(zone)
-  counts2 <- rgeos::gWithin(data, zone, byid=TRUE)
-  return(length(counts2[counts2 == TRUE]))
+  counts2 <- raster::intersect(data,zone) 
+  return(counts2@data)
 }
 
-buffer_control_data(belf_control_data,belf_control_zones)
+control_data_df <- buffer_control_data(belf_control_data,belf_control_zones)
 
+leaflet(belf_control_zones) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_data_df$X,  lat = control_data_df$Y) %>% setView(lng = -5.69092, lat = 54.59236, zoom = 13)
+
+nrow(control_data_df)
 ```
 
-> Output column : Output Area code ( OA_code)
+> Output column : Output Area code ( OA_code )
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 head(total_zones[,c(25,13,34)])
@@ -495,8 +495,10 @@ total_zones_1 <- total_zones[,-c(29:33)]
 updated_dataset <- merge(merged_1,total_zones_1,by.x="a_ID",by.y="a_ID")
 updated_dataset <-updated_dataset[,-c(31:57)]
 head(updated_dataset[,c(1,13,29,30,31)])
+
 #final_dataset
+final_df <- rbind.fill(updated_dataset,control_data_df)
 #Create new csv file with the cleaned data
-write.csv(updated_dataset, file = paste0(dir_path, "/Belfast/final_Belfast_data.csv"),row.names=FALSE)
+write.csv(final_df, file = paste0(dir_path, "/Belfast/final_Belfast_data.csv"),row.names=FALSE)
 
 ```
