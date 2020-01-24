@@ -540,6 +540,45 @@ s_19 <- count_impl(total[total$year == "2019", ])
 head(df_zones)
 ```
 
+
+```{r}
+s_pre <-s_13 + s_14 + s_15 + s_16
+s_pre$ImplementationZone <- s_13$ImplementationZone 
+s_post <-s_18 + s_19
+s_post$ImplementationZone <- s_13$ImplementationZone 
+
+zone_1a <- s_pre[s_pre$ImplementationZone=="1",2]
+zone_1b <- s_pre[s_pre$ImplementationZone=="7",2]
+zone_3 <- s_pre[s_pre$ImplementationZone=="3",2]
+zone_4 <- s_pre[s_pre$ImplementationZone=="4",2]
+zone_5 <- s_pre[s_pre$ImplementationZone=="5",2]
+zone_6 <- s_pre[s_pre$ImplementationZone=="6",2]
+all <- sum(zone_1a,zone_1b,zone_3,zone_4,zone_5,zone_6 )
+
+zone_1a_p <- s_post[s_post$ImplementationZone=="1",2]
+zone_1b_p <- s_post[s_post$ImplementationZone=="7",2]
+zone_3_p <- s_post[s_post$ImplementationZone=="3",2]
+zone_4_p <- s_post[s_post$ImplementationZone=="4",2]
+zone_5_p <- s_post[s_post$ImplementationZone=="5",2]
+zone_6_p <- s_post[s_post$ImplementationZone=="6",2]
+all_p <- sum(zone_1a_p,zone_1b_p,zone_3_p,zone_4_p,zone_5_p,zone_6_p)
+
+collisions_pre_20mph <- c(zone_1a,zone_1b,zone_3,zone_4,zone_5,zone_6,all)
+collisions_post_20mph <- c(zone_1a_p,zone_1b_p,zone_3_p,zone_4_p,zone_5_p,zone_6_p,all_p)
+
+rate_pre_20mph <- round(collisions_pre_20mph/3,2)
+rate_post_20mph <- round(collisions_post_20mph/1,2)
+
+diff_in_rates <- - rate_pre_20mph + rate_post_20mph
+percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2)
+
+type <- c("1a","1b","3","4","5","6","All zones")
+df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates * 100)
+colnames(df)=c("Implementation zone", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
+
+kable(df,caption = "Table 3: Average annual road traffic collision rates in the city of Edinburgh per implementation zone") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
 > Total accidents per zone
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
