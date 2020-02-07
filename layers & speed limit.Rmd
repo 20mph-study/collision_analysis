@@ -1,0 +1,228 @@
+---
+title: "Untitled"
+author: "edin"
+date: "2/6/2020"
+output: html_document
+---
+
+```{r , echo=FALSE, warning=FALSE,message=FALSE}
+# Load libraries
+library(rgdal)
+library(leaflet)
+library(tidyverse)
+library(rgeos)
+library(raster)
+library(ggplot2)
+library(sf)
+library(mapview)
+library(maptools)
+library(sp)
+library(readxl)
+library(readr)
+library(grid)
+library(gridExtra)
+library(xtable)
+library(knitr)
+library(kableExtra)
+library(plyr)
+library(RColorBrewer)
+
+
+#Function for leaflet visualisations
+leaflet_map <- function(final_df,edin_streets){
+  crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
+  wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
+  
+  #Convert data to planar projection  
+  edin_streets <- spTransform(edin_streets,crs)
+  coordinates(final_df) <- ~ X + Y
+  
+  #Convert data projections back to lat/long to plot with leaflet
+  edin_streets <- spTransform(edin_streets,"+init=epsg:4326")
+  
+  #Same projections
+  proj4string(final_df) <- proj4string(edin_streets)
+  
+  edin_streets <- st_as_sf(edin_streets)
+  #Leaflet maps of the road network , accidents and their projections
+  road_existing_20 <-edin_streets%>% filter(edin_streets$LAYER == "20mph existing streets")
+  road_local_20 <- filter(edin_streets, edin_streets$LAYER == "20mph local streets")
+  road_main_20 <- filter(edin_streets, edin_streets$LAYER == "20mph main streets")
+  road_30 <- filter(edin_streets, edin_streets$LAYER == "30mph")
+ 
+ 
+  
+  #Visualize
+  map <- leaflet() %>% addTiles() %>% addPolylines(data = edin_streets)
+
+  map_near <-map %>% leaflet() %>% addTiles() %>% addMarkers(lng =final_df$X, lat = final_df$Y,
+                                                             popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
+                                                                          "Speed limit: ", final_df$Speed_limit ,"<br>",
+                                                                          "Layer: ",final_df$LAYER ,"<br>",
+                                                                         "Date: ",final_df$Date ), group = 'incidents linked to a road')
+  
+map3 <- map_near %>% addCircleMarkers(lng =final_df$Longitude , lat = final_df$Latitude,
+                                        popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
+                                                     "Speed limit: ", final_df$Speed_limit ,"<br>",
+                                                     "Date: ",final_df$Date ), group = 'all incidents')
+  
+  
+  map3 <- map3 %>% addLegend("bottomright",colors =c("#41ab5d",  "#fc4e2a", "#ffeda0",  "#1d91c0"),
+                             labels= c("existing 20mph", "local 20mph","main 20 mph","30mph"),
+                             title= "Road network",opacity = 1)
+  
+  map3 %>%
+    setView(lng = -3.188267 , lat = 55.953251, zoom = 11)%>%
+    addPolylines(data = road_existing_20, color= "#41ab5d", group = 'existing 20mph' ) %>%
+    addPolylines(data = road_local_20,color= "#fc4e2a" , group = 'local 20mph' ) %>%
+    addPolylines(data = road_main_20,color= "#ffeda0" , group = 'main 20mph')%>%
+    addPolylines(data = road_30,color= "#1d91c0" , group = '30mph') %>% addLayersControl(overlayGroups = c( 'existing 20mph','local 20mph','main 20mph','30mph','incidents linked to a road','all incidents'),
+                                                                                                options = layersControlOptions(collapsed = FALSE))
+}
+```
+
+
+```{r , echo=FALSE, warning=FALSE,message=FALSE}
+data <- read_csv("C://Users//Kyriaki Kokka//Documents//GitHub//collision_analysis//data//merged_data.csv")
+#2.Gis 
+#Read geodatabase for Edinburgh
+#Path
+gdb_path <- "C://Users//Kyriaki Kokka//Documents//GitHub//collision_analysis//data//20mph.gdb"
+gdb_layers <- ogrListLayers(gdb_path)
+
+#Read shapefile
+edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets", verbose = FALSE)
+#Put ID column as variable 
+edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
+#Transform to long/lat
+edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
+```
+
+> layer =  30mph
+  speed limit = 30mph
+ 
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+
+mergedDf <- data[data$LAYER == "30mph" &data$Speed_limit == 30, ]
+leaflet_map(mergedDf,edin_cons_streets)
+
+s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
+s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
+s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
+s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
+s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
+s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+data_frame(s13,s14,s15,s16,s18,s19)
+```
+
+
+> layer =  existing 20mph
+  speed limit = 30mph
+ 
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+
+mergedDf <- data[data$LAYER == "20mph existing streets" &data$Speed_limit == 30, ]
+leaflet_map(mergedDf,edin_cons_streets)
+
+s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
+s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
+s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
+s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
+s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
+s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+data_frame(s13,s14,s15,s16,s18,s19)
+```
+
+> layer = 30mph 
+  speed limit = 20mph
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+mergedDf <- data[data$LAYER == "30mph" &data$Speed_limit == 20, ]
+leaflet_map(mergedDf,edin_cons_streets)
+
+s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
+s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
+s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
+s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
+s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
+s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+data_frame(s13,s14,s15,s16,s18,s19)
+```
+
+>layer = local 20mph
+ Speed limit = 20
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+
+mergedDf <- data[data$LAYER == "20mph local streets" & data$Speed_limit == 20, ]
+leaflet_map(mergedDf,edin_cons_streets)
+
+s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
+s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
+s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
+s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
+s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
+s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+data_frame(s13,s14,s15,s16,s18,s19)
+
+```
+
+>layer = local 20mph
+ Speed limit = 30
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+
+mergedDf <- data[data$LAYER == "20mph local streets" & data$Speed_limit == 30, ]
+leaflet_map(mergedDf,edin_cons_streets)
+
+s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
+s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
+s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
+s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
+s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
+s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+data_frame(s13,s14,s15,s16,s18,s19)
+```
+
+>layer = main 20mph
+ Speed limit = 30
+ 
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+
+mergedDf <- data[data$LAYER == "20mph main streets" & data$Speed_limit == 30, ]
+leaflet_map(mergedDf,edin_cons_streets)
+
+s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
+s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
+s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
+s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
+s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
+s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+data_frame(s13,s14,s15,s16,s18,s19)
+```
+
+>layer = main 20mph
+ Speed limit = 20
+ 
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+
+
+```
+
+>layer =existing  20mph
+ Speed limit = 20
+
+```{r}
+mergedDf <- data[data$LAYER == "20mph existing streets" & data$Speed_limit == 20, ]
+leaflet_map(mergedDf,edin_cons_streets)
+
+s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
+s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
+s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
+s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
+s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
+s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+data_frame(s13,s14,s15,s16,s18,s19)
+```
+ 
+ 
