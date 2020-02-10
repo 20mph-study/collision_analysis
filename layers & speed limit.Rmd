@@ -57,12 +57,16 @@ leaflet_map <- function(final_df,edin_streets){
 
   map_near <-map %>% leaflet() %>% addTiles() %>% addMarkers(lng =final_df$X, lat = final_df$Y,
                                                              popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
+                                                                          "Date: ",final_df$Date ,"<br>",
                                                                           "Speed limit: ", final_df$Speed_limit ,"<br>",
-                                                                          "Layer: ",final_df$LAYER ,"<br>",
-                                                                         "Date: ",final_df$Date ,"<br>",
-                                                     "Road type: ",final_df$Road_Type,"<br>",
-                                                     "1st road class: ",final_df$X1st_Road_Class,"<br>",
-                                                     "Junction detail: ",final_df$Junction_Detail), group = 'incidents linked to a road')
+                                                                          "Layer before: ",final_df$LAYER.x ,"<br>",
+                                                                          "Layer after: ",final_df$LAYER.y ,"<br>",
+                                                                          "Distance before: ",final_df$snap_dist_before,"<br>",
+                                                                          "Distance after: ",final_df$snap_dist,"<br>",
+                                                                          "Road type: ",final_df$Road_Type,"<br>",
+                                                                          "1st road class: ",final_df$X1st_Road_Class,"<br>",
+                                                                          "2nd road class: ",final_df$X2nd_Road_Class,"<br>",
+                                                                          "Junction detail: ",final_df$Junction_Detail), group = 'incidents linked to a road')
   
 map3 <- map_near %>% addCircleMarkers(lng =final_df$Longitude , lat = final_df$Latitude,
                                         popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
@@ -83,6 +87,29 @@ map3 <- map_near %>% addCircleMarkers(lng =final_df$Longitude , lat = final_df$L
     addPolylines(data = road_part,color= "#6a51a3" , group = 'part time 20mph')%>%addLayersControl(overlayGroups = c( 'existing 20mph','local 20mph','main 20mph','30mph','part time 20mph','incidents linked to a road','all incidents'),
                                                                                                 options = layersControlOptions(collapsed = FALSE))
 }
+#2.Function for deleting Na points
+delete_na <- function(data, desiredCols) {
+  completeVec <- complete.cases(data[, desiredCols])
+  return(data[completeVec, ])
+}
+
+nearest_line <-function(df,road_net){
+  #Create planar(cartesian) projection 
+  crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
+  wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
+  
+  #Convert data to planar projection  
+  road_net <- spTransform(road_net,crs)
+  df <-  spTransform(SpatialPointsDataFrame(coords = df[5:6],proj4string = wgs84,data = df), crs)
+  
+  #Make sure our data have same projections
+  proj4string(df) <- proj4string(road_net)
+  
+  #Find nearest line with maxDist=6m 
+  nearest_line_sp <- localSnapPointsToLines(df,road_net,maxDist=10,withAttrs=TRUE)
+  
+  return(nearest_line_sp)
+}
 ```
 
 
@@ -96,6 +123,14 @@ data$X1st_Road_Class[data$X1st_Road_Class == 3] <- "A"
 data$X1st_Road_Class[data$X1st_Road_Class == 4] <- "B"
 data$X1st_Road_Class[data$X1st_Road_Class == 5] <- "C"
 data$X1st_Road_Class[data$X1st_Road_Class == 6] <- "Unclassified"
+
+data$X2nd_Road_Class[data$X2nd_Road_Class == 0] <- "Not a junction or within 20meters"
+data$X2nd_Road_Class[data$X2nd_Road_Class == 1] <- "Motorway"
+data$X2nd_Road_Class[data$X2nd_Road_Class == 2] <- "A(M)"
+data$X2nd_Road_Class[data$X2nd_Road_Class == 3] <- "A"
+data$X2nd_Road_Class[data$X2nd_Road_Class == 4] <- "B"
+data$X2nd_Road_Class[data$X2nd_Road_Class == 5] <- "C"
+data$X2nd_Road_Class[data$X2nd_Road_Class == 6] <- "unclassified"
 
 data$Junction_Detail[data$Junction_Detail == 0] <- "Not a junction or within 20meters"
 data$Junction_Detail[data$Junction_Detail == 1] <- "Roundabout"
@@ -129,46 +164,50 @@ edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets", ve
 edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
 #Transform to long/lat
 edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
+
+
+```
+
+```{r}
+road_existing <- data[data$LAYER == "20mph existing streets", ]
+leaflet_map(road_existing,edin_cons_streets)
+```
+
+```{r}
+#1st road class
+road_class <- mergedDf[mergedDf$X1st_Road_Class == "A", ]
+leaflet_map(road_class[1:42,],edin_cons_streets)
+
+dataT <- data[data$Junction_Detail == "T or staggered junction", ]
+leaflet_map(dataT[1:947,],edin_cons_streets)
 ```
 
 > layer =  existing 20mph
 > speed limit = 30mph
  
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-mergedDf <- data[data$LAYER == "20mph existing streets" &data$Speed_limit == 30, ]
-summary(mergedDf)
+mergedDf <- data[data$LAYER == "20mph existing streets" & data$Speed_limit == 30, ]
+mergedDf <- mergedDf[,-2]
+mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
+#leaflet_map(mergedDf,edin_cons_streets)
+#s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
+#s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
+#s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
+#s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ],"Accident_Index"))
+#s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
+#s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
+#data_frame(s13,s14,s15,s16,s18,s19)
 
-#1st road class
-road_class <- mergedDf[mergedDf$X1st_Road_Class == "A", ]
 
-leaflet_map(road_class[1:42,],edin_cons_streets)
+#exclude 20mph existing streets and link again accidents to the remaining layers
+network <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
 
-leaflet_map(mergedDf,edin_cons_streets)
+new_lines <- nearest_line(mergedDf,network)
+new_nearest_road <- spTransform(new_lines,"+init=epsg:4326")
+new_nearest_road <-new_lines@data
+new_nearest_road <- unique(merge(new_nearest_road,network@data,by.x = "nearest_line_id" ,by.y = "ID"))
+leaflet_map(new_nearest_road,edin_cons_streets)
 
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
-data_frame(s13,s14,s15,s16,s18,s19)
-```
-
-> layer =  existing 20mph
-  speed limit = 30mph
- 
-```{r, echo=FALSE, warning=FALSE,message=FALSE}
-
-mergedDf <- data[data$LAYER == "20mph existing streets" &data$Speed_limit == 30, ]
-leaflet_map(mergedDf,edin_cons_streets)
-
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
-data_frame(s13,s14,s15,s16,s18,s19)
 ```
 
 > layer = 30mph 
@@ -178,12 +217,12 @@ data_frame(s13,s14,s15,s16,s18,s19)
 mergedDf <- data[data$LAYER == "30mph" &data$Speed_limit == 20, ]
 leaflet_map(mergedDf,edin_cons_streets)
 
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
 ```
 
@@ -195,12 +234,12 @@ data_frame(s13,s14,s15,s16,s18,s19)
 mergedDf <- data[data$LAYER == "20mph local streets" & data$Speed_limit == 20, ]
 leaflet_map(mergedDf,edin_cons_streets)
 
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
 
 ```
@@ -213,12 +252,12 @@ data_frame(s13,s14,s15,s16,s18,s19)
 mergedDf <- data[data$LAYER == "20mph local streets" & data$Speed_limit == 30, ]
 leaflet_map(mergedDf,edin_cons_streets)
 
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
 ```
 
@@ -230,12 +269,12 @@ data_frame(s13,s14,s15,s16,s18,s19)
 mergedDf <- data[data$LAYER == "20mph main streets" & data$Speed_limit == 30, ]
 leaflet_map(mergedDf,edin_cons_streets)
 
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
 ```
 
@@ -243,7 +282,16 @@ data_frame(s13,s14,s15,s16,s18,s19)
  Speed limit = 20
  
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
+mergedDf <- data[data$LAYER == "20mph main streets" & data$Speed_limit == 20, ]
+leaflet_map(mergedDf,edin_cons_streets)
 
+s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
+data_frame(s13,s14,s15,s16,s18,s19)
 
 ```
 
@@ -254,12 +302,24 @@ data_frame(s13,s14,s15,s16,s18,s19)
 mergedDf <- data[data$LAYER == "20mph existing streets" & data$Speed_limit == 20, ]
 leaflet_map(mergedDf,edin_cons_streets)
 
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
+s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
+data_frame(s13,s14,s15,s16,s18,s19)
+```
+```{r}
+mergedDf <- data[data$LAYER == "30mph" & data$Speed_limit == 30, ]
+leaflet_map(mergedDf,edin_cons_streets)
+
+s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
 ```
  
