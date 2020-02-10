@@ -49,7 +49,7 @@ leaflet_map <- function(final_df,edin_streets){
   road_local_20 <- filter(edin_streets, edin_streets$LAYER == "20mph local streets")
   road_main_20 <- filter(edin_streets, edin_streets$LAYER == "20mph main streets")
   road_30 <- filter(edin_streets, edin_streets$LAYER == "30mph")
- 
+  road_part <- filter(edin_streets, edin_streets$LAYER == "Part time 20mph")
  
   
   #Visualize
@@ -59,16 +59,19 @@ leaflet_map <- function(final_df,edin_streets){
                                                              popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
                                                                           "Speed limit: ", final_df$Speed_limit ,"<br>",
                                                                           "Layer: ",final_df$LAYER ,"<br>",
-                                                                         "Date: ",final_df$Date ), group = 'incidents linked to a road')
+                                                                         "Date: ",final_df$Date ,"<br>",
+                                                     "Road type: ",final_df$Road_Type,"<br>",
+                                                     "1st road class: ",final_df$X1st_Road_Class,"<br>",
+                                                     "Junction detail: ",final_df$Junction_Detail), group = 'incidents linked to a road')
   
 map3 <- map_near %>% addCircleMarkers(lng =final_df$Longitude , lat = final_df$Latitude,
                                         popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
                                                      "Speed limit: ", final_df$Speed_limit ,"<br>",
-                                                     "Date: ",final_df$Date ), group = 'all incidents')
+                                                     "Date: ",final_df$Date), group = 'all incidents')
   
   
-  map3 <- map3 %>% addLegend("bottomright",colors =c("#41ab5d",  "#fc4e2a", "#ffeda0",  "#1d91c0"),
-                             labels= c("existing 20mph", "local 20mph","main 20 mph","30mph"),
+  map3 <- map3 %>% addLegend("bottomright",colors =c("#41ab5d",  "#fc4e2a", "#ffeda0",  "#08306b","#6a51a3"),
+                             labels= c("existing 20mph", "local 20mph","main 20 mph","30mph", "part time 20mph"),
                              title= "Road network",opacity = 1)
   
   map3 %>%
@@ -76,7 +79,8 @@ map3 <- map_near %>% addCircleMarkers(lng =final_df$Longitude , lat = final_df$L
     addPolylines(data = road_existing_20, color= "#41ab5d", group = 'existing 20mph' ) %>%
     addPolylines(data = road_local_20,color= "#fc4e2a" , group = 'local 20mph' ) %>%
     addPolylines(data = road_main_20,color= "#ffeda0" , group = 'main 20mph')%>%
-    addPolylines(data = road_30,color= "#1d91c0" , group = '30mph') %>% addLayersControl(overlayGroups = c( 'existing 20mph','local 20mph','main 20mph','30mph','incidents linked to a road','all incidents'),
+    addPolylines(data = road_30,color= "#08306b" , group = '30mph') %>% 
+    addPolylines(data = road_part,color= "#6a51a3" , group = 'part time 20mph')%>%addLayersControl(overlayGroups = c( 'existing 20mph','local 20mph','main 20mph','30mph','part time 20mph','incidents linked to a road','all incidents'),
                                                                                                 options = layersControlOptions(collapsed = FALSE))
 }
 ```
@@ -84,6 +88,35 @@ map3 <- map_near %>% addCircleMarkers(lng =final_df$Longitude , lat = final_df$L
 
 ```{r , echo=FALSE, warning=FALSE,message=FALSE}
 data <- read_csv("C://Users//Kyriaki Kokka//Documents//GitHub//collision_analysis//data//merged_data.csv")
+
+data$X1st_Road_Class[data$X1st_Road_Class == 0] <- "Not a junction or within 20meters"
+data$X1st_Road_Class[data$X1st_Road_Class == 1] <- "Motorway"
+data$X1st_Road_Class[data$X1st_Road_Class == 2] <- "A(M)"
+data$X1st_Road_Class[data$X1st_Road_Class == 3] <- "A"
+data$X1st_Road_Class[data$X1st_Road_Class == 4] <- "B"
+data$X1st_Road_Class[data$X1st_Road_Class == 5] <- "C"
+data$X1st_Road_Class[data$X1st_Road_Class == 6] <- "Unclassified"
+
+data$Junction_Detail[data$Junction_Detail == 0] <- "Not a junction or within 20meters"
+data$Junction_Detail[data$Junction_Detail == 1] <- "Roundabout"
+data$Junction_Detail[data$Junction_Detail == 2] <- "Mini-roundabout"
+data$Junction_Detail[data$Junction_Detail == 3] <- "T or staggered junction"
+data$Junction_Detail[data$Junction_Detail == 5] <- "Slip road"
+data$Junction_Detail[data$Junction_Detail == 6] <- "Crossroads"
+data$Junction_Detail[data$Junction_Detail == 7] <- "More than 4 arms(not roundabout"
+data$Junction_Detail[data$Junction_Detail == 8] <- "Private drive or entrance"
+data$Junction_Detail[data$Junction_Detail == -1] <- "data missing"
+
+data$Road_Type[data$Road_Type == 1] <- "Roundabout"
+data$Road_Type[data$Road_Type == 2] <- "One way street"
+data$Road_Type[data$Road_Type == 3] <- "Dual carriageway"
+data$Road_Type[data$Road_Type == 6] <- "single carriageway"
+data$Road_Type[data$Road_Type == 7] <- "slip road"
+data$Road_Type[data$Road_Type == 9] <- "unknown"
+data$Road_Type[data$Road_Type == 12] <- "One way street/slip road"
+data$Road_Type[data$Road_Type == -1] <- "data missing"
+
+
 #2.Gis 
 #Read geodatabase for Edinburgh
 #Path
@@ -98,12 +131,18 @@ edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
 edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 ```
 
-> layer =  30mph
-  speed limit = 30mph
+> layer =  existing 20mph
+> speed limit = 30mph
  
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
+mergedDf <- data[data$LAYER == "20mph existing streets" &data$Speed_limit == 30, ]
+summary(mergedDf)
 
-mergedDf <- data[data$LAYER == "30mph" &data$Speed_limit == 30, ]
+#1st road class
+road_class <- mergedDf[mergedDf$X1st_Road_Class == "A", ]
+
+leaflet_map(road_class[1:42,],edin_cons_streets)
+
 leaflet_map(mergedDf,edin_cons_streets)
 
 s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
@@ -114,7 +153,6 @@ s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-3
 s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
 data_frame(s13,s14,s15,s16,s18,s19)
 ```
-
 
 > layer =  existing 20mph
   speed limit = 30mph
