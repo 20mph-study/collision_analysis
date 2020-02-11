@@ -213,7 +213,7 @@ mergedDf <- data[data$LAYER == "30mph" &data$Speed_limit == 20, ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 leaflet_map(mergedDf,edin_cons_streets)
-
+ 
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
 s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
 s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))

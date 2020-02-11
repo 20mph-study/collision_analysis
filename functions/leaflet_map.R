@@ -24,7 +24,7 @@ leaflet_map <- function(final_df,edin_streets){
   road_50 <- filter(edin_streets, edin_streets$LAYER == "50, 60 or 70mph")
   road_trunk <- filter(edin_streets, edin_streets$LAYER == "Trunk roads")
   
-  
+   
   #Visualize
   map <- leaflet() %>% addTiles() %>% addPolylines(data = edin_streets)
   map_near <-map %>% leaflet() %>% addTiles() %>% addMarkers(lng =final_df$X, lat = final_df$Y,

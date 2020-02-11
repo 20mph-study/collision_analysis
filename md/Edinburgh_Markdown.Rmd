@@ -707,7 +707,7 @@ con_data <- con_data[con_data$Date >= "2015-03-05" & con_data$Date <= "2018-03-0
 control_zone_6_df <- data.frame(buffer_data(con_data,control_zone_6))
 control_zone_6_df <- cbind(Control_zone = "6", control_zone_6_df)
 leaflet(control_zone_6) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_6_df$Longitude, lat = control_zone_6_df$Latitude)
-nrow(control_zone_6_df)
+nrow(control_zone_6_df) 
 ```
 
 > Updated dataset for Edinburgh
