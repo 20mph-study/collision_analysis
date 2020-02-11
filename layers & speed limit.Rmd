@@ -200,13 +200,15 @@ mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
 
 #exclude 20mph existing streets and link again accidents to the remaining layers
-network <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
+network_existing <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
 
-new_lines <- nearest_line(mergedDf,network)
+new_lines_existing <- nearest_line(mergedDf,network)
 new_nearest_road <- spTransform(new_lines,"+init=epsg:4326")
 new_nearest_road <-new_lines@data
 new_nearest_road <- unique(merge(new_nearest_road,network@data,by.x = "nearest_line_id" ,by.y = "ID"))
 leaflet_map(new_nearest_road,edin_cons_streets)
+
+
 
 ```
 
@@ -224,6 +226,14 @@ s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= 
 s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
 s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
+
+network_30mph <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
+
+new_lines_30mph <- nearest_line(mergedDf,network)
+new_nearest_road_30mph <- spTransform(new_lines,"+init=epsg:4326")
+new_nearest_road_30mph <-new_lines@data
+new_nearest_road_30mph <- unique(merge(new_nearest_road_30mph,network_30mph@data,by.x = "nearest_line_id" ,by.y = "ID"))
+leaflet_map(new_nearest_road_30mph,edin_cons_streets)
 ```
 
 >layer = local 20mph
