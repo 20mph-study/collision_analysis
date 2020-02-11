@@ -232,7 +232,7 @@ mergedDf <- rename(mergedDf,c("Longitude.x" = "Longitude","Latitude.x"="Latitude
 
 mergedA <- mergedDf[,-c(42)]
 
-write.csv(mergedA, file = paste0(dir_path, "/merged_data.csv"),row.names=FALSE)
+write.csv(mergedA, file = paste0(dir_path, "/merged_data.csv"), row.names = FALSE )
 ```
 
 > Mapping accidents with roads: 2013
@@ -646,7 +646,7 @@ buffer_data <-function(data,zone){
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_1 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_1,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910"))
-con_data <- con_data[con_data$Date <= "2013-07-31" & con_data$Date <= "2016-07-31", ]
+con_data <- con_data[con_data$Date >= "2013-07-31" & con_data$Date <= "2016-07-31", ]
 control_zone_1a_df <- data.frame(buffer_data(con_data,control_zone_1))
 control_zone_1a_df <- cbind(Control_zone = "1a", control_zone_1a_df)
 leaflet(control_zone_1) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_1a_df$Longitude, lat = control_zone_1a_df$Latitude) %>% setView(lng = -2.099075 , lat = 57.149651, zoom = 13)
@@ -658,7 +658,7 @@ nrow(control_zone_1a_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_7 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_7,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("925"))
-con_data <- con_data[con_data$Date <= "2013-07-31" & con_data$Date <= "2016-07-31", ]
+con_data <- con_data[con_data$Date >= "2013-07-31" & con_data$Date <= "2016-07-31", ]
 control_zone_1b_df <- data.frame(buffer_data(con_data,control_zone_7))
 control_zone_1b_df <- cbind(Control_zone = "1b", control_zone_1b_df)
 leaflet(control_zone_7) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_1b_df$Longitude, lat = control_zone_1b_df$Latitude) %>% setView(lng = -2.8833 , lat = 56.3833, zoom = 11)
@@ -670,7 +670,7 @@ nrow(control_zone_1b_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_3 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_3,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("918"))
-con_data <- con_data[con_data$Date <= "2014-02-28" & con_data$Date <= "2017-02-28", ]
+con_data <- con_data[con_data$Date >= "2014-02-28" & con_data$Date <= "2017-02-28", ]
 control_zone_3_df <- data.frame(buffer_data(con_data,control_zone_3))
 control_zone_3_df <- cbind(Control_zone = "3", control_zone_3_df)
 leaflet(control_zone_3) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_3_df$Longitude, lat = control_zone_3_df$Latitude)
@@ -682,7 +682,7 @@ nrow(control_zone_3_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_4 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_4,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("935"))
-con_data <- con_data[con_data$Date <= "2014-08-16" & con_data$Date <= "2017-08-16", ]
+con_data <- con_data[con_data$Date >= "2014-08-16" & con_data$Date <= "2017-08-16", ]
 control_zone_4_df <- data.frame(buffer_data(con_data,control_zone_4))
 control_zone_4_df <- cbind(Control_zone = "4", control_zone_4_df)
 leaflet(control_zone_4) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_4_df$Longitude, lat = control_zone_4_df$Latitude)
@@ -694,7 +694,7 @@ nrow(control_zone_4_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_5 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_5,]        
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("926"))
-con_data <- con_data[con_data$Date <= "2014-08-16" & con_data$Date <= "2017-08-16", ]
+con_data <- con_data[con_data$Date >= "2014-08-16" & con_data$Date <= "2017-08-16", ]
 control_zone_5_df <- data.frame(buffer_data(con_data,control_zone_5))
 control_zone_5_df <- cbind(Control_zone = "5", control_zone_5_df)
 leaflet(control_zone_5) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_5_df$Longitude, lat = control_zone_5_df$Latitude) %>% setView(lng = -4.25763 , lat = 55.86515, zoom = 12)
@@ -706,7 +706,7 @@ nrow(control_zone_5_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_6 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_6,]    
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("935"))
-con_data <- con_data[con_data$Date <= "2015-03-05" & con_data$Date <= "2018-03-05", ]
+con_data <- con_data[con_data$Date >= "2015-03-05" & con_data$Date <= "2018-03-05", ]
 control_zone_6_df <- data.frame(buffer_data(con_data,control_zone_6))
 control_zone_6_df <- cbind(Control_zone = "6", control_zone_6_df)
 leaflet(control_zone_6) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_6_df$Longitude, lat = control_zone_6_df$Latitude)

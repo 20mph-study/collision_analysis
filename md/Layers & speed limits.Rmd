@@ -165,22 +165,6 @@ edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets", ve
 edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
 #Transform to long/lat
 edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
-
-
-```
-
-```{r}
-road_existing <- data[data$LAYER == "20mph existing streets", ]
-leaflet_map(road_existing,edin_cons_streets)
-```
-
-```{r}
-#1st road class
-road_class <- mergedDf[mergedDf$X1st_Road_Class == "A", ]
-leaflet_map(road_class[1:42,],edin_cons_streets)
-
-dataT <- data[data$Junction_Detail == "T or staggered junction", ]
-leaflet_map(dataT[1:947,],edin_cons_streets)
 ```
 
 > layer =  existing 20mph
@@ -191,7 +175,7 @@ mergedDf <- data[data$LAYER == "20mph existing streets" & data$Speed_limit == 30
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
-#leaflet_map(mergedDf,edin_cons_streets)
+leaflet_map(mergedDf,edin_cons_streets)
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
 s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
 s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
@@ -208,15 +192,15 @@ network_existing <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20m
 #mergedDfa  <- mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2015-12-31", ]
 #mergedDfa <- delete_na(mergedDfa,"Accident_Index")
 
-new_lines_existing <- nearest_line(mergedDf,network)
+new_lines_existing <- nearest_line(mergedDf,network_existing)
 new_nearest_road <- spTransform(new_lines_existing,"+init=epsg:4326")
 new_nearest_road <-new_lines_existing@data
-new_nearest_road <- unique(merge(new_nearest_road,network@data,by.x = "nearest_line_id" ,by.y = "ID"))
+new_nearest_road <- unique(merge(new_nearest_road,network_existing@data,by.x = "nearest_line_id" ,by.y = "ID"))
 leaflet_map(new_nearest_road,edin_cons_streets)
 
 new_nearest_road$D <- abs(new_nearest_road$snap_dist - new_nearest_road$snap_dist_before)
 
-new <- new_nearest_road %>% filter(new_nearest_road$D <= 4.77)
+new <- new_nearest_road %>% filter(new_nearest_road$D <= 2)
  
 
 ```
@@ -319,7 +303,7 @@ data_frame(s13,s14,s15,s16,s18,s19)
 >layer =existing  20mph
 Speed limit = 20
 
-```{r}
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
 mergedDf <- data[data$LAYER == "20mph existing streets" & data$Speed_limit == 20, ]
 leaflet_map(mergedDf,edin_cons_streets)
 
@@ -331,7 +315,7 @@ s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= 
 s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
 ```
-```{r}
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
 mergedDf <- data[data$LAYER == "30mph" & data$Speed_limit == 30, ]
 leaflet_map(mergedDf,edin_cons_streets)
 
@@ -343,3 +327,23 @@ s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= 
 s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
 ```
+
+
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+#road_existing <- data[data$LAYER == "20mph existing streets", ]
+#leaflet_map(road_existing,edin_cons_streets)
+```
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+#1st road class
+#road_class <- mergedDf[mergedDf$X1st_Road_Class == "A", ]
+#leaflet_map(road_class[1:42,],edin_cons_streets)
+
+#T or staggered junction
+#dataT <- data[data$Junction_Detail == "T or staggered junction", ]
+#leaflet_map(dataT[1:947,],edin_cons_streets)
+```
+```
+
+
