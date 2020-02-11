@@ -3,8 +3,9 @@
 date: "2/6/2020"
 output: html_document
 ---
+
   
-  ```{r , echo=FALSE, warning=FALSE,message=FALSE}
+```{r , echo=FALSE, warning=FALSE,message=FALSE}
 # Load libraries
 library(rgdal)
 library(leaflet)
@@ -216,7 +217,7 @@ leaflet_map(new_nearest_road,edin_cons_streets)
 new_nearest_road$D <- abs(new_nearest_road$snap_dist - new_nearest_road$snap_dist_before)
 
 new <- new_nearest_road %>% filter(new_nearest_road$D <= 4.77)
-
+ 
 
 ```
 
