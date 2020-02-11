@@ -163,10 +163,24 @@ edin_road_data <- edin_road_data %>% filter(edin_road_data$Speed_limit %in% c(20
 control_zone_data <- read_csv(paste0(dir_path, "/edin_control_data.csv"))
 control_zone_data <- control_zone_data %>% filter(control_zone_data$Speed_limit %in% c(20,30)) 
 casualties_data <- read_csv(paste0(dir_path, "/edin_casualties_data.csv"))
-rd_2019 <- read_csv(paste0(dir_path, "/data2019.csv"))
-rd_2019 <- rd_2019 %>% filter(rd_2019$Speed_limit %in% c(20,30)) 
+#rd_2019 <- read_csv(paste0(dir_path, "/data2019.csv"))
+#2019 data
+rd_2019 <- read_excel(paste0(dir_path, "/2019 DataJune.xls"))
+rd_2019 <- rd_2019 %>% filter(rd_2019$`Speed Limit` %in% c(20,30)) 
+coord <- rd_2019 %>% st_as_sf(coords = c("Grid Ref: Easting","Grid Ref: Northing"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
+rd_2019 <- data.frame(rd_2019,coord)
+
+
+#rename columns
+rd_2019 <- rename(rd_2019,c("Reference.Number"="Accident_Index" ,   "Speed.Limit" = "Speed_limit",
+                            "Grid.Ref..Northing"="Location_Northing_OSGR", "Grid.Ref..Easting"= "Location_Easting_OSGR",
+                            "Accident.Year"="year",  "X"="Longitude",   "Y"="Latitude","Accident.Date" = "Date", "Accident.Severity"  = "Accident_Severity",
+                            "Number.of.Casualties" = "Number_of_Casualties", "Number.of.Vehicles" = "Number_of_Vehicles"))
+
+rd_2019$Date <- as.Date(rd_2019$Date,format="%d/%m/%Y")
 
 edin_road_data <- edin_road_data %>% mutate(year = format(as.Date(edin_road_data$Date, format="%m/%d/%Y"),"%Y"))
+rd_2019 <- rd_2019 %>% mutate(year = format(as.Date(rd_2019$Date, format="%m/%d/%Y"),"%Y"))
 edin_road_data <- rbind.fill(edin_road_data,rd_2019)
 
 #keep a copy for implementation zones
@@ -235,55 +249,40 @@ mergedA <- mergedDf[,-c(42)]
 write.csv(mergedA, file = paste0(dir_path, "/merged_data.csv"), row.names = FALSE )
 ```
 
-> Mapping accidents with roads: 2013
+> Mapping accidents with roads: 2013/2014
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2013", ],edin_road_data[edin_road_data$year == "2013", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2013", ])
+count(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
 aa <- mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,]
 AA <- delete_na(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,],"Accident_Index")
 p13 <- count_pre(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
 pre13 <- count_post(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
 ```
 
-> Mapping accidents with roads: 2014
+> Mapping accidents with roads: 2014/2015
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-leaflet_map(mergedDf[mergedDf$year == "2014", ],edin_road_data[edin_road_data$year == "2014", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2014", ])
+leaflet_map(mergedDf[mergedDf$Date >= "2014-07-31" & mergedDf$Date <= "2015-07-30" ,],edin_cons_streets)
+count(mergedDf[mergedDf$Date >= "2014-07-31" & mergedDf$Date <= "2015-07-30" ,])
 p14 <- count_pre(mergedDf[mergedDf$Date >= "2014-07-31" & mergedDf$Date <= "2015-07-30" ,]) 
 pre14 <- count_post(mergedDf[mergedDf$Date >= "2014-07-31" & mergedDf$Date <= "2015-07-30" ,])
 ```
 
-> Mapping accidents with roads: 2015
+> Mapping accidents with roads: 2015/2016
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-leaflet_map(mergedDf[mergedDf$year == "2015", ],edin_road_data[edin_road_data$year == "2015", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2015", ])
+leaflet_map(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-20" ,],edin_cons_streets)
+count(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-20" ,])
 p15 <- count_pre(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-20" ,])
 pre15 <- count_post(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-20" ,])
 ```
 
-> Mapping accidents with roads: 2016
-
-```{r, echo=FALSE, warning=FALSE,message=FALSE}
-leaflet_map(mergedDf[mergedDf$year == "2016", ],edin_road_data[edin_road_data$year == "2016", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2016", ])
-
-```
-
-> Mapping accidents with roads: 2018
+> Mapping accidents with roads: 2018/2019
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2018", ],edin_road_data[edin_road_data$year == "2018", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2018", ])
-```
-
-> Mapping accidents with roads: 2019
-
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-leaflet_map(mergedDf[mergedDf$year == "2019", ],edin_road_data[edin_road_data$year == "2019", ],edin_cons_streets)
-count(mergedDf[mergedDf$year == "2019", ])
+count(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
 ```
 
 > Count pre 20mph 
@@ -299,11 +298,8 @@ p
 > Count post 20mph
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-post0 <- count_pre(mergedDf[mergedDf$year == "2018", ]) 
-post <- count_pre(mergedDf[mergedDf$year == "2018", ]) + count_pre(mergedDf[mergedDf$year == "2019", ])
-post$LAYER <- as.character(post0$LAYER)
-po <- count_post(mergedDf[mergedDf$year == "2018", ]) + count_post(mergedDf[mergedDf$year == "2019", ])
-po$Speed_limit <- p$Speed_limit
+post <- count_pre(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
+po <- count_post(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
 post
 po
 ```
