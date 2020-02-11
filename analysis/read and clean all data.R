@@ -34,14 +34,13 @@ filter_data <- function(data){
 }
 
 ##Data path 
-#dir_path <- "V:\\Studies\\MOVED\\HealthImpact\\Data\\"
-dir_path <- "C:\\Users\\Kyriaki Kokka\\Desktop\\"
+dir_path <- "../data"
 
 #Edinburgh
 #Read csv files
 #Read every year seperately
 #Read csv file from 2005 to 2014
-rd_source <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2005 to 2014.csv"))  
+rd_source <- read_csv(paste0(dir_path, "/collisions/collisions 2005 to 2014.csv"))  
 rd_source$Date <- as.Date(rd_source$Date,format="%d/%m/%Y")
 
 #2013 data
@@ -53,22 +52,22 @@ rd_2014 <- rd_source[rd_source$Date >="2014-01-01" & rd_source$Date <= "2014-12-
 rd_2014$Date <- as.Date(rd_2014$Date,format="%d/%m/%Y")
 
 #2015 data
-rd_2015 <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2015.csv"))
+rd_2015 <- read_csv(paste0(dir_path, "/collisions/collisions 2015.csv"))
 rd_2015$Date <- as.Date(rd_2015$Date,format="%d/%m/%Y")
 
 #2016 data
-rd_2016 <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2016.csv"))
+rd_2016 <- read_csv(paste0(dir_path, "/collisions/collisions 2016.csv"))
 rd_2016$Date <- as.Date(rd_2016$Date,format="%d/%m/%Y")
 rd_2016 <- rd_2016[rd_2016$Date >="2016-01-01" & rd_2016$Date <= "2016-07-20", ]
 
 #2018 data
-rd_2018 <- read_csv(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2018.csv"))
+rd_2018 <- read_csv(paste0(dir_path, "/collisions/collisions 2018.csv"))
 rd_2018$Date <- as.Date(rd_2018$Date,format="%d/%m/%Y")
 rd_2018$Accident_Index <- as.character(rd_2018$Accident_Index)
 rd_2018 <- rd_2018[rd_2018$Date >="2018-03-06" & rd_2018$Date <= "2018-12-31", ]
 
 #2019 data
-rd_2019 <- read_excel(paste0(dir_path, "20mph study collisions\\collisions\\collisions 2019 Jan to May Edinburgh only.xls"))
+rd_2019 <- read_excel(paste0(dir_path, "/collisions/2019 DataJune.xls"))
 rd_2019 <- rd_2019 %>% filter(rd_2019$`Speed Limit` %in% c(20,30,40)) 
 coord <- rd_2019 %>% st_as_sf(coords = c("Grid Ref: Easting","Grid Ref: Northing"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
 rd_2019 <- data.frame(rd_2019,coord)
@@ -84,25 +83,25 @@ edin_road_data <-delete_na(edin_road_data,c("Longitude","Latitude"))
 
 #Keep a copy to use it in control zones  
 control_zone_data <- edin_road_data %>% filter(edin_road_data$Speed_limit %in% c(20,30,40)) 
-control_zone_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910","918","926","938","925","935","932"))
+control_zone_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910","918","926","938","925","935","923"))
 
 #Edinburgh's data
 edin_road_data <- filter_data(edin_road_data)
 
 #Create new csv file with the cleaned data for Edinburgh
-write.csv(edin_road_data, file = paste0(dir_path, "20mph study collisions\\cleaned datasets\\edin_road_data.csv"),row.names=FALSE)
+write.csv(edin_road_data, file = paste0(dir_path, "/edin_road_data.csv"),row.names=FALSE)
 
 #Create new csv file with the cleaned data for control zones
-write.csv(control_zone_data, file = paste0(dir_path, "20mph study collisions\\cleaned datasets\\edin_control_data.csv"),row.names=FALSE)
+write.csv(control_zone_data, file = paste0(dir_path, "/edin_control_data.csv"),row.names=FALSE)
 
 #Create new csv file with 2019 cleaned data 
-write.csv(rd_2019, file = paste0(dir_path, "20mph study collisions\\cleaned datasets\\data2019.csv"),row.names=FALSE)
+write.csv(rd_2019, file = paste0(dir_path, "/data2019.csv"),row.names=FALSE)
 
 ##Read casualties data
-cs_source <- read_csv(paste0(dir_path, "20mph study collisions\\20mph study casualties\\Casualties2005to2014.csv"))
-cs_2015 <- read_csv(paste0(dir_path, "20mph study collisions\\20mph study casualties\\Casualties2015.csv"))
-cs_2016 <- read_csv(paste0(dir_path, "20mph study collisions\\20mph study casualties\\Casualties2016.csv"))
-cs_2018 <- read_csv(paste0(dir_path, "20mph study collisions\\20mph study casualties\\Casualties2018.csv"))
+cs_source <- read_csv(paste0(dir_path, "/Casualties2005to2014.csv"))
+cs_2015 <- read_csv(paste0(dir_path, "/Casualties2015.csv"))
+cs_2016 <- read_csv(paste0(dir_path, "/Casualties2016.csv"))
+cs_2018 <- read_csv(paste0(dir_path, "/Casualties2018.csv"))
 cs_2018$Accident_Index <- as.character(cs_2018$Accident_Index)
 cs_source <- cs_source[,c(1,8)]
 cs_2015 <- cs_2015[,c(1,8)]
@@ -114,7 +113,22 @@ casualties_data <- rbind(cs_source,cs_2015,cs_2016,cs_2018)
 casualties_data <-delete_na(casualties_data,c("Accident_Index"))
 
 #Create new csv file with the cleaned data
-write.csv(casualties_data, file = paste0(dir_path, "20mph study collisions\\cleaned datasets\\edin_casualties_data.csv"),row.names=FALSE)
+write.csv(casualties_data, file = paste0(dir_path, "/edin_casualties_data.csv"),row.names=FALSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #Belfast data 
 #PSNI data
