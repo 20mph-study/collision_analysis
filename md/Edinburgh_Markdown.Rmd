@@ -97,7 +97,7 @@ edin_road_network <- edin_cons_streets
 
 #edin_road_network@data$LAYER <- as.character(edin_road_network@data$LAYER)
 #edin_road_network <- st_as_sf(edin_road_network)
-edin_road_network <- edin_road_network[edin_road_network@data$LAYER  %in% c("20mph existing streets", "20mph local streets","20mph main streets","30mph"),]
+edin_road_network <- edin_road_network[edin_road_network@data$LAYER  %in% c("20mph existing streets", "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
 
 edin_road_network <- spTransform(edin_road_network,"+init=epsg:4326")
 #nearest_road2 <- nearest_line(edin_road_data,edin_road_network)
@@ -169,15 +169,12 @@ rd_2019 <- rd_2019 %>% filter(rd_2019$Speed_limit %in% c(20,30))
 edin_road_data <- edin_road_data %>% mutate(year = format(as.Date(edin_road_data$Date, format="%m/%d/%Y"),"%Y"))
 edin_road_data <- rbind.fill(edin_road_data,rd_2019)
 
-
 #keep a copy for implementation zones
 data <- edin_road_data
 edin_road_data <-rowid_to_column(edin_road_data, "ID")
 
 df <- data
-
 names <- data.frame(names(edin_road_data))
-
 ```
 
 > Time series analysis
@@ -243,6 +240,8 @@ write.csv(mergedA, file = paste0(dir_path, "/merged_data.csv"),row.names=FALSE)
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2013", ],edin_road_data[edin_road_data$year == "2013", ],edin_cons_streets)
 count(mergedDf[mergedDf$year == "2013", ])
+aa <- mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,]
+AA <- delete_na(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,],"Accident_Index")
 p13 <- count_pre(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
 pre13 <- count_post(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
 ```
@@ -252,7 +251,7 @@ pre13 <- count_post(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$year == "2014", ],edin_road_data[edin_road_data$year == "2014", ],edin_cons_streets)
 count(mergedDf[mergedDf$year == "2014", ])
-p14 <- count_pre(mergedDf[mergedDf$Date >= "2014-07-31" & mergedDf$Date <= "2015-07-30" ,])
+p14 <- count_pre(mergedDf[mergedDf$Date >= "2014-07-31" & mergedDf$Date <= "2015-07-30" ,]) 
 pre14 <- count_post(mergedDf[mergedDf$Date >= "2014-07-31" & mergedDf$Date <= "2015-07-30" ,])
 ```
 
@@ -315,7 +314,7 @@ po
 head(mergedDf[,c(3,20,40)])
 ```
 
-> Table: Average annual road traffic collision rates in the city of Edinburgh ( GIS )
+> Table: Average annual road traffic collision rates in the city of Edinburgh ( council data )
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #count streets that have changed from 30 to 20mph
@@ -343,7 +342,7 @@ colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-
 kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
-> Table: Average annual road traffic collision rates in the city of Edinburgh ( Stats19 )
+> Table: Average annual road traffic collision rates in the city of Edinburgh ( police )
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 
@@ -378,7 +377,9 @@ d <- sum(po[,2])
 sum1 <- (a+b+c)/3
 sum2 <- d
 unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
-secular_trend <- ((a-b)/a  + (b-c)/b)/2
+trend_a <- (a-b)/a 
+trend_b <- (b-c)/b
+secular_trend <- (trend_a + trend_b) / 2
 f <- ( unadjusted_estimate - secular_trend ) * 100
 
 Y_2013_14 <- c(a," ", round(f,digits = 2))
@@ -391,32 +392,7 @@ colnames(df)=c("Tax year", "2013/14","2014/15","2015/16", "2018/19")
 
 kable(df,caption = "Effect estimate(GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
-
-> Effect estimate ( Stats19 )
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-Tax_year <- c("Annual number of collisions"," ","Effect estimate ")
-a <- sum(p13[,2])
-b <- sum(p14[,2])
-c <- sum(p15[,2])
-d <- sum(post[,2])
-
-sum1 <- (a+b+c)/3
-sum2 <- d
-unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
-secular_trend <- ((a-b)/a  + (b-c)/b)/2
-f <- ( unadjusted_estimate - secular_trend ) * 100
-
-Y_2013_14 <- c(a," ", round(f,digits = 2))
-Y_2014_15 <- c(b," "," ")
-Y_2015_16 <- c(c," "," ")
-Y_2018_19 <- c(d," "," ")
-df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2018_19)
-colnames(df)=c("Tax year", "2013/14","2014/15","2015/16", "2018/19")
-
-kable(df,caption = "Effect estimate(Stats19)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
-```
-
+ 
 > Data used for the implementation and control zones (2013-2018)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
@@ -424,11 +400,12 @@ kable(df,caption = "Effect estimate(Stats19)") %>% kable_styling(bootstrap_optio
 #read 2017, part of 2016 & 2018 data
 rd2016 <- read_csv(paste0(dir_path, "/collisions 2016.csv"))
 rd2016$Date <- as.Date(rd2016$Date,format="%d/%m/%Y")
-rd2016 <- rd2016 %>% filter(rd2016$Date > "2016-07-20" & rd2016$Date <= "2016-12-31" )
+rd2016 <- rd2016 %>% filter(rd2016$Date >= "2016-07-21" & rd2016$Date <= "2016-12-31" )
 rd2017 <- read_csv(paste0(dir_path, "/collisions 2017.csv"))
+rd2017$Date <- as.Date(rd2017$Date,format="%d/%m/%Y")
 rd2018 <- read_csv(paste0(dir_path, "/collisions 2018.csv"))
 rd2018$Date <- as.Date(rd2018$Date,format="%d/%m/%Y")
-rd2018 <-rd2018 %>% filter(rd2018$Date > "2018-03-05" & rd2018$Date <= "2018-12-31" )
+rd2018 <-rd2018 %>% filter(rd2018$Date >= "2018-01-01" & rd2018$Date <= "2018-03-05" )
 
 rd <- rbind(rd2016,rd2017,rd2018)
 
@@ -440,6 +417,7 @@ edin_rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% ("923"))
 
 edin_road_data <- rbind.fill(edin_rd,edin_road_data)
 control_zone_data <- rbind.fill(rd,control_zone_data)
+control_zone_data$Date <- as.character(control_zone_data$Date)
 control_zone_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910","925","918","935","926")) 
 
 data <- edin_road_data
@@ -558,7 +536,6 @@ s_16 <- count_impl(total[total$Date >= "2016-01-01" & total$Date <= "2016-12-31"
 > Mapping accidents with implementation zones: 2017
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-
 total <- total_zones[total_zones$Date >= "2017-01-01" & total_zones$Date <= "2017-12-31" ,]
 
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
@@ -578,16 +555,6 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
 s_18 <- count_impl(total[total$Date >= "2018-01-01" & total$Date <= "2018-12-31", ])
-```
-
-> Mapping accidents with implementation zones: 2019
-
-```{r, echo=FALSE, warning=FALSE,message=FALSE}
-total <- total_zones[total_zones$year == "2019", ]
-map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
-                         popup =paste("Accident index: ", total$Accident_Index, "<br>",
-                                      "Zone: ", total$ImplementationZone))
-s_19 <- count_impl(total[total$year == "2019", ])
 ```
 
 > Output column: Implementation Zone
@@ -653,9 +620,9 @@ kable(df,caption = "Table 3: Average annual road traffic collision rates in the 
 > Total accidents per zone
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-s <- s_13 + s_14 + s_15 + s_16 + s_18 + s_19 
-s$ImplementationZone <- s_13$ImplementationZone 
-s
+#s <- s_13 + s_14 + s_15 + s_16 + s_18 + s_19 
+#s$ImplementationZone <- s_13$ImplementationZone 
+#s
 ```
 
 
@@ -679,6 +646,7 @@ buffer_data <-function(data,zone){
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_1 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_1,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910"))
+con_data <- con_data[con_data$Date <= "2013-07-31" & con_data$Date <= "2016-07-31", ]
 control_zone_1a_df <- data.frame(buffer_data(con_data,control_zone_1))
 control_zone_1a_df <- cbind(Control_zone = "1a", control_zone_1a_df)
 leaflet(control_zone_1) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_1a_df$Longitude, lat = control_zone_1a_df$Latitude) %>% setView(lng = -2.099075 , lat = 57.149651, zoom = 13)
@@ -690,6 +658,7 @@ nrow(control_zone_1a_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_7 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_7,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("925"))
+con_data <- con_data[con_data$Date <= "2013-07-31" & con_data$Date <= "2016-07-31", ]
 control_zone_1b_df <- data.frame(buffer_data(con_data,control_zone_7))
 control_zone_1b_df <- cbind(Control_zone = "1b", control_zone_1b_df)
 leaflet(control_zone_7) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_1b_df$Longitude, lat = control_zone_1b_df$Latitude) %>% setView(lng = -2.8833 , lat = 56.3833, zoom = 11)
@@ -701,6 +670,7 @@ nrow(control_zone_1b_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_3 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_3,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("918"))
+con_data <- con_data[con_data$Date <= "2014-02-28" & con_data$Date <= "2017-02-28", ]
 control_zone_3_df <- data.frame(buffer_data(con_data,control_zone_3))
 control_zone_3_df <- cbind(Control_zone = "3", control_zone_3_df)
 leaflet(control_zone_3) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_3_df$Longitude, lat = control_zone_3_df$Latitude)
@@ -712,6 +682,7 @@ nrow(control_zone_3_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_4 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_4,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("935"))
+con_data <- con_data[con_data$Date <= "2014-08-16" & con_data$Date <= "2017-08-16", ]
 control_zone_4_df <- data.frame(buffer_data(con_data,control_zone_4))
 control_zone_4_df <- cbind(Control_zone = "4", control_zone_4_df)
 leaflet(control_zone_4) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_4_df$Longitude, lat = control_zone_4_df$Latitude)
@@ -723,6 +694,7 @@ nrow(control_zone_4_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_5 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_5,]        
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("926"))
+con_data <- con_data[con_data$Date <= "2014-08-16" & con_data$Date <= "2017-08-16", ]
 control_zone_5_df <- data.frame(buffer_data(con_data,control_zone_5))
 control_zone_5_df <- cbind(Control_zone = "5", control_zone_5_df)
 leaflet(control_zone_5) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_5_df$Longitude, lat = control_zone_5_df$Latitude) %>% setView(lng = -4.25763 , lat = 55.86515, zoom = 12)
@@ -734,6 +706,7 @@ nrow(control_zone_5_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_6 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_6,]    
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("935"))
+con_data <- con_data[con_data$Date <= "2015-03-05" & con_data$Date <= "2018-03-05", ]
 control_zone_6_df <- data.frame(buffer_data(con_data,control_zone_6))
 control_zone_6_df <- cbind(Control_zone = "6", control_zone_6_df)
 leaflet(control_zone_6) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_6_df$Longitude, lat = control_zone_6_df$Latitude)
