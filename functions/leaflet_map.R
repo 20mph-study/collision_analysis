@@ -5,14 +5,13 @@ leaflet_map <- function(final_df,edin_streets){
   
   #Convert data to planar projection  
   edin_streets <- spTransform(edin_streets,crs)
-  coordinates(road_df) <- ~ Longitude + Latitude
+  coordinates(final_df) <- ~ Longitude + Latitude
   
   #Convert data projections back to lat/long to plot with leaflet
   edin_streets <- spTransform(edin_streets,"+init=epsg:4326")
   
   #Same projections
   proj4string(final_df) <- proj4string(edin_streets)
-  proj4string(road_df) <- proj4string(edin_streets)
   
   edin_streets <- st_as_sf(edin_streets)
   #Leaflet maps of the road network , accidents and their projections

@@ -243,7 +243,7 @@ mergedDf <- unique(rbind.fill(acc_sev,mer))
 #casualties_data <- rbind.fill(casualties_data,rd_2019)
 
 mergedDf <- rename(mergedDf,c("Longitude.x" = "Longitude","Latitude.x"="Latitude","year.x"="year","Speed_limit.x"="Speed_limit","Date.x"="Date"))
-
+mergedDf$Date <- as.character(mergedDf$Date)
 mergedA <- mergedDf[,-c(42)]
 
 write.csv(mergedA, file = paste0(dir_path, "/merged_data.csv"), row.names = FALSE )
@@ -252,7 +252,7 @@ write.csv(mergedA, file = paste0(dir_path, "/merged_data.csv"), row.names = FALS
 > Mapping accidents with roads: 2013/2014
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-leaflet_map(mergedDf[mergedDf$year == "2013", ],edin_road_data[edin_road_data$year == "2013", ],edin_cons_streets)
+leaflet_map(mergedDf[mergedDf$year == "2013", ],edin_cons_streets)
 count(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
 aa <- mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,]
 AA <- delete_na(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,],"Accident_Index")
@@ -281,7 +281,7 @@ pre15 <- count_post(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2
 > Mapping accidents with roads: 2018/2019
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-leaflet_map(mergedDf[mergedDf$year == "2018", ],edin_road_data[edin_road_data$year == "2018", ],edin_cons_streets)
+leaflet_map(mergedDf[mergedDf$year == "2018", ],edin_cons_streets)
 count(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
 ```
 
@@ -361,7 +361,7 @@ colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-
 kable(df,caption = "Table 2: Average annual road traffic collision rates in the city of Edinburgh (Stats19)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
-> Effect estimate ( GIS )
+> Effect estimate
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 Tax_year <- c("Annual number of collisions"," ","Effect estimate ")
@@ -381,12 +381,13 @@ f <- ( unadjusted_estimate - secular_trend ) * 100
 Y_2013_14 <- c(a," ", round(f,digits = 2))
 Y_2014_15 <- c(b," "," ")
 Y_2015_16 <- c(c," "," ")
+Y_2016_17 <- c("Intervention"," "," ")
 Y_2018_19 <- c(d," "," ")
 
-df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2018_19)
-colnames(df)=c("Tax year", "2013/14","2014/15","2015/16", "2018/19")
+df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2016_17,Y_2018_19)
+colnames(df)=c("Tax year", "2013/14","2014/15","2015/16","2016/17" ,"2018/19")
 
-kable(df,caption = "Effect estimate(GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+kable(df,caption = "Effect estimate") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
  
 > Data used for the implementation and control zones (2013-2018)
