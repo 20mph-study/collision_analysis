@@ -392,9 +392,9 @@ calculations <- c("a+b+c / 3 ", "a-b /a", "b-c / b", "Unadjusted_estimate", "Sec
 column <- c(round(sum1,digits = 2),round(trend_a,digits = 2)*100,round(trend_b,digits = 2)*100,round(unadjusted_estimate,digits = 2) *100,round(secular_trend,digits = 2)*100)
 
 df_cal <- data.frame(calculations,column)
-colnames(df_cal) <-  
+colnames(df_cal) <-  c("Calculations", " ")
 
-kable(list(head(df),head(df_cal)),caption = "Effect estimate",booktabs = TRUE, valign = 't') %>% kable_styling(bootstrap_options = "hover") 
+kable(list(df,df_cal),caption = "Effect estimate", booktabs = TRUE, valign = 't') %>% kable_styling(bootstrap_options = c("hover","striped") )
 
 #round(unadjusted_estimate*100,digits = 2),round(secular_trend*100,digits = 2),
 #"striped", "hover"
