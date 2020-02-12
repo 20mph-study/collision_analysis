@@ -288,7 +288,6 @@ count(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
 > Count pre 20mph 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-#No 2016
 pre <- count_pre(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2016-07-20" ,])
 p <- count_post(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2016-07-20" ,])
 pre
@@ -335,7 +334,7 @@ percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2)
 type <- c("at 30mph","at 20mph","Part time 20mph","at 30mph changed to 20mph","All streets")
 df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates*100)
 colnames(df)=c(" ", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
-kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (council data)") %>% kable_styling(bootstrap_options = c("striped", "hover")) %>%  footnote(general = " ", number =c("All accidents at 20mph, 30mph","pre-20mph : 2013 / 2016 ( 3 years )","post-20mph : 2018 / 2019 ( 16 months )","diff in rates = pre - post / pre ")) %>% pack_rows("Streets not changed", 1, 3,label_row_css = "background-color: #e5f5e0") %>% pack_rows("Streets changed", 4, 4,label_row_css = "background-color: #e5f5e0") %>% pack_rows("All streets", 5, 5,label_row_css = "background-color:#e5f5e0 ;")
+kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (council data)") %>% kable_styling(bootstrap_options = c("basic"),font_size = 12 ) %>%  footnote(general = " ", number =c("All accidents at 20mph, 30mph","pre-20mph : 2013 / 2016 ( 3 years )","post-20mph : 2018 / 2019 ( 16 months )","diff in rates = pre - post / pre ")) %>% pack_rows("Streets stayed", 1, 3,label_row_css = "background-color: #e5f5e0 ;") %>% pack_rows("Streets changed", 4, 4,label_row_css = "background-color: #e5f5e0;") %>% pack_rows("All streets", 5, 5,label_row_css = "background-color:#e5f5e0 ;")
 #e5f5e0
 ```
 
@@ -359,7 +358,7 @@ type <- c("Streets at 20mph","Streets at 30mph","All streets")
 df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates * 100)
 colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
 
-kable(df,caption = "Table 2: Average annual road traffic collision rates in the city of Edinburgh (police)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+kable(df,caption = "Table 2: Average annual road traffic collision rates in the city of Edinburgh (police)") %>% kable_styling(bootstrap_options = c("basic"))
 ```
 
 > Effect estimate
@@ -396,10 +395,8 @@ column <- c(round(sum1,digits = 2),round(trend_a,digits = 2)*100,round(trend_b,d
 df_cal <- data.frame(calculations,column)
 colnames(df_cal) <-  c("Formula", " ")
 
-kable(df,caption = "Effect estimate", booktabs = TRUE, valign = 't') %>% kable_styling(bootstrap_options = c("hover","striped") )
-kable(df_cal,caption = "Calculations") %>% kable_styling(bootstrap_options = c("hover","striped") )
-#round(unadjusted_estimate*100,digits = 2),round(secular_trend*100,digits = 2),
-#"striped", "hover"
+kable(df,caption = "Effect estimate", booktabs = TRUE, valign = 't') %>% kable_styling(position = "center",bootstrap_options = c("hover","striped"),font_size = 20 )
+kable(df_cal,caption = "Calculations") %>% kable_styling(position = "center",bootstrap_options = c("basic"),font_size = 20 )
 ```
  
 > Data used for the implementation and control zones (2013-2018)
