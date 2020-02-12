@@ -327,7 +327,7 @@ collisions_post_20mph <- c(post[post$LAYER == "30mph",2],post[post$LAYER == "20m
 
 #rate per year
 rate_pre_20mph <- round(collisions_pre_20mph/3,2)
-rate_post_20mph <- round(collisions_post_20mph/1.25,2)
+rate_post_20mph <- round(collisions_post_20mph/1.3,2)
 
 diff_in_rates <-  rate_pre_20mph - rate_post_20mph
 percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2) 
@@ -335,7 +335,7 @@ percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2)
 type <- c("Streets at 30mph","Streets at 20mph","Part time 20mph","Streets at 30mph changed to 20mph","All streets")
 df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates*100)
 colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
-kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (council data)") %>% kable_styling(bootstrap_options = c("striped", "hover")) %>%  footnote(general = " ", number = "All accidents at 20mph, 30mph used in the table")
 ```
 
 > Table: Average annual road traffic collision rates in the city of Edinburgh ( police )
@@ -349,7 +349,7 @@ collisions_pre_20mph <- c(p[p$Speed_limit == 20,2],p[p$Speed_limit == 30,2],sum_
 collisions_post_20mph <- c(po[po$Speed_limit == 20,2],po[po$Speed_limit == 30,2],sum_post_2)
 
 rate_pre_20mph <- round(collisions_pre_20mph/3,2)
-rate_post_20mph <- round(collisions_post_20mph/1.25,2)
+rate_post_20mph <- round(collisions_post_20mph/1.3,2)
 
 diff_in_rates <-  rate_pre_20mph - rate_post_20mph
 percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2)
@@ -358,36 +358,46 @@ type <- c("Streets at 20mph","Streets at 30mph","All streets")
 df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates * 100)
 colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
 
-kable(df,caption = "Table 2: Average annual road traffic collision rates in the city of Edinburgh (Stats19)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+kable(df,caption = "Table 2: Average annual road traffic collision rates in the city of Edinburgh (police)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
 > Effect estimate
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-Tax_year <- c("Annual number of collisions"," ","Effect estimate ")
+Tax_year <- c("Annual number of collisions","Rate"," "," ","Effect estimate ")
 a <- sum(pre13[,2])
 b <- sum(pre14[,2])
 c <- sum(pre15[,2])
 d <- sum(po[,2])
 
 sum1 <- (a+b+c) / 3
-sum2 <- d / 1.25
+sum2 <- d / 1.3
 unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
 trend_a <- (a-b)/a 
 trend_b <- (b-c)/b
 secular_trend <- (trend_a + trend_b) / 2
 f <- ( unadjusted_estimate - secular_trend ) * 100
 
-Y_2013_14 <- c(a," ", round(f,digits = 2))
-Y_2014_15 <- c(b," "," ")
-Y_2015_16 <- c(c," "," ")
-Y_2016_17 <- c("Intervention"," "," ")
-Y_2018_19 <- c(d," "," ")
+Y_2013_14 <- c(a,a," "," ", round(f,digits = 2))
+Y_2014_15 <- c(b,b," "," "," ")
+Y_2015_16 <- c(c,c," "," "," ")
+Y_2016_18 <- c(" "," "," "," "," ")
+Y_2018_19 <- c(d, round(sum2,digits = 2)," "," "," ")
 
-df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2016_17,Y_2018_19)
-colnames(df)=c("Tax year", "2013/14","2014/15","2015/16","2016/17" ,"2018/19")
+df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2016_18,Y_2018_19)
+colnames(df) <- c("Tax year", "2013/14","2014/15","2015/16","2016/17","2018/19")
 
-kable(df,caption = "Effect estimate") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+
+calculations <- c("a+b+c / 3 ", "a-b /a", "b-c / b", "Unadjusted_estimate", "Secular_trend" )
+column <- c(round(sum1,digits = 2),round(trend_a,digits = 2)*100,round(trend_b,digits = 2)*100,round(unadjusted_estimate,digits = 2) *100,round(secular_trend,digits = 2)*100)
+
+df_cal <- data.frame(calculations,column)
+colnames(df_cal) <-  
+
+kable(list(head(df),head(df_cal)),caption = "Effect estimate",booktabs = TRUE, valign = 't') %>% kable_styling(bootstrap_options = "hover") 
+
+#round(unadjusted_estimate*100,digits = 2),round(secular_trend*100,digits = 2),
+#"striped", "hover"
 ```
  
 > Data used for the implementation and control zones (2013-2018)
