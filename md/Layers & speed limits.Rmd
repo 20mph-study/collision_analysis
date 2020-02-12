@@ -255,7 +255,7 @@ Speed limit = 30
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 
 mergedDf <- data[data$LAYER == "20mph local streets" & data$Speed_limit == 30, ]
-leaflet_map(mergedDf,edin_cons_streets)
+#leaflet_map(mergedDf,edin_cons_streets)
 
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
 s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
@@ -272,7 +272,7 @@ Speed limit = 30
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 
 mergedDf <- data[data$LAYER == "20mph main streets" & data$Speed_limit == 30, ]
-leaflet_map(mergedDf,edin_cons_streets)
+#leaflet_map(mergedDf,edin_cons_streets)
 
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
 s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
@@ -288,7 +288,7 @@ Speed limit = 20
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 mergedDf <- data[data$LAYER == "20mph main streets" & data$Speed_limit == 20, ]
-leaflet_map(mergedDf,edin_cons_streets)
+#leaflet_map(mergedDf,edin_cons_streets)
 
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
 s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
@@ -305,7 +305,7 @@ Speed limit = 20
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 mergedDf <- data[data$LAYER == "20mph existing streets" & data$Speed_limit == 20, ]
-leaflet_map(mergedDf,edin_cons_streets)
+#leaflet_map(mergedDf,edin_cons_streets)
 
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
 s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
@@ -317,7 +317,7 @@ data_frame(s13,s14,s15,s16,s18,s19)
 ```
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 mergedDf <- data[data$LAYER == "30mph" & data$Speed_limit == 30, ]
-leaflet_map(mergedDf,edin_cons_streets)
+#leaflet_map(mergedDf,edin_cons_streets)
 
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
 s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
