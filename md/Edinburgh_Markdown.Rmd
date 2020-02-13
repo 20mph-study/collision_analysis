@@ -25,51 +25,20 @@ library(kableExtra)
 library(plyr)
 library(RColorBrewer)
 
-#1.Function for keeping data of Edinburgh with speed limits 20/30/40
-filter_data <- function(data){
-  data <- data %>% filter(data$Speed_limit %in% c(20,30,40)) 
-  data <- data %>% filter(data$`Local_Authority_(District)` == 923)
-  #data$Date <- as.Date(data$Date,format="%d/%m/%Y")
-  data <- na.omit(data[1:31])#remove NA obs
-  return(data)
-}
-
-#2.Function for deleting Na points
-delete_na <- function(data, desiredCols) {
-  completeVec <- complete.cases(data[, desiredCols])
-  return(data[completeVec, ])
-}
-
-#Count function
-count <- function(data_df){
-  count1 <- aggregate(Accident_Index~LAYER,data_df,length)
-  count2 <- aggregate(Accident_Index~Speed_limit,data_df,length)
-  print(count1)
-  print(count2)
-}
-
-#Count accidents per layer
-count_pre <- function(data_df){
-  count1 <-  aggregate(Accident_Index~LAYER,data_df,length)
-  return(count1)
-}
-
-#Count accidents per speed limit
-count_post <- function(data_df){
-  count1 <-  aggregate(Accident_Index~Speed_limit,data_df,length)
-  return(count1)
-}
-
-#Count accidents per zone
-count_impl <- function(data_df){
-  count1 <- aggregate(Accident_Index~ImplementationZone,data_df,length)
-  print(count1)
-  return(count1)
-}
-
 source('../functions/localSnapPointsToLines.R')
 source('../functions/nearest_line.R')
 source('../functions/leaflet_map.R')
+source('../functions/time_plot.R')
+source('../functions/table_annual.R')
+source('../functions/table_police.R')
+source('../functions/buffer_data.R')
+source('../functions/read_road_data.R')
+source('../functions/filter_data.R')
+source('../functions/delete_na.R')
+source('../functions/count.R')
+source('../functions/count_pre.R')
+source('../functions/count_post.R')
+source('../functions/count_impl.R')
 
 ##1.Data path 
 dir_path <- "../data"
@@ -78,9 +47,6 @@ dir_path <- "../data"
 > Edinburgh's road network
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
-#Data inputs
-
-#2.Gis 
 #Read geodatabase for Edinburgh
 #Path
 gdb_path <- paste0(dir_path, "/20mph.gdb")
@@ -94,20 +60,13 @@ edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
 edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 
 edin_road_network <- edin_cons_streets
-
-#edin_road_network@data$LAYER <- as.character(edin_road_network@data$LAYER)
-#edin_road_network <- st_as_sf(edin_road_network)
 edin_road_network <- edin_road_network[edin_road_network@data$LAYER  %in% c("20mph existing streets", "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
-
 edin_road_network <- spTransform(edin_road_network,"+init=epsg:4326")
-#nearest_road2 <- nearest_line(edin_road_data,edin_road_network)
-
-#leaflet(edin_road_network) %>% addTiles() %>% addPolylines(popup=edin_road_network$LAYER)
 
 #Visualize with leaflet
-#col = c("#bf812d","#80cdc1","#d6604d","#525252","#1a9850","#cab2d6","#e6f598","#4393c3")
+col = c("#bf812d","#80cdc1","#d6604d","#525252","#1a9850","#cab2d6","#e6f598","#4393c3")
 #my.palette <- brewer.pal(n = 8, name = "Set3")
-#spplot(edin_cons_streets,'LAYER',col.regions = col)
+spplot(edin_cons_streets,'LAYER',col.regions = col)
 leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
 ```
 
@@ -148,87 +107,39 @@ control_gdb_layers <- ogrListLayers(control_gdb_path)
 #Read data
 edin_control_zone <- readOGR(dsn = control_gdb_path,layer="SG_DataZone_Bdry_2011", verbose = FALSE)
 edin_control_zone <- spTransform(edin_control_zone, "+init=epsg:4326")
-
 control_zone_all <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_all,]
 
 leaflet(control_zone_all) %>% addTiles() %>% addPolygons()
-
 ```
 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
 #Read data
-edin_road_data <- read_csv(paste0(dir_path, "/edin_road_data.csv"))
-edin_road_data <- edin_road_data %>% filter(edin_road_data$Speed_limit %in% c(20,30)) 
+edin_road_data <- read_road_data()
 control_zone_data <- read_csv(paste0(dir_path, "/edin_control_data.csv"))
 control_zone_data <- control_zone_data %>% filter(control_zone_data$Speed_limit %in% c(20,30)) 
 casualties_data <- read_csv(paste0(dir_path, "/edin_casualties_data.csv"))
-#rd_2019 <- read_csv(paste0(dir_path, "/data2019.csv"))
-#2019 data
-rd_2019 <- read_excel(paste0(dir_path, "/2019 DataJune.xls"))
-rd_2019 <- rd_2019 %>% filter(rd_2019$`Speed Limit` %in% c(20,30)) 
-coord <- rd_2019 %>% st_as_sf(coords = c("Grid Ref: Easting","Grid Ref: Northing"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
-rd_2019 <- data.frame(rd_2019,coord)
-
-
-#rename columns
-rd_2019 <- rename(rd_2019,c("Reference.Number"="Accident_Index" ,   "Speed.Limit" = "Speed_limit",
-                            "Grid.Ref..Northing"="Location_Northing_OSGR", "Grid.Ref..Easting"= "Location_Easting_OSGR",
-                            "Accident.Year"="year",  "X"="Longitude",   "Y"="Latitude","Accident.Date" = "Date", "Accident.Severity"  = "Accident_Severity",
-                            "Number.of.Casualties" = "Number_of_Casualties", "Number.of.Vehicles" = "Number_of_Vehicles"))
-
-rd_2019$Date <- as.Date(rd_2019$Date,format="%d/%m/%Y")
-
-edin_road_data <- edin_road_data %>% mutate(year = format(as.Date(edin_road_data$Date, format="%m/%d/%Y"),"%Y"))
-rd_2019 <- rd_2019 %>% mutate(year = format(as.Date(rd_2019$Date, format="%m/%d/%Y"),"%Y"))
-edin_road_data <- rbind.fill(edin_road_data,rd_2019)
 
 #keep a copy for implementation zones
 data <- edin_road_data
-edin_road_data <-rowid_to_column(edin_road_data, "ID")
-
-#find the new longitude and latitude data
-edin_road_data <-  rename(edin_road_data,c("Longitude"="Longitude before","Latitude"="Latitude before")) 
-coord <- edin_road_data %>% st_as_sf(coords = c("Location_Easting_OSGR","Location_Northing_OSGR"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
-edin_road_data <- data.frame(edin_road_data,coord)
-edin_road_data <-  rename(edin_road_data,c("X"="Longitude","Y"="Latitude")) 
-
 df <- data
-names <- data.frame(names(edin_road_data))
 ```
 
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #check problems in longitude/latitude
-data0 <- edin_road_data[edin_road_data$Date >= "2016-01-01" & edin_road_data$Date <= "2016-12-31", ]
+data0 <- edin_road_data[edin_road_data$Date >= "2013-01-01" & edin_road_data$Date <= "2013-12-31", ]
 leaflet(edin_cons_streets) %>% addTiles() %>% addPolylines() %>% addMarkers(lng =data0$Longitude, lat = data0$Latitude) %>% 
   addCircleMarkers(lng = data0$Longitude.before, lat = data0$Latitude.before )
 ```
 
-
 > Time series analysis
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-ggplot(edin_road_data) +
- aes(x = Speed_limit) +
- geom_histogram(bins = 30L, fill = "#a6d96a") +
- theme_minimal() +
- facet_wrap(vars(year))
-
-ggplot(edin_road_data) +
- aes(x = Date, colour = Speed_limit) +
- geom_histogram(bins = 30L, fill = "#a6d96a") +
- scale_color_distiller(palette = "Greens") +
- theme_minimal()
-
-ggplot(edin_road_data) +
- aes(x = Date, weight = Speed_limit) +
- geom_bar(fill = "#1a9850") +
- theme_minimal()
+time_plot(edin_road_data)
 ```
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-#Data manipulation
 #Get nearest line for pre and post 20mph using the nearest_line function, use only layers we care edin_road network instead of edin_cons_streets
 #nearest_road <- nearest_line(edin_road_data,edin_cons_streets)
 #nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
@@ -244,7 +155,6 @@ mergedDf_original <- unique(merge(data.frame(nearest_road),edin_cons_streets@dat
 mergedDf <- unique(merge(data.frame(nearest_road),edin_road_network@data,by.x = "nearest_line_id" ,by.y = "ID"))
 mer <- mergedDf [mergedDf$year == "2019",]
 mergedDf <- merge(mergedDf,casualties_data)
-
 
 mergedDf$Casualty_Severity <- as.character(mergedDf$Casualty_Severity)
 mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 1] <- "Fatal"
@@ -323,56 +233,11 @@ po
 head(mergedDf[,c(3,20,40)])
 ```
 
-> Table: Average annual road traffic collision rates in the city of Edinburgh ( council data )
+> Table: Average annual road traffic collision rates in the city of Edinburgh 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-#count streets that have changed from 30 to 20mph
-s1 <- pre[pre$LAYER == "20mph main streets",2] + pre[pre$LAYER == "20mph local streets",2]
-s2 <- post[post$LAYER == "20mph main streets",2] + post[post$LAYER == "20mph local streets",2]
-
-#sum all streets pre and post
-sum_pre <-sum(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],pre[pre$LAYER == "Part time 20mph",2],s1)
-sum_post <-sum(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],post[post$LAYER == "Part time 20mph",2],s2)
-
-#create column pre and post
-collisions_pre_20mph <- c(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],pre[pre$LAYER == "Part time 20mph",2],s1,sum_pre)
-collisions_post_20mph <- c(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],post[post$LAYER == "Part time 20mph",2],s2,sum_post)
-
-#rate per year
-rate_pre_20mph <- round(collisions_pre_20mph/3,2)
-rate_post_20mph <- round(collisions_post_20mph/1.3,2)
-
-diff_in_rates <-  rate_pre_20mph - rate_post_20mph
-percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2) 
-
-type <- c("at 30mph","at 20mph","Part time 20mph","at 30mph changed to 20mph","All streets")
-df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates*100)
-colnames(df)=c(" ", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
-kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (council data)") %>% kable_styling(bootstrap_options = c("basic","hover"),font_size = 12 ) %>%  footnote(general = " ", number =c("All accidents at 20mph, 30mph","pre-20mph : 2013 / 2016 ( 3 years )","post-20mph : 2018 / 2019 ( 16 months )","diff in rates = pre - post / pre ")) %>% pack_rows("Streets stayed", 1, 3,label_row_css = "background-color: #e5f5e0 ;") %>% pack_rows("Streets changed", 4, 4,label_row_css = "background-color: #e5f5e0;") %>% pack_rows("All streets", 5, 5,label_row_css = "background-color:#e5f5e0 ;")
-#e5f5e0
-```
-
-> Table: Average annual road traffic collision rates in the city of Edinburgh ( police )
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-
-sum_pre_2 <-sum(p[p$Speed_limit == 20,2],p[p$Speed_limit == 30,2])
-sum_post_2 <-sum(po[po$Speed_limit == 20,2],po[po$Speed_limit == 30,2])
-
-collisions_pre_20mph <- c(p[p$Speed_limit == 20,2],p[p$Speed_limit == 30,2],sum_pre_2)
-collisions_post_20mph <- c(po[po$Speed_limit == 20,2],po[po$Speed_limit == 30,2],sum_post_2)
-
-rate_pre_20mph <- round(collisions_pre_20mph/3,2)
-rate_post_20mph <- round(collisions_post_20mph/1.3,2)
-
-diff_in_rates <-  rate_pre_20mph - rate_post_20mph
-percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2)
-
-type <- c("Streets at 20mph","Streets at 30mph","All streets")
-df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates * 100)
-colnames(df)=c("Type", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
-
-kable(df,caption = "Table 2: Average annual road traffic collision rates in the city of Edinburgh (police)") %>% kable_styling(bootstrap_options = c("basic"))
+table_annual(pre,post)
+table_police(p,po)
 ```
 
 > Effect estimate
@@ -385,7 +250,7 @@ c <- sum(pre15[,2])
 d <- sum(po[,2])
 
 sum1 <- (a+b+c) / 3
-sum2 <- d / 1.333
+sum2 <- d / 1.33
 unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
 trend_a <- (a-b)/a 
 trend_b <- (b-c)/b
@@ -395,22 +260,23 @@ f <- ( unadjusted_estimate - secular_trend ) * 100
 Y_2013_14 <- c(a,a," ", round(f,digits = 2))
 Y_2014_15 <- c(b,b," "," ")
 Y_2015_16 <- c(c,c," "," ")
-Y_2016_17 <- c("Intervention"," "," "," ")
-Y_2017_18 <- c("years"," "," "," ")
+Y_2016_17 <- c("Intervention "," "," "," ")
+Y_2017_18 <- c("years "," "," "," ")
 Y_2018_19 <- c(d, round(sum2,digits = 2)," "," ")
 
 df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2016_17,Y_2017_18,Y_2018_19)
-colnames(df) <- c("Tax year", "2013/14","2014/15","2015/16","2016/17","2017/18","2018/19")
+colnames(df) <- c("Tax year", " 2013/14 "," 2014/15 ","  2015/16  ","  2016/17  ","  2017/18  "," 2018/19 ")
 
 
 calculations <- c("a+b+c / 3 ", "a-b / a", "b-c / b", "Unadjusted_estimate", "Secular_trend" )
-column <- c(round(sum1,digits = 2),round(trend_a,digits = 2)*100,round(trend_b,digits = 2)*100,round(unadjusted_estimate,digits = 2) *100,round(secular_trend,digits = 2)*100)
+column <- c(round(sum1,digits = 2),round(trend_a,digits = 2)*100,round(trend_b,digits = 2)*100,round(unadjusted_estimate,digits = 2) *100,round(secular_trend,digits =     
+                                                                                                                                                    2)*100)
 
 df_cal <- data.frame(calculations,column)
-colnames(df_cal) <-  c("Formula", " ")
+colnames(df_cal) <-  c("Calculations", " ")
 
-kable(df,caption = "Effect estimate", booktabs = TRUE, valign = 't') %>% kable_styling(position = "center",bootstrap_options = c("hover","striped"),font_size = 15 )
-kable(df_cal,caption = "Calculations") %>% kable_styling(position = "center",bootstrap_options = c("basic","hover","striped"),font_size = 15 )
+kable(df,caption = "Effect estimate", booktabs = TRUE, valign = 't') %>% kable_styling(bootstrap_options = c("hover","striped"),font_size = 15 )
+kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic","hover","striped"),font_size = 15 )
 ```
  
 > Data used for the implementation and control zones (2013-2018)
@@ -433,9 +299,14 @@ rd <- rd %>% filter(rd$Speed_limit %in% c(20,30))
 rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% c("923","910","925","918","935","926")) 
 rd <- delete_na(rd,c("Longitude","Latitude"))
 
+#rd <-  rename(rd,c("Longitude"="Longitude before","Latitude"="Latitude before")) 
+#coord <- rd %>% st_as_sf(coords = c("Location_Easting_OSGR","Location_Northing_OSGR"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
+#rd <- data.frame(rd,coord)
+#rd <-  rename(rd,c("X"="Longitude","Y"="Latitude")) 
+
 edin_rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% ("923")) 
 
-edin_road_data <- rbind.fill(edin_rd,edin_road_data)
+edin_road_data <- rbind.fill(edin_rd,data)
 control_zone_data <- rbind.fill(rd,control_zone_data)
 control_zone_data$Date <- as.character(control_zone_data$Date)
 control_zone_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910","925","918","935","926")) 
@@ -446,31 +317,7 @@ data <- rowid_to_column(data,"index_ID")
 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-#Create planar(cartesian) projection 
-crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
-wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
-
-#Convert data to planar projection  
-edin_impl_zones <- spTransform(edin_impl_zones, crs)
-utm_data <-  spTransform(SpatialPointsDataFrame(coords = data[5:6], proj4string = wgs84, data = data), crs)
-
-proj4string(utm_data) <- proj4string(edin_impl_zones)
-
-#add a buffer around the point
-points_polygons <- gBuffer(utm_data, width = 6, byid = TRUE )
-count_zones <- over(points_polygons, edin_impl_zones, returnList = FALSE)
-count_zones <- rowid_to_column(count_zones,"ID")
-
-total_zones <- merge(data, count_zones, by.x = "index_ID", by.y = "ID")
-total_zones$Date <- as.character(total_zones$Date)
-df_zones <-data.frame(total_zones[2], total_zones[19], total_zones[36])
-
-#Convert data projections back to lat/long to plot with leaflet 
-edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
-#total_zones <- spTransform(total_zones, "+init=epsg:4326")
-utm_data <- spTransform(utm_data, "+init=epsg:4326")
-#delete_na()
-#df_na <- na.omit(df_zones[1:4]) # check how many are missing
+count_zones <- buffer_data(data,edin_impl_zones)
 ```
 
 > Mapping accidents with implementation zones: 2013
@@ -558,8 +405,6 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
 s_17 <- count_impl(total[total$Date >= "2017-01-01" & total$Date <= "2017-12-31", ])
 ```
 
-
-
 > Mapping accidents with implementation zones: 2018
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
@@ -637,22 +482,6 @@ kable(df,caption = "Table 3: Average annual road traffic collision rates in the 
 #s <- s_13 + s_14 + s_15 + s_16 + s_18 + s_19 
 #s$ImplementationZone <- s_13$ImplementationZone 
 #s
-```
-
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-buffer_data <-function(data,zone){
-  #Create planar(cartesian) projection 
-  crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
-  wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
-  
-  zone <- spTransform(zone,crs)
-  data <-  spTransform(SpatialPointsDataFrame(coords = data[4:5],proj4string = wgs84,data = data), crs)
-  
-  proj4string(data) <- proj4string(zone)
-  counts2 <- raster::intersect(data,zone) 
-  return(counts2@data)
-}
 ```
 
 > Control zone 1a:City center --> George St/Harbour, Aberdeen 
