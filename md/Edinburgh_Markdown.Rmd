@@ -122,7 +122,7 @@ casualties_data <- read_csv(paste0(dir_path, "/edin_casualties_data.csv"))
 
 #keep a copy for implementation zones
 data <- edin_road_data
-df <- data
+df <- data 
 ```
 
 
