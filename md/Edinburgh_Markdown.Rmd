@@ -128,7 +128,7 @@ df <- data
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #check problems in longitude/latitude
-data0 <- edin_road_data[edin_road_data$Date >= "2013-01-01" & edin_road_data$Date <= "2013-12-31", ]
+data0 <- edin_road_data[edin_road_data$Date >= "2016-01-01" & edin_road_data$Date <= "2016-12-31", ]
 leaflet(edin_cons_streets) %>% addTiles() %>% addPolylines() %>% addMarkers(lng =data0$Longitude, lat = data0$Latitude) %>% 
   addCircleMarkers(lng = data0$Longitude.before, lat = data0$Latitude.before )
 ```
@@ -145,7 +145,7 @@ time_plot(edin_road_data)
 #nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
 nearest_road <- nearest_line(edin_road_data,edin_road_network)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
-head(nearest_road[,c(2,34,35)])
+head(nearest_road[,c(2,32,33)])
 ```
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
@@ -153,23 +153,23 @@ head(nearest_road[,c(2,34,35)])
 #Then merge Casualty severity column with collisions dataset
 mergedDf_original <- unique(merge(data.frame(nearest_road),edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID"))
 mergedDf <- unique(merge(data.frame(nearest_road),edin_road_network@data,by.x = "nearest_line_id" ,by.y = "ID"))
-mer <- mergedDf [mergedDf$year == "2019",]
-mergedDf <- merge(mergedDf,casualties_data)
+#mer <- mergedDf [mergedDf$year == "2019",]
+#mergedDf <- merge(mergedDf,casualties_data)
 
-mergedDf$Casualty_Severity <- as.character(mergedDf$Casualty_Severity)
-mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 1] <- "Fatal"
-mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 2] <- "Serious"
-mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 3] <- "Slight"
+#mergedDf$Casualty_Severity <- as.character(mergedDf$Casualty_Severity)
+#mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 1] <- "Fatal"
+#mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 2] <- "Serious"
+#mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 3] <- "Slight"
 
-acc_sev <- aggregate(data=mergedDf,Casualty_Severity ~ . ,FUN=paste)
-mergedDf <- rbind.fill(mergedDf,mer)
-mergedDf <- unique(rbind.fill(acc_sev,mer))
+#acc_sev <- aggregate(data=mergedDf,Casualty_Severity ~ . ,FUN=paste)
+#mergedDf <- rbind.fill(mergedDf,mer)
+#mergedDf <- unique(rbind.fill(acc_sev,mer))
 #casualties_data <- rbind.fill(casualties_data,rd_2019)
 
 mergedDf <- rename(mergedDf,c("Longitude.x" = "Longitude","Latitude.x"="Latitude","year.x"="year","Speed_limit.x"="Speed_limit","Date.x"="Date"))
 mergedDf$Date <- as.character(mergedDf$Date)
-mergedA <- mergedDf[,-c(44)]
-
+#mergedA <- mergedDf[,-c(44)]
+mergedA <- mergedDf
 write.csv(mergedA, file = paste0(dir_path, "/merged_data.csv"), row.names = FALSE )
 ```
 
@@ -198,8 +198,8 @@ pre14 <- count_post(mergedDf[mergedDf$Date >= "2014-07-31" & mergedDf$Date <= "2
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-20" ,],edin_cons_streets)
 count(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-20" ,])
-p15 <- count_pre(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-20" ,])
-pre15 <- count_post(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-20" ,])
+p15 <- count_pre(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-30" ,])
+pre15 <- count_post(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-30" ,])
 ```
 
 > Mapping accidents with roads: 2018/2019
@@ -212,8 +212,8 @@ count(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
 > Count pre 20mph 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-pre <- count_pre(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2016-07-20" ,])
-p <- count_post(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2016-07-20" ,])
+pre <- count_pre(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2016-07-30" ,])
+p <- count_post(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2016-07-30" ,])
 pre
 p
 ```
@@ -243,7 +243,7 @@ table_police(p,po)
 > Effect estimate
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-Tax_year <- c("Annual number of collisions","Rate per year"," ","Effect estimate ")
+Tax_year <- c("Annual number of collisions","Rate per year"," ","% reduction in collisions ")
 a <- sum(pre13[,2])
 b <- sum(pre14[,2])
 c <- sum(pre15[,2])
@@ -266,17 +266,18 @@ Y_2018_19 <- c(d, round(sum2,digits = 2)," "," ")
 
 df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2016_17,Y_2017_18,Y_2018_19)
 colnames(df) <- c("Tax year", " 2013/14 "," 2014/15 ","  2015/16  ","  2016/17  ","  2017/18  "," 2018/19 ")
+ 
 
-
-calculations <- c("a+b+c / 3 ", "a-b / a", "b-c / b", "Unadjusted_estimate", "Secular_trend" )
+calculations <- c("A + B + C / 3 ", "A - B / A", "B - C / B", "Unadjusted_estimate", "Secular_trend" )
 column <- c(round(sum1,digits = 2),round(trend_a,digits = 2)*100,round(trend_b,digits = 2)*100,round(unadjusted_estimate,digits = 2) *100,round(secular_trend,digits =     
                                                                                                                                                     2)*100)
 
 df_cal <- data.frame(calculations,column)
 colnames(df_cal) <-  c("Calculations", " ")
 
-kable(df,caption = "Effect estimate", booktabs = TRUE, valign = 't') %>% kable_styling(bootstrap_options = c("hover","striped"),font_size = 15 )
-kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic","hover","striped"),font_size = 15 )
+kable(df,caption = "Total number of collisions in the city of Edinburgh ", booktabs = TRUE, valign = 't') %>% kable_styling(bootstrap_options = c("hover","striped"),font_size = 15 )
+kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic","hover","striped"),font_size = 15 )%>%  
+    footnote(general = " ", number =c("A : accidents 2013/14 ( 1 year )","B : accidents 2014/15 ( 1 year ) ","C : accidents 2015/16 ( 1 year )","D : accidents 2018/19 ( 16 months )")) 
 ```
  
 > Data used for the implementation and control zones (2013-2018)

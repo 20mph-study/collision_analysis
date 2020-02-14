@@ -1,6 +1,15 @@
 read_road_data <- function(){
+  library(readxl)
+  library(readr)
   edin_road_data <- read_csv(paste0(dir_path, "/edin_road_data.csv"))
   edin_road_data <- edin_road_data %>% filter(edin_road_data$Speed_limit %in% c(20,30)) 
+  
+  #2016 data
+  rd_2016 <- read_csv(paste0(dir_path, "/collisions_2016.csv"))
+  rd_2016$Date <- as.Date(rd_2016$Date,format="%d/%m/%Y")
+  rd_2016 <- rd_2016[rd_2016$Date > "2016-07-20" & rd_2016$Date <= "2016-07-30", ] 
+  rd_2016 <- rd_2016 %>% filter(rd_2016$`Local_Authority_(District)` == "923")
+  rd_2016 <- rd_2016 %>% filter(rd_2016$Speed_limit %in% c(20,30))
   
   #rd_2019 <- read_csv(paste0(dir_path, "/data2019.csv"))
   #2019 data
@@ -17,7 +26,7 @@ read_road_data <- function(){
                               "Number.of.Casualties" = "Number_of_Casualties", "Number.of.Vehicles" = "Number_of_Vehicles"))
   
   rd_2019$Date <- as.Date(rd_2019$Date,format="%d/%m/%Y")
-  
+  edin_road_data <- rbind.fill(edin_road_data,rd_2016)
   edin_road_data <- edin_road_data %>% mutate(year = format(as.Date(edin_road_data$Date, format="%m/%d/%Y"),"%Y"))
   rd_2019 <- rd_2019 %>% mutate(year = format(as.Date(rd_2019$Date, format="%m/%d/%Y"),"%Y"))
   edin_road_data <- rbind.fill(edin_road_data,rd_2019)
