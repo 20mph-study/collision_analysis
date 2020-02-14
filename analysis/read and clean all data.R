@@ -40,7 +40,7 @@ dir_path <- "../data"
 #Read csv files
 #Read every year seperately
 #Read csv file from 2005 to 2014
-rd_source <- read_csv(paste0(dir_path, "/collisions/collisions 2005 to 2014.csv"))  
+rd_source <- read_csv(paste0(dir_path, "/collisions 2005 to 2014.csv"))  
 rd_source$Date <- as.Date(rd_source$Date,format="%d/%m/%Y")
 
 #2013 data
@@ -52,16 +52,16 @@ rd_2014 <- rd_source[rd_source$Date >="2014-01-01" & rd_source$Date <= "2014-12-
 rd_2014$Date <- as.Date(rd_2014$Date,format="%d/%m/%Y")
 
 #2015 data
-rd_2015 <- read_csv(paste0(dir_path, "/collisions/collisions 2015.csv"))
+rd_2015 <- read_csv(paste0(dir_path, "/collisions 2015.csv"))
 rd_2015$Date <- as.Date(rd_2015$Date,format="%d/%m/%Y")
 
 #2016 data
-rd_2016 <- read_csv(paste0(dir_path, "/collisions/collisions 2016.csv"))
+rd_2016 <- read_csv(paste0(dir_path, "/collisions 2016.csv"))
 rd_2016$Date <- as.Date(rd_2016$Date,format="%d/%m/%Y")
-rd_2016 <- rd_2016[rd_2016$Date >="2016-01-01" & rd_2016$Date <= "2016-07-20", ]
+rd_2016 <- rd_2016[rd_2016$Date >="2016-01-01" & rd_2016$Date <= "2016-07-30", ]
 
 #2018 data
-rd_2018 <- read_csv(paste0(dir_path, "/collisions/collisions 2018.csv"))
+rd_2018 <- read_csv(paste0(dir_path, "/collisions 2018.csv"))
 rd_2018$Date <- as.Date(rd_2018$Date,format="%d/%m/%Y")
 rd_2018$Accident_Index <- as.character(rd_2018$Accident_Index)
 rd_2018 <- rd_2018[rd_2018$Date >="2018-03-06" & rd_2018$Date <= "2018-12-31", ]
