@@ -62,58 +62,10 @@ edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 edin_road_network <- edin_cons_streets
 edin_road_network <- edin_road_network[edin_road_network@data$LAYER  %in% c("20mph existing streets", "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
 edin_road_network <- spTransform(edin_road_network,"+init=epsg:4326")
-
 ```
-
-> Edinburgh's implementation zones
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-#Read shapefile
-edin_impl_zones <- readOGR(dsn = gdb_path, layer="ImplementationZones", verbose = FALSE)
-#Transform to long/lat
-edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
-#Change zone 1
-edin_impl_zones@data$ImplementationZone <- as.integer(edin_impl_zones@data$ImplementationZone)
-edin_impl_zones@data[6,]$ImplementationZone <- 7
-#Visualize with leaflet
-
-```
-
-> Edinburgh's control zones
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-#Read control zones codes
-control_1 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone1.txt"),stringsAsFactor = FALSE,header = FALSE)
-control_3 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone3.txt"),stringsAsFactor = FALSE,header = FALSE)
-control_3 <- c(control_3[,1],control_3[,2],control_3[,3],control_3[,4],control_3[,5],control_3[,6],control_3[,7],control_3[,8],control_3[,9])
-control_4 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone4.txt"),stringsAsFactor = FALSE,header = FALSE)
-control_5 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone5.txt"),stringsAsFactor = FALSE,header = FALSE)
-control_6 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone6.txt"),stringsAsFactor = FALSE,header = FALSE)
-control_7 <- read.delim(paste0(dir_path, "/control_zone_codes/controlzone7.txt"),stringsAsFactor = FALSE,header = FALSE)
-control_all <- c(control_1,control_3,control_4,control_5,control_6,control_7)
-
-#Path for control zones
-control_gdb_path <- paste0(dir_path, "/SG_DataZoneBdry_2011")
-control_gdb_layers <- ogrListLayers(control_gdb_path)
-
-#Read data
-edin_control_zone <- readOGR(dsn = control_gdb_path,layer="SG_DataZone_Bdry_2011", verbose = FALSE)
-edin_control_zone <- spTransform(edin_control_zone, "+init=epsg:4326")
-control_zone_all <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_all,]
-
-```
-
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
-#Read data
 edin_road_data <- read_road_data()
-control_zone_data <- read_csv(paste0(dir_path, "/edin_control_data.csv"))
-control_zone_data <- control_zone_data %>% filter(control_zone_data$Speed_limit %in% c(20,30)) 
-casualties_data <- read_csv(paste0(dir_path, "/edin_casualties_data.csv"))
-
-#keep a copy for implementation zones
-data <- edin_road_data
-df <- data 
 ```
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
@@ -159,8 +111,6 @@ pre15 <- count_post(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 pre <- count_pre(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2016-07-30" ,])
 p <- count_post(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2016-07-30" ,])
-pre
-p
 ```
 
 > Count post 20mph
@@ -168,8 +118,7 @@ p
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 post <- count_pre(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
 po <- count_post(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
-post
-po
+
 ```
 
 > Table: Average annual road traffic collision rates in the city of Edinburgh 
