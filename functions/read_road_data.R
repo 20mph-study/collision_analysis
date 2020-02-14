@@ -30,4 +30,4 @@ read_road_data <- function(){
   edin_road_data <- data.frame(edin_road_data,coord)
   edin_road_data <-  rename(edin_road_data,c("X"="Longitude","Y"="Latitude")) 
   return(edin_road_data)
-}
+} 

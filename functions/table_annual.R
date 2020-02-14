@@ -13,7 +13,7 @@ table_annual <- function(pre,post){
   
   #rate per year
   rate_pre_20mph <- round(collisions_pre_20mph/3,2)
-  rate_post_20mph <- round(collisions_post_20mph/1.3,2)
+  rate_post_20mph <- round(collisions_post_20mph/1.33,2)
   
   diff_in_rates <-  rate_pre_20mph - rate_post_20mph
   percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2) 
@@ -23,10 +23,13 @@ table_annual <- function(pre,post){
   colnames(df)=c(" ", "collisions pre-20mph","collisions post-20mph","rate pre-20mph", "rate post-20mph","diff in rates", "Perc.diff.rates")
   
   kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (council data)") %>% 
-    kable_styling(bootstrap_options = c("basic","hover"),font_size = 12 ) %>%  
-    footnote(general = " ", number =c("All accidents at 20mph, 30mph","pre-20mph : 2013 / 2016 ( 3 years )","post-20mph : 2018 / 2019 ( 16 months )","diff in rates = pre -                                         post / pre ")) %>% 
+    kable_styling(bootstrap_options = c("basic","hover"),font_size = 11 ) %>%  
+    footnote(general = " ", number =c("All accidents at 20mph, 30mph","pre-20mph : 2013 / 2016 ( 3 years )","post-20mph : 2018 / 2019 ( 16 months )","diff in rates = pre - post ",
+                                      "Per.diff.rates = (pre - post) / pre * 100","Part time 20mph : a traffic calming measure in specific hours per day. 
+                                                                                                           E.g.Outside of schools, at the start and end of the school day")) %>% 
     pack_rows("Streets stayed", 1, 3,label_row_css = "background-color: #e5f5e0 ;") %>% 
     pack_rows("Streets changed", 4, 4,label_row_css = "background-color: #e5f5e0;") %>% 
     pack_rows("All streets", 5, 5,label_row_css = "background-color:#e5f5e0 ;")
   #e5f5e0
 }
+ 
