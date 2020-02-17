@@ -116,8 +116,7 @@ leaflet(control_zone_all) %>% addTiles() %>% addPolygons()
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
 #Read data
 edin_road_data <- read_road_data()
-control_zone_data <- read_csv(paste0(dir_path, "/edin_control_data.csv"))
-control_zone_data <- control_zone_data %>% filter(control_zone_data$Speed_limit %in% c(20,30)) 
+control_zone_data <- read_controlzone_data()
 casualties_data <- read_csv(paste0(dir_path, "/edin_casualties_data.csv"))
 
 #keep a copy for implementation zones
@@ -285,7 +284,7 @@ kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #We add data into edin_road_data and control_zone_data to proceed with implementation zone counting 
 #read 2017, part of 2016 & 2018 data
-rd2016 <- read_csv(paste0(dir_path, "/collisions 2016.csv"))
+rd2016 <- read_csv(paste0(dir_path, "/collisions_2016.csv"))
 rd2016$Date <- as.Date(rd2016$Date,format="%d/%m/%Y")
 rd2016 <- rd2016 %>% filter(rd2016$Date >= "2016-07-21" & rd2016$Date <= "2016-12-31" )
 rd2017 <- read_csv(paste0(dir_path, "/collisions 2017.csv"))
@@ -295,30 +294,96 @@ rd2018$Date <- as.Date(rd2018$Date,format="%d/%m/%Y")
 rd2018 <-rd2018 %>% filter(rd2018$Date >= "2018-01-01" & rd2018$Date <= "2018-03-05" )
 
 rd <- rbind(rd2016,rd2017,rd2018)
-
+rd <- rd %>% mutate(year = format(as.Date(rd$Date, format="%m/%d/%Y"),"%Y"))
 rd <- rd %>% filter(rd$Speed_limit %in% c(20,30))
-rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% c("923","910","925","918","935","926")) 
+rd$`Local_Authority_(District)` <- as.character(rd$`Local_Authority_(District)`)
 rd <- delete_na(rd,c("Longitude","Latitude"))
 
-#rd <-  rename(rd,c("Longitude"="Longitude before","Latitude"="Latitude before")) 
-#coord <- rd %>% st_as_sf(coords = c("Location_Easting_OSGR","Location_Northing_OSGR"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
-#rd <- data.frame(rd,coord)
-#rd <-  rename(rd,c("X"="Longitude","Y"="Latitude")) 
+edin_rd <- rd %>% filter(rd$`Local_Authority_(District)` == "923" ) 
+rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% c("910","925","918","935","926")) 
 
-edin_rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% ("923")) 
+rd <-  rename(rd,c("Longitude"="Longitude before","Latitude"="Latitude before")) 
+coord <- rd %>% st_as_sf(coords = c("Location_Easting_OSGR","Location_Northing_OSGR"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
+rd <- data.frame(rd,coord)
+rd <-  rename(rd,c("X"="Longitude","Y"="Latitude")) 
+
+edin_rd <-  rename(edin_rd,c("Longitude"="Longitude before","Latitude"="Latitude before")) 
+coord <- edin_rd %>% st_as_sf(coords = c("Location_Easting_OSGR","Location_Northing_OSGR"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
+edin_rd <- data.frame(edin_rd,coord)
+edin_rd <-  rename(edin_rd,c("X"="Longitude","Y"="Latitude")) 
 
 edin_road_data <- rbind.fill(edin_rd,data)
+control_zone_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910","925","918","935","926")) 
 control_zone_data <- rbind.fill(rd,control_zone_data)
 control_zone_data$Date <- as.character(control_zone_data$Date)
-control_zone_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910","925","918","935","926")) 
 
-data <- edin_road_data
-data <- rowid_to_column(data,"index_ID")
+data1 <- edin_road_data
+data1 <- rowid_to_column(data,"index_ID")
 ```
 
 
+```{r}
+rd2016 <- read_csv(paste0(dir_path, "/collisions_2016.csv"))
+rd2016$Date <- as.Date(rd2016$Date,format="%d/%m/%Y")
+rd2016 <- rd2016 %>% filter(rd2016$Date >= "2016-07-21" & rd2016$Date <= "2016-12-31" )
+rd2016 <- rd2016 %>% mutate(year = format(as.Date(rd2016$Date, format="%m/%d/%Y"),"%Y"))
+rd2016 <- rd2016 %>% filter(rd2016$Speed_limit %in% c(20,30))
+rd2016$`Local_Authority_(District)` <- as.character(rd2016$`Local_Authority_(District)`)
+rd2016 <- delete_na(rd2016,c("Longitude","Latitude"))
+rd2016 <- rd2016 %>% filter(rd2016$`Local_Authority_(District)` %in% c("923","910","925","918","935","926")) 
+```
+
+```{r}
+rd2017 <- read_csv(paste0(dir_path, "/collisions 2017.csv"))
+rd2017$Date <- as.Date(rd2017$Date,format="%d/%m/%Y")
+rd2017 <- rd2017 %>% mutate(year = format(as.Date(rd2017$Date, format="%m/%d/%Y"),"%Y"))
+rd2017 <- rd2017 %>% filter(rd2017$Speed_limit %in% c(20,30))
+rd2017$`Local_Authority_(District)` <- as.character(rd2017$`Local_Authority_(District)`)
+rd2017 <- delete_na(rd2017,c("Longitude","Latitude"))
+rd2017 <- rd2017 %>% filter(rd2017$`Local_Authority_(District)` %in% c("923","910","925","918","935","926")) 
+```
+
+```{r}
+rd2018 <- read_csv(paste0(dir_path, "/collisions 2018.csv"))
+rd2018$Date <- as.Date(rd2018$Date,format="%d/%m/%Y")
+rd2018 <-rd2018 %>% filter(rd2018$Date >= "2018-01-01" & rd2018$Date <= "2018-03-05" )
+rd2018 <- rd2018 %>% mutate(year = format(as.Date(rd2018$Date, format="%m/%d/%Y"),"%Y"))
+rd2018 <- rd2018 %>% filter(rd2018$Speed_limit %in% c(20,30))
+rd2018$`Local_Authority_(District)` <- as.character(rd2018$`Local_Authority_(District)`)
+rd2018 <- delete_na(rd2018,c("Longitude","Latitude"))
+rd2018 <- rd2018 %>% filter(rd2018$`Local_Authority_(District)` %in% c("923","910","925","918","935","926")) 
+```
+
+
+```{r}
+rd2016 <- read_csv(paste0(dir_path, "/collisions_2016.csv"))
+rd2016$Date <- as.Date(rd2016$Date,format="%d/%m/%Y")
+rd2016 <- rd2016 %>% filter(rd2016$Date >= "2016-07-21" & rd2016$Date <= "2016-12-31" )
+rd2017 <- read_csv(paste0(dir_path, "/collisions 2017.csv"))
+rd2017$Date <- as.Date(rd2017$Date,format="%d/%m/%Y")
+rd2018 <- read_csv(paste0(dir_path, "/collisions 2018.csv"))
+rd2018$Date <- as.Date(rd2018$Date,format="%d/%m/%Y")
+rd2018 <-rd2018 %>% filter(rd2018$Date >= "2018-01-01" & rd2018$Date <= "2018-03-05" )
+
+rd <- rbind(rd2016,rd2017,rd2018)
+rd <- rd %>% mutate(year = format(as.Date(rd$Date, format="%m/%d/%Y"),"%Y"))
+rd <- rd %>% filter(rd$Speed_limit %in% c(20,30))
+rd$`Local_Authority_(District)` <- as.character(rd$`Local_Authority_(District)`)
+rd <- delete_na(rd,c("Longitude","Latitude"))
+
+edin_rd <- rd %>% filter(rd$`Local_Authority_(District)` == "923" ) 
+rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% c("910","925","918","935","926")) 
+```
+
+
+
+
+
+
+
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-count_zones <- buffer_data(data,edin_impl_zones)
+count_zones <- buffer_data(data1,edin_impl_zones)
+total_zones <- count_zones
 ```
 
 > Mapping accidents with implementation zones: 2013

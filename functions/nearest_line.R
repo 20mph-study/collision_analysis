@@ -6,7 +6,7 @@ nearest_line <-function(df,road_net){
   
   #Convert data to planar projection  
   road_net <- spTransform(road_net,crs)
-  df <-  spTransform(SpatialPointsDataFrame(coords = df[34:35],proj4string = wgs84,data = df), crs)
+  df <-  spTransform(SpatialPointsDataFrame(coords = df[35:36],proj4string = wgs84,data = df), crs)
   
   #Make sure our data have same projections
   proj4string(df) <- proj4string(road_net)
