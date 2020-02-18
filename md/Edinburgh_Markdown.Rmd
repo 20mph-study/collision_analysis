@@ -39,6 +39,11 @@ source('../functions/count.R')
 source('../functions/count_pre.R')
 source('../functions/count_post.R')
 source('../functions/count_impl.R')
+source('../functions/add_zone_data.R')
+source('../functions/read_controlzone_data.R')
+source('../functions/table_zones.R')
+source('../functions/map_zones.R')
+
 
 ##1.Data path 
 dir_path <- "../data"
@@ -144,7 +149,7 @@ time_plot(edin_road_data)
 #nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
 nearest_road <- nearest_line(edin_road_data,edin_road_network)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
-head(nearest_road[,c(2,32,33)])
+head(nearest_road[,c(2,37,38)])
 ```
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
@@ -177,8 +182,6 @@ write.csv(mergedA, file = paste0(dir_path, "/merged_data.csv"), row.names = FALS
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 leaflet_map(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,],edin_cons_streets)
 count(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
-aa <- mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,]
-AA <- delete_na(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,],"Accident_Index")
 p13 <- count_pre(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
 pre13 <- count_post(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
 ```
@@ -300,54 +303,23 @@ edin_rd <-  rename(edin_rd,c("X"="Longitude","Y"="Latitude"))
 
 edin_road_data <- rbind.fill(edin_rd,edin_road_data)
 
-control_zone_data <- read_csv(paste0(dir_path, "/edin_control_data.csv"))
-control_zone_data <- control_zone_data %>% filter(control_zone_data$Speed_limit %in% c(20,30)) 
-control_zone_data <- control_zone_data %>% mutate(year = format(as.Date(control_zone_data$Date, format="%m/%d/%Y"),"%Y"))
-control_zone_data <- rbind.fill(rd,control_zone_data)
-control_zone_data$Date <- as.character(control_zone_data$Date)
-control_zone_data$`Local_Authority_(District)` <- as.character(control_zone_data$`Local_Authority_(District)`)
-control_zone_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910","925","918","935","926"))
-
 data1 <- edin_road_data
 data1 <- rowid_to_column(data1,"index_ID")
 ```
 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-count_zones <- buffer_data(data1,edin_impl_zones)
-total_zones <- count_zones
+total_zones <- buffer_data(data1,edin_impl_zones)
 ```
 
-> Mapping accidents with implementation zones 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
+map_zones <- map_zones(edin_impl_zones)
+```
 
-edin_impl_zones <- st_as_sf(edin_impl_zones)
-#Leaflet maps of the zones & accidents
-zone_1 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 1)
-zone_2 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 2)
-zone_3 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 3)
-zone_4 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 4)
-zone_5 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 5)
-zone_6 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 6)
-zone_7 <- filter(edin_impl_zones,edin_impl_zones$ImplementationZone == 7)
+> Mapping accidents with implementation zones : 2013
 
-#Visualize
-map_zones <- leaflet() %>% addTiles() %>%  
-  addPolygons(data = zone_1, color= "green",group = " zone 1 ")%>%
-  addPolygons(data = zone_2,color= "red",group = " zone 2 ")%>%
-  addPolygons(data = zone_3,color= "purpl",group = " zone 3 ") %>%
-  addPolygons(data = zone_4,color= "cyan",group = " zone 4 ")%>%
-  addPolygons(data = zone_5,color= "blue",group = " zone 5 ")%>%
-  addPolygons(data = zone_6,color= "orange",group = " zone 6 ")%>%
-  addPolygons(data = zone_7,color= "black",group = " zone 7 ") %>% 
-addLayersControl(overlayGroups = c( " zone 1 "," zone 2 "," zone 3 "," zone 4 "," zone 5 "," zone 6 "," zone 7 "),
-                                    options = layersControlOptions(collapsed = FALSE))
-map_zones <- map_zones %>% addLegend("bottomright",colors =c("green",  "red","purple", "cyan", "blue", "orange", "black"),
-                      labels= c("1(1a):City Centre", "2:North","3:South Central/East","4:North West","5:West", "6:South","7(1b):Rural West"),
-                      title= "Implementation zones", opacity = 1) %>% setView(lng = -3.188267 , lat = 55.953251, zoom = 11)
-
-#total <- total_zones[total_zones$year == "2013", ]
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$Date >= "2013-07-31" & total_zones$Date <= "2013-12-31" ,]
 
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
@@ -376,7 +348,6 @@ total <- total_zones[total_zones$Date >= "2015-01-01" & total_zones$Date <= "201
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
-s_15 <- count_impl(total[total$Date >= "2015-01-01" & total$Date <= "2015-12-31", ])
 ```
 
 > Mapping accidents with implementation zones: 2016
@@ -412,7 +383,7 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
 > Output column: Implementation Zone
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-#head(df_zones)
+head(total_zones[,c(2,19,40)])
 ```
 
 > Table: Average annual road traffic collision rates in the city of Edinburgh per implementation zone
@@ -421,11 +392,26 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
 table_zones(total_zones)
 ```
 
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+control_zone_data <- read_csv(paste0(dir_path, "/edin_control_data.csv"))
+control_zone_data <-  rename(control_zone_data,c("Longitude"="Longitude before","Latitude"="Latitude before")) 
+control_zone_data <- control_zone_data %>% filter(control_zone_data$Speed_limit %in% c(20,30)) 
+control_zone_data <- control_zone_data %>% mutate(year = format(as.Date(control_zone_data$Date, format="%m/%d/%Y"),"%Y"))
+control_zone_data <- rbind.fill(rd,control_zone_data)
+control_zone_data$Date <- as.character(control_zone_data$Date)
+control_zone_data <- control_zone_data[ ,-c(36:45)]
+control_zone_data$Local_Authority_.District. <- as.character(control_zone_data$Local_Authority_.District.)
+control_zone_data <- control_zone_data %>% filter(control_zone_data$Local_Authority_.District. %in% c("910","925","918","935","926"))
+
+```
+
+
+
 > Control zone 1a:City center --> George St/Harbour, Aberdeen 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_1 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_1,]
-con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910"))
+con_data <- control_zone_data %>% filter(control_zone_data$Local_Authority_.District. %in% c("910"))
 con_data <- con_data[con_data$Date >= "2013-07-31" & con_data$Date <= "2016-07-31", ]
 control_zone_1a_df <- data.frame(buffer_data(con_data,control_zone_1))
 control_zone_1a_df <- cbind(Control_zone = "1a", control_zone_1a_df)
@@ -437,7 +423,7 @@ nrow(control_zone_1a_df)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_7 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_7,]
-con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("925"))
+con_data <- control_zone_data %>% filter(control_zone_data$Local_Authority_.District. %in% c("925"))
 con_data <- con_data[con_data$Date >= "2013-07-31" & con_data$Date <= "2016-07-31", ]
 control_zone_1b_df <- data.frame(buffer_data(con_data,control_zone_7))
 control_zone_1b_df <- cbind(Control_zone = "1b", control_zone_1b_df)
@@ -449,7 +435,7 @@ nrow(control_zone_1b_df)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_3 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_3,]
-con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("918"))
+con_data <- control_zone_data %>% filter(control_zone_data$Local_Authority_.District. %in% c("918"))
 con_data <- con_data[con_data$Date >= "2014-02-28" & con_data$Date <= "2017-02-28", ]
 control_zone_3_df <- data.frame(buffer_data(con_data,control_zone_3))
 control_zone_3_df <- cbind(Control_zone = "3", control_zone_3_df)
@@ -461,7 +447,7 @@ nrow(control_zone_3_df)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_4 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_4,]
-con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("935"))
+con_data <- control_zone_data %>% filter(control_zone_data$Local_Authority_.District. %in% c("935"))
 con_data <- con_data[con_data$Date >= "2014-08-16" & con_data$Date <= "2017-08-16", ]
 control_zone_4_df <- data.frame(buffer_data(con_data,control_zone_4))
 control_zone_4_df <- cbind(Control_zone = "4", control_zone_4_df)
@@ -473,7 +459,7 @@ nrow(control_zone_4_df)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_5 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_5,]        
-con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("926"))
+con_data <- control_zone_data %>% filter(control_zone_data$Local_Authority_.District. %in% c("926"))
 con_data <- con_data[con_data$Date >= "2014-08-16" & con_data$Date <= "2017-08-16", ]
 control_zone_5_df <- data.frame(buffer_data(con_data,control_zone_5))
 control_zone_5_df <- cbind(Control_zone = "5", control_zone_5_df)
@@ -485,7 +471,7 @@ nrow(control_zone_5_df)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_6 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_6,]    
-con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("935"))
+con_data <- control_zone_data %>% filter(control_zone_data$Local_Authority_.District. %in% c("935"))
 con_data <- con_data[con_data$Date >= "2015-03-05" & con_data$Date <= "2018-03-05", ]
 control_zone_6_df <- data.frame(buffer_data(con_data,control_zone_6))
 control_zone_6_df <- cbind(Control_zone = "6", control_zone_6_df)
