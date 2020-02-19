@@ -44,8 +44,6 @@ source('../functions/read_controlzone_data.R')
 source('../functions/table_zones.R')
 source('../functions/map_zones.R')
 
-
-
 ##1.Data path 
 dir_path <- "../data"
 ```
@@ -123,9 +121,6 @@ leaflet(control_zone_all) %>% addTiles() %>% addPolygons()
 #Read data
 edin_road_data <- read_road_data()
 casualties_data <- read_csv(paste0(dir_path, "/edin_casualties_data.csv"))
-#keep a copy
-#data <- edin_road_data
-#df <- data 
 ```
 
 
@@ -144,9 +139,7 @@ time_plot(edin_road_data)
 ```
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-#Get nearest line for pre and post 20mph using the nearest_line function, use only layers we care edin_road network instead of edin_cons_streets
-#nearest_road <- nearest_line(edin_road_data,edin_cons_streets)
-#nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
+#Get nearest line for pre and post 20mph using the nearest_line function, use only layers we care edin_road network
 nearest_road <- nearest_line(edin_road_data,edin_road_network)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
 head(nearest_road[,c(2,37,38)])
@@ -284,70 +277,32 @@ kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic
 > Data used for the implementation and control zones (2013-2018)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-
 #We add data into edin_road_data and control_zone_data to proceed with implementation zone counting 
 #read 2017, part of 2016 & 2018 data
-
 rd <- add_zone_data()
-#rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% c("923","910","925","918","935","926")) 
+rd$Date <- as.character(rd$Date)
 edin_zone_rd <- rd %>% filter(rd$`Local_Authority_(District)` == "923" ) 
 control_zone_rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% c("910","925","918","935","926")) 
 
-#rd <-  rename(rd,c("Longitude" = "Longitude before", "Latitude" = "Latitude before")) 
-#coord <- rd %>% st_as_sf(coords = c("Location_Easting_OSGR","Location_Northing_OSGR"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
-#rd <- data.frame(rd,coord)
-#rd <-  rename(rd,c("X"="Longitude","Y"="Latitude")) 
+edin_road_data_3 <- mergedDf[,-c(36,37,41,42,44)]
+edin_road_data_3 <- rename(edin_road_data_3,c("Longitude.before" = "Longitude", "Latitude.before" = "Latitude")) 
 
-#edin_rd <-  rename(edin_rd, c("Longitude" = "Longitude before","Latitude" = "Latitude before")) 
-#coord <- edin_rd %>% st_as_sf(coords = c("Location_Easting_OSGR","Location_Northing_OSGR"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% #as_tibble()
-#edin_zone_rd <- data.frame(edin_zone_rd,coord)
-#edin_zone_rd <-  rename(edin_zone_rd,c("X"="Longitude","Y"="Latitude")) 
-edin_road_data_1 <- edin_road_data[,-c(35,36)]
-edin_road_data_1 <-  rename(edin_road_data,c("Longitude before" = "Longitude", "Latitude before" = "Latitude")) 
-edin_zone_data <- rbind.fill(edin_zone_rd,edin_road_data_1)
+edin_zone_rd <- rename(edin_zone_rd, c("1st_Road_Number" = "X1st_Road_Number", "2nd_Road_Number" = "X2nd_Road_Number", 
+                                       "1st_Road_Class" = "X1st_Road_Class", "2nd_Road_Class" = "X2nd_Road_Class",
+                                       "Pedestrian_Crossing-Human_Control" = "Pedestrian_Crossing.Human_Control", 
+                                       "Pedestrian_Crossing-Physical_Facilities" = "Pedestrian_Crossing.Physical_Facilities",
+                                       "Local_Authority_(District)" = "Local_Authority_.District.", 
+                                       "Local_Authority_(Highway)" = "Local_Authority_.Highway."))
 
-data1 <- edin_road_data
-data1 <- rowid_to_column(data1,"index_ID")
-```
-
-> Data used for the implementation and control zones (2013-2018)
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-#We add data into edin_road_data and control_zone_data to proceed with implementation zone counting 
-#read 2017, part of 2016 & 2018 data
-
-rd <- add_zone_data()
-#rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% c("923","910","925","918","935","926")) 
-edin_zone_rd <- rd %>% filter(rd$`Local_Authority_(District)` == "923" ) 
-control_zone_rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% c("910","925","918","935","926")) 
-
-#rd <-  rename(rd,c("Longitude" = "Longitude before", "Latitude" = "Latitude before")) 
-#coord <- rd %>% st_as_sf(coords = c("Location_Easting_OSGR","Location_Northing_OSGR"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
-#rd <- data.frame(rd,coord)
-#rd <-  rename(rd,c("X"="Longitude","Y"="Latitude")) 
-
-#edin_rd <-  rename(edin_rd, c("Longitude" = "Longitude before","Latitude" = "Latitude before")) 
-#coord <- edin_rd %>% st_as_sf(coords = c("Location_Easting_OSGR","Location_Northing_OSGR"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% #as_tibble()
-#edin_zone_rd <- data.frame(edin_zone_rd,coord)
-#edin_zone_rd <-  rename(edin_zone_rd,c("X"="Longitude","Y"="Latitude")) 
-edin_road_data_1 <- edin_road_data[,-c(35,36)]
-edin_road_data_1 <-  rename(edin_road_data,c("Longitude before" = "Longitude", "Latitude before" = "Latitude")) 
-edin_zone_data <- rbind.fill(edin_zone_rd,edin_road_data_1)
-
-edin_road_data_3 <-  rename(mergedDf,c("Longitude before" = "Longitude", "Latitude before" = "Latitude")) 
-edin_road_data_3 <- edin_road_data_3[,-c(36,37,41,42,44)]
 edin_zone_data <- rbind.fill(edin_zone_rd,edin_road_data_3)
-
-data3 <- edin_zone_data
-
-data1 <- edin_zone_data
-data1 <- rowid_to_column(data1,"index_ID")
+data <- edin_zone_data
+data <- rowid_to_column(data,"index_ID")
 ```
 
 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-total_zones <- buffer_data(data3,edin_impl_zones)
+total_zones <- buffer_data(data,edin_impl_zones)
 ```
 
 
@@ -359,7 +314,6 @@ map_zones <- map_zones(edin_impl_zones)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$Date >= "2013-07-31" & total_zones$Date <= "2013-12-31" ,]
-
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
@@ -370,7 +324,6 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$Date >= "2014-01-01" & total_zones$Date <= "2014-12-31" ,]
-
 map_zones %>%
   setView(lng = -3.188267 , lat = 55.953251, zoom = 11) %>% 
   addMarkers(lng =total$Longitude, lat = total$Latitude, 
@@ -382,7 +335,6 @@ map_zones %>%
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$Date >= "2015-01-01" & total_zones$Date <= "2015-12-31" ,]
-
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
@@ -392,7 +344,6 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$Date >= "2016-01-01" & total_zones$Date <= "2016-12-31" ,]
-
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
@@ -402,7 +353,6 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$Date >= "2017-01-01" & total_zones$Date <= "2017-12-31" ,]
-
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
@@ -412,7 +362,6 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total <- total_zones[total_zones$Date >= "2018-01-01" & total_zones$Date <= "2018-12-31" ,]
-
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
@@ -433,10 +382,9 @@ table_zones(total_zones)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_data <- read_controlzone_data()
 control_zone_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("910","925","918","935","926"))
-control_zone_data <- rbind.fill(control_zone_rd,control_zone_data)
+control_zone_data1 <- rbind.fill(control_zone_rd,control_zone_data)
 control_zone_data$Date <- as.character(control_zone_data$Date)
 control_zone_data$`Local_Authority_(District)` <- as.character(control_zone_data$`Local_Authority_(District)` )
-
 ```
 
 > Control zone 1a:City center --> George St/Harbour, Aberdeen 
@@ -518,15 +466,10 @@ nrow(control_zone_6_df)
 #final_dataset
 #control zones data
 control_zones_df <-rbind.fill(control_zone_1a_df,control_zone_1b_df,control_zone_3_df,control_zone_4_df,control_zone_5_df,control_zone_6_df)
-merged_1 <- mergedDf[,-c(35:38,39)]
-total_zones_1 <- total_zones[,-c(1,3:34)]
-updated_dataset <- merge(merged_1,total_zones_1,by.x = "Accident_Index",by.y = "Accident_Index")
-updated_dataset <-updated_dataset[,-c(2,3,36)]
-final_df <- rbind.fill(updated_dataset,control_zones_df)
-final_df <- final_df[,-c(33:34,40:45)]
-head(updated_dataset[,c(1,18,32,35)])
+final_df <- rbind.fill(total_zones,control_zones_df)
+final_df <- final_df[,-c(1,36,41,42,47:54)]
+head(final_df[,c(1,38,39,40)])
 #Create new csv file with the cleaned data
 write.csv(final_df, file = paste0(dir_path, "/final_Edinburgh_data.csv"),row.names=FALSE)
-
 ```
 
