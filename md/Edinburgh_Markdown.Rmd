@@ -45,6 +45,7 @@ source('../functions/table_zones.R')
 source('../functions/map_zones.R')
 
 
+
 ##1.Data path 
 dir_path <- "../data"
 ```
@@ -283,6 +284,7 @@ kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic
 > Data used for the implementation and control zones (2013-2018)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
+
 #We add data into edin_road_data and control_zone_data to proceed with implementation zone counting 
 #read 2017, part of 2016 & 2018 data
 
@@ -308,9 +310,44 @@ data1 <- edin_road_data
 data1 <- rowid_to_column(data1,"index_ID")
 ```
 
+> Data used for the implementation and control zones (2013-2018)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-total_zones <- buffer_data(data1,edin_impl_zones)
+#We add data into edin_road_data and control_zone_data to proceed with implementation zone counting 
+#read 2017, part of 2016 & 2018 data
+
+rd <- add_zone_data()
+#rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% c("923","910","925","918","935","926")) 
+edin_zone_rd <- rd %>% filter(rd$`Local_Authority_(District)` == "923" ) 
+control_zone_rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% c("910","925","918","935","926")) 
+
+#rd <-  rename(rd,c("Longitude" = "Longitude before", "Latitude" = "Latitude before")) 
+#coord <- rd %>% st_as_sf(coords = c("Location_Easting_OSGR","Location_Northing_OSGR"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
+#rd <- data.frame(rd,coord)
+#rd <-  rename(rd,c("X"="Longitude","Y"="Latitude")) 
+
+#edin_rd <-  rename(edin_rd, c("Longitude" = "Longitude before","Latitude" = "Latitude before")) 
+#coord <- edin_rd %>% st_as_sf(coords = c("Location_Easting_OSGR","Location_Northing_OSGR"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% #as_tibble()
+#edin_zone_rd <- data.frame(edin_zone_rd,coord)
+#edin_zone_rd <-  rename(edin_zone_rd,c("X"="Longitude","Y"="Latitude")) 
+edin_road_data_1 <- edin_road_data[,-c(35,36)]
+edin_road_data_1 <-  rename(edin_road_data,c("Longitude before" = "Longitude", "Latitude before" = "Latitude")) 
+edin_zone_data <- rbind.fill(edin_zone_rd,edin_road_data_1)
+
+edin_road_data_3 <-  rename(mergedDf,c("Longitude before" = "Longitude", "Latitude before" = "Latitude")) 
+edin_road_data_3 <- edin_road_data_3[,-c(36,37,41,42,44)]
+edin_zone_data <- rbind.fill(edin_zone_rd,edin_road_data_3)
+
+data3 <- edin_zone_data
+
+data1 <- edin_zone_data
+data1 <- rowid_to_column(data1,"index_ID")
+```
+
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+total_zones <- buffer_data(data3,edin_impl_zones)
 ```
 
 
