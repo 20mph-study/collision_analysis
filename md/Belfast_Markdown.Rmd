@@ -1,12 +1,9 @@
 ---
 title: "Belfast markdown"
-output:
-  html_document:
-    df_print: paged
+output: html_document
 ---
 
 ```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=FALSE}
-
 # Load libraries
 library(rgdal)
 library(leaflet)
@@ -115,7 +112,6 @@ ggplot(belf_data) +
 
 
 ```{r ,echo=FALSE, message=FALSE, warning=FALSE}
-
 #Nearest line
 df <- belf_data
 road_net <- belfast_road_data

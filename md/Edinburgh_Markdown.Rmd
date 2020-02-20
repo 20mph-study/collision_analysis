@@ -150,23 +150,24 @@ head(nearest_road[,c(2,37,38)])
 #Then merge Casualty severity column with collisions dataset
 mergedDf_original <- unique(merge(data.frame(nearest_road),edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID"))
 mergedDf <- unique(merge(data.frame(nearest_road),edin_road_network@data,by.x = "nearest_line_id" ,by.y = "ID"))
-#mer <- mergedDf [mergedDf$year == "2019",]
-#mergedDf <- merge(mergedDf,casualties_data)
+mer <- mergedDf [mergedDf$year == "2019",]
+mer$Casualty_Severity <- "NA"
+mergedDf <- merge(mergedDf,casualties_data)
+mergedDf$LSOA_of_Accident_Location <- "-1"
 
-#mergedDf$Casualty_Severity <- as.character(mergedDf$Casualty_Severity)
-#mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 1] <- "Fatal"
-#mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 2] <- "Serious"
-#mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 3] <- "Slight"
+mergedDf$Casualty_Severity <- as.character(mergedDf$Casualty_Severity)
+mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 1] <- "Fatal"
+mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 2] <- "Serious"
+mergedDf$Casualty_Severity[mergedDf$Casualty_Severity == 3] <- "Slight"
 
-#acc_sev <- aggregate(data=mergedDf,Casualty_Severity ~ . ,FUN=paste)
-#mergedDf <- rbind.fill(mergedDf,mer)
-#mergedDf <- unique(rbind.fill(acc_sev,mer))
-#casualties_data <- rbind.fill(casualties_data,rd_2019)
+acc_sev <- aggregate(data = mergedDf, Casualty_Severity ~ . , FUN = paste)
+mergedDf <- rbind.fill(mergedDf,mer)
+mergedDf <- unique(rbind.fill(acc_sev,mer))
 
 mergedDf <- rename(mergedDf,c("Longitude.x" = "Longitude","Latitude.x"="Latitude","year.x"="year","Speed_limit.x"="Speed_limit","Date.x"="Date"))
 mergedDf$Date <- as.character(mergedDf$Date)
-#mergedA <- mergedDf[,-c(44)]
-mergedA <- mergedDf
+mergedA <- mergedDf[,-c(45)]
+
 write.csv(mergedA, file = paste0(dir_path, "/merged_data.csv"), row.names = FALSE )
 ```
 
@@ -200,8 +201,8 @@ pre15 <- count_post(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2
 > Mapping accidents with roads: 2018/2019
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-leaflet_map(mergedDf[mergedDf$year == "2018", ],edin_cons_streets)
-count(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
+leaflet_map(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,],edin_cons_streets)
+count(mergedDf[mergedDf$Date >= "2019-01-01" & mergedDf$Date <= "2019-06-31" ,])
 ```
 
 > Count pre 20mph 
@@ -232,7 +233,7 @@ head(mergedDf[,c(3,20,40)])
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 table_annual(pre,post)
-table_police(p,po)
+#table_police(p,po)
 ```
 
 > Effect estimate

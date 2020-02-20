@@ -27,6 +27,7 @@ library(kableExtra)
 library(plyr)
 library(RColorBrewer)
 
+source('../functions/localSnapPointsToLines.R')
 
 #Function for leaflet visualisations
 leaflet_map <- function(final_df,edin_streets){
@@ -59,14 +60,13 @@ leaflet_map <- function(final_df,edin_streets){
                                                              popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
                                                                           "Date: ",final_df$Date ,"<br>",
                                                                           "Speed limit: ", final_df$Speed_limit ,"<br>",
-                                                                          "Layer before: ",final_df$LAYER.x ,"<br>",
-                                                                          "Layer after: ",final_df$LAYER.y ,"<br>",
-                                                                          "Distance before: ",final_df$snap_dist_before,"<br>",
-                                                                          "Distance after: ",final_df$snap_dist,"<br>",
+                                                                          "Layer: ",final_df$LAYER ,"<br>",
+                                                                          "Distance: ",final_df$snap_dist,"<br>",
                                                                           "Road type: ",final_df$Road_Type,"<br>",
                                                                           "1st road class: ",final_df$X1st_Road_Class,"<br>",
                                                                           "2nd road class: ",final_df$X2nd_Road_Class,"<br>",
-                                                                          "Junction detail: ",final_df$Junction_Detail), group = 'incidents linked to a road')
+                                                                          "Junction detail: ",final_df$Junction_Detail), 
+                                                            group = 'incidents linked to a road')
   
   map3 <- map_near %>% addCircleMarkers(lng =final_df$Longitude , lat = final_df$Latitude,
                                         popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
@@ -74,7 +74,7 @@ leaflet_map <- function(final_df,edin_streets){
                                                      "Date: ",final_df$Date), group = 'all incidents')
   
   
-  map3 <- map3 %>% addLegend("bottomright",colors =c("#41ab5d",  "#fc4e2a", "#ffeda0",  "#08306b","#6a51a3"),
+  map3 <- map3 %>% addLegend("bottomright",colors =c("#41ab5d",  "#fc4e2a", "#4eb3d3",  "#08306b","#6a51a3"),
                              labels= c("existing 20mph", "local 20mph","main 20 mph","30mph", "part time 20mph"),
                              title= "Road network",opacity = 1)
   
@@ -82,11 +82,75 @@ leaflet_map <- function(final_df,edin_streets){
     setView(lng = -3.188267 , lat = 55.953251, zoom = 11)%>%
     addPolylines(data = road_existing_20, color= "#41ab5d", group = 'existing 20mph' ) %>%
     addPolylines(data = road_local_20,color= "#fc4e2a" , group = 'local 20mph' ) %>%
-    addPolylines(data = road_main_20,color= "#ffeda0" , group = 'main 20mph')%>%
+    addPolylines(data = road_main_20,color= "#4eb3d3" , group = 'main 20mph')%>%
     addPolylines(data = road_30,color= "#08306b" , group = '30mph') %>% 
-    addPolylines(data = road_part,color= "#6a51a3" , group = 'part time 20mph')%>%addLayersControl(overlayGroups = c( 'existing 20mph','local 20mph','main 20mph','30mph','part time 20mph','incidents linked to a road','all incidents'),
-                                                                                                   options = layersControlOptions(collapsed = FALSE))
+    addPolylines(data = road_part,color= "#6a51a3" , group = 'part time 20mph')%>%
+    addLayersControl(overlayGroups = c( 'existing 20mph','local 20mph','main 20mph','30mph','part time 20mph',
+                                        'incidents linked to a road', 'all incidents'),options = layersControlOptions(collapsed = FALSE))
 }
+
+
+leaflet_map_compararison <- function(final_df,edin_streets){
+  crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
+  wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
+  
+  #Convert data to planar projection  
+  edin_streets <- spTransform(edin_streets,crs)
+  coordinates(final_df) <- ~ X + Y
+  
+  #Convert data projections back to lat/long to plot with leaflet
+  edin_streets <- spTransform(edin_streets,"+init=epsg:4326")
+  
+  #Same projections
+  proj4string(final_df) <- proj4string(edin_streets)
+  
+  edin_streets <- st_as_sf(edin_streets)
+  #Leaflet maps of the road network , accidents and their projections
+  road_existing_20 <-edin_streets%>% filter(edin_streets$LAYER == "20mph existing streets")
+  road_local_20 <- filter(edin_streets, edin_streets$LAYER == "20mph local streets")
+  road_main_20 <- filter(edin_streets, edin_streets$LAYER == "20mph main streets")
+  road_30 <- filter(edin_streets, edin_streets$LAYER == "30mph")
+  road_part <- filter(edin_streets, edin_streets$LAYER == "Part time 20mph")
+  
+  
+  #Visualize
+  map <- leaflet() %>% addTiles() %>% addPolylines(data = edin_streets)
+  
+  map_near <-map %>% leaflet() %>% addTiles() %>% addMarkers(lng = final_df$X, lat = final_df$Y,
+                                                             popup = paste("Accident index: ", final_df$Accident_Index, "<br>",
+                                                                          "Date: ",final_df$Date ,"<br>",
+                                                                          "Speed limit: ", final_df$Speed_limit ,"<br>",
+                                                                          "Layer before: ",final_df$LAYER.x ,"<br>",
+                                                                          "Layer after: ",final_df$LAYER.y ,"<br>",
+                                                                          "Distance before: ",final_df$snap_dist_before,"<br>",
+                                                                          "Distance after: ",final_df$snap_dist,"<br>",
+                                                                          "Road type: ",final_df$Road_Type,"<br>",
+                                                                          "1st road class: ",final_df$X1st_Road_Class,"<br>",
+                                                                          "2nd road class: ",final_df$X2nd_Road_Class,"<br>",
+                                                                          "Junction detail: ",final_df$Junction_Detail), 
+                                                            group = 'incidents linked to a road')
+  
+  map3 <- map_near %>% addCircleMarkers(lng = final_df$Longitude , lat = final_df$Latitude,
+                                        popup = paste("Accident index: ", final_df$Accident_Index, "<br>",
+                                                     "Speed limit: ", final_df$Speed_limit ,"<br>",
+                                                     "Date: ",final_df$Date), group = 'all incidents')
+  
+  
+  map3 <- map3 %>% addLegend("bottomright",colors = c("#41ab5d",  "#fc4e2a", "#4eb3d3",  "#08306b","#6a51a3"),
+                             labels= c("existing 20mph", "local 20mph","main 20 mph","30mph", "part time 20mph"),
+                             title= "Road network",opacity = 1)
+  
+  map3 %>%
+    setView(lng = -3.188267 , lat = 55.953251, zoom = 11)%>%
+    addPolylines(data = road_existing_20, color = "#41ab5d", group = 'existing 20mph' ) %>%
+    addPolylines(data = road_local_20,color = "#fc4e2a" , group = 'local 20mph' ) %>%
+    addPolylines(data = road_main_20,color = "#4eb3d3" , group = 'main 20mph')%>%
+    addPolylines(data = road_30,color = "#08306b" , group = '30mph') %>% 
+    addPolylines(data = road_part,color = "#6a51a3" , group = 'part time 20mph')%>%
+    addLayersControl(overlayGroups = c( 'existing 20mph','local 20mph','main 20mph','30mph','part time 20mph',
+                                        'incidents linked to a road', 'all incidents'), options = layersControlOptions(collapsed = FALSE))
+}
+
 #2.Function for deleting Na points
 delete_na <- function(data, desiredCols) {
   completeVec <- complete.cases(data[, desiredCols])
@@ -100,13 +164,14 @@ nearest_line <-function(df,road_net){
   
   #Convert data to planar projection  
   road_net <- spTransform(road_net,crs)
-  df <-  spTransform(SpatialPointsDataFrame(coords = df[5:6],proj4string = wgs84,data = df), crs)
+  coords = data.frame(df$Longitude,df$Latitude)
+  df <-  spTransform(SpatialPointsDataFrame(coords = coords, proj4string = wgs84, data = df), crs)
   
   #Make sure our data have same projections
   proj4string(df) <- proj4string(road_net)
   
   #Find nearest line with maxDist=6m 
-  nearest_line_sp <- localSnapPointsToLines(df,road_net,maxDist=10,withAttrs=TRUE)
+  nearest_line_sp <- localSnapPointsToLines(df, road_net, maxDist = 10, withAttrs = TRUE)
   
   return(nearest_line_sp)
 }
@@ -141,6 +206,7 @@ data$Junction_Detail[data$Junction_Detail == 5] <- "Slip road"
 data$Junction_Detail[data$Junction_Detail == 6] <- "Crossroads"
 data$Junction_Detail[data$Junction_Detail == 7] <- "More than 4 arms(not roundabout"
 data$Junction_Detail[data$Junction_Detail == 8] <- "Private drive or entrance"
+data$Junction_Detail[data$Junction_Detail == 9] <- "Other junction"
 data$Junction_Detail[data$Junction_Detail == -1] <- "data missing"
 
 data$Road_Type[data$Road_Type == 1] <- "Roundabout"
@@ -171,9 +237,11 @@ edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 > speed limit = 30mph
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-mergedDf <- data[data$LAYER == "20mph existing streets" & data$Speed_limit == 30, ]
+#data1 <- delete_na(data[data$Junction_Detail == "Not a junction or within 20meters", ],"Accident_Index")
+data1 <- delete_na(data[data$X2nd_Road_Class != "-1", ],"Accident_Index")
+
+mergedDf <- data1[data1$LAYER == "20mph existing streets" & data1$Speed_limit == 30, ]
 mergedDf <- mergedDf[,-2]
-mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
 leaflet_map(mergedDf,edin_cons_streets)
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
@@ -183,35 +251,48 @@ s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= 
 s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
 s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
+```
 
+> layer =  existing 20mph
+> speed limit = 30mph
+NEW
 
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #exclude 20mph existing streets and link again accidents to the remaining layers
 #"20mph local streets","20mph main streets","30mph","Part time 20mph","20mph existing streets"
-network_existing <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
+mergedDf <- data1[data1$LAYER == "20mph existing streets" & data1$Speed_limit == 30, ]
+mergedDf <- mergedDf[,-2]
+mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
-#mergedDfa  <- mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2015-12-31", ]
-#mergedDfa <- delete_na(mergedDfa,"Accident_Index")
+network_existing <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
 
 new_lines_existing <- nearest_line(mergedDf,network_existing)
 new_nearest_road <- spTransform(new_lines_existing,"+init=epsg:4326")
 new_nearest_road <-new_lines_existing@data
 new_nearest_road <- unique(merge(new_nearest_road,network_existing@data,by.x = "nearest_line_id" ,by.y = "ID"))
-leaflet_map(new_nearest_road,edin_cons_streets)
+leaflet_map_compararison(new_nearest_road,edin_cons_streets)
+
+mergedDf <- new_nearest_road
+
+s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
+data_frame(s13,s14,s15,s16,s18,s19)
 
 new_nearest_road$D <- abs(new_nearest_road$snap_dist - new_nearest_road$snap_dist_before)
 
 new <- new_nearest_road %>% filter(new_nearest_road$D <= 2)
- 
-
 ```
 
 > layer = 30mph 
-speed limit = 20mph
+>speed limit = 20mph
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-mergedDf <- data[data$LAYER == "30mph" &data$Speed_limit == 20, ]
+mergedDf <- data1[data1$LAYER == "30mph" &data1$Speed_limit == 20, ]
 mergedDf <- mergedDf[,-2]
-mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 leaflet_map(mergedDf,edin_cons_streets)
  
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
@@ -221,22 +302,38 @@ s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= 
 s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
 s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
+```
 
+> layer = 30mph 
+>speed limit = 20mph
+>NEW
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
 network_30mph <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","20mph existing streets","Part time 20mph"),]
+mergedDf <- data1[data1$LAYER == "30mph" &data1$Speed_limit == 20, ]
+mergedDf <- mergedDf[,-2]
+mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
 new_lines_30mph <- nearest_line(mergedDf,network_30mph)
 new_nearest_road_30mph <- spTransform(new_lines_30mph,"+init=epsg:4326")
 new_nearest_road_30mph <-new_lines_30mph@data
 new_nearest_road_30mph <- unique(merge(new_nearest_road_30mph,network_30mph@data,by.x = "nearest_line_id" ,by.y = "ID"))
-leaflet_map(new_nearest_road_30mph,edin_cons_streets)
+leaflet_map_compararison(new_nearest_road_30mph,edin_cons_streets)
+s13 <- nrow(delete_na(new_nearest_road_30mph[new_nearest_road_30mph$Date >= "2013-01-01" & new_nearest_road_30mph$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(new_nearest_road_30mph[new_nearest_road_30mph$Date >= "2014-01-01" & new_nearest_road_30mph$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(new_nearest_road_30mph[new_nearest_road_30mph$Date >= "2015-01-01" & new_nearest_road_30mph$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(new_nearest_road_30mph[new_nearest_road_30mph$Date >= "2016-01-01" & new_nearest_road_30mph$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(new_nearest_road_30mph[new_nearest_road_30mph$Date >= "2018-01-01" & new_nearest_road_30mph$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(new_nearest_road_30mph[new_nearest_road_30mph$year == "2019" , ],"Accident_Index"))
+data_frame(s13,s14,s15,s16,s18,s19)
 ```
 
 >layer = local 20mph
-Speed limit = 20
+>Speed limit = 20
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 
-mergedDf <- data[data$LAYER == "20mph local streets" & data$Speed_limit == 20, ]
+mergedDf <- data1[data1$LAYER == "20mph local streets" & data1$Speed_limit == 20, ]
 leaflet_map(mergedDf,edin_cons_streets)
 
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
@@ -250,11 +347,80 @@ data_frame(s13,s14,s15,s16,s18,s19)
 ```
 
 >layer = local 20mph
-Speed limit = 30
+>Speed limit = 20
+>NEW
+
+```{r,echo=FALSE, warning=FALSE,message=FALSE}
+network_20mphlocal <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph existing streets","Part time 20mph"),]
+mergedDf <- data1[data1$LAYER == c("20mph local streets", "20mph main streets")  & data1$Speed_limit == 20, ]
+#mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
+mergedDf <- mergedDf[,-2]
+mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
+
+new_lines_20mphlocal <- nearest_line(mergedDf,network_20mphlocal)
+new_nearest_road_20mphlocal <- spTransform(new_lines_20mphlocal,"+init=epsg:4326")
+new_nearest_road_20mphlocal <-new_lines_20mphlocal@data
+new_nearest_road_20mphlocal <- unique(merge(new_nearest_road_20mphlocal,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
+leaflet_map_compararison(new_nearest_road_20mphlocal,edin_cons_streets)
+
+s13 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$Date >= "2013-01-01" & new_nearest_road_20mphlocal$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$Date >= "2014-01-01" & new_nearest_road_20mphlocal$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$Date >= "2015-01-01" & new_nearest_road_20mphlocal$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$Date >= "2016-01-01" & new_nearest_road_20mphlocal$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$Date >= "2018-01-01" & new_nearest_road_20mphlocal$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$year == "2019" , ],"Accident_Index"))
+data_frame(s13,s14,s15,s16,s18,s19)
+```
+
+
+>layer = local 20mph
+>Speed limit = 30
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 
-mergedDf <- data[data$LAYER == "20mph local streets" & data$Speed_limit == 30, ]
+mergedDf <- data1[data1$LAYER == c("20mph local streets", "20mph main streets") & data1$Speed_limit == 30, ]
+#leaflet_map(mergedDf,edin_cons_streets)
+
+s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
+data_frame(s13,s14,s15,s16,s18,s19)
+
+```
+
+>layer = local 20mph
+>Speed limit = 30
+>NEW
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+network_20mphlocal <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph existing streets","Part time 20mph"),]
+mergedDf <- data1[data1$LAYER == c("20mph local streets", "20mph main streets") & data1$Speed_limit == 30, ]
+mergedDf <- mergedDf[,-2]
+mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
+
+new_lines_20mphlocal <- nearest_line(mergedDf,network_20mphlocal)
+new_nearest_road_20mphlocal <- spTransform(new_lines_20mphlocal,"+init=epsg:4326")
+new_nearest_road_20mphlocal <-new_lines_20mphlocal@data
+new_nearest_road_20mphlocal <- unique(merge(new_nearest_road_20mphlocal,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
+leaflet_map_compararison(new_nearest_road_20mphlocal,edin_cons_streets)
+s13 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$Date >= "2013-01-01" & new_nearest_road_20mphlocal$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$Date >= "2014-01-01" & new_nearest_road_20mphlocal$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$Date >= "2015-01-01" & new_nearest_road_20mphlocal$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$Date >= "2016-01-01" & new_nearest_road_20mphlocal$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$Date >= "2018-01-01" & new_nearest_road_20mphlocal$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(new_nearest_road_20mphlocal[new_nearest_road_20mphlocal$year == "2019" , ],"Accident_Index"))
+data_frame(s13,s14,s15,s16,s18,s19)
+```
+
+>layer = main 20mph
+>Speed limit = 30
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+
+mergedDf <- data[data$LAYER == c("20mph local streets", "20mph main streets") & data$Speed_limit == 30, ]
 #leaflet_map(mergedDf,edin_cons_streets)
 
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
@@ -267,11 +433,36 @@ data_frame(s13,s14,s15,s16,s18,s19)
 ```
 
 >layer = main 20mph
-Speed limit = 30
+>Speed limit = 30
+>NEW
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
+network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph existing streets","Part time 20mph"),]
+mergedDf <- data1[data1$LAYER == c("20mph local streets", "20mph main streets") & data1$Speed_limit == 30, ]
+mergedDf <- mergedDf[,-2]
+mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
-mergedDf <- data[data$LAYER == "20mph main streets" & data$Speed_limit == 30, ]
+new_lines_20mphmain <- nearest_line(mergedDf,network_20mphmain)
+new_nearest_road_20mphmain <- spTransform(new_lines_20mphmain,"+init=epsg:4326")
+new_nearest_road_20mphmain <-new_lines_20mphmain@data
+new_nearest_road_20mphmain <- unique(merge(new_nearest_road_20mphmain,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
+
+leaflet_map_compararison(new_nearest_road_20mphmain,edin_cons_streets)
+
+s13 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$Date >= "2013-01-01" & new_nearest_road_20mphmain$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$Date >= "2014-01-01" & new_nearest_road_20mphmain$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$Date >= "2015-01-01" & new_nearest_road_20mphmain$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$Date >= "2016-01-01" & new_nearest_road_20mphmain$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$Date >= "2018-01-01" & new_nearest_road_20mphmain$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$year == "2019" , ],"Accident_Index"))
+data_frame(s13,s14,s15,s16,s18,s19)
+```
+
+>layer = main 20mph
+>Speed limit = 20
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+mergedDf <- data[data$LAYER == c("20mph local streets", "20mph main streets") & data$Speed_limit == 20, ]
 #leaflet_map(mergedDf,edin_cons_streets)
 
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
@@ -281,30 +472,32 @@ s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= 
 s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
 s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
+
 ```
 
 >layer = main 20mph
 Speed limit = 20
+NEW
 
-```{r, echo=FALSE, warning=FALSE,message=FALSE}
-mergedDf <- data[data$LAYER == "20mph main streets" & data$Speed_limit == 20, ]
-#leaflet_map(mergedDf,edin_cons_streets)
+```{r}
+network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets","20mph existing streets","Part time 20mph"),]
+mergedDf <- data[data$LAYER == c("20mph local streets", "20mph main streets") & data$Speed_limit == 20, ]
+mergedDf <- mergedDf[,-2]
+mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
-s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
-s14 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ],"Accident_Index"))
-s15 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ],"Accident_Index"))
-s16 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ],"Accident_Index"))
-s18 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ],"Accident_Index"))
-s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
-data_frame(s13,s14,s15,s16,s18,s19)
-
+new_lines_20mphmain <- nearest_line(mergedDf,network_20mphmain)
+new_nearest_road_20mphmain <- spTransform(new_lines_20mphmain,"+init=epsg:4326")
+new_nearest_road_20mphmain <-new_lines_20mphmain@data
+new_nearest_road_20mphmain <- unique(merge(new_nearest_road_20mphmain,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
+leaflet_map_compararison(new_nearest_road_20mphmain,edin_cons_streets)
 ```
+
 
 >layer =existing  20mph
 Speed limit = 20
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-mergedDf <- data[data$LAYER == "20mph existing streets" & data$Speed_limit == 20, ]
+mergedDf <- data[data$LAYER == c("20mph local streets", "20mph main streets") & data$Speed_limit == 20, ]
 #leaflet_map(mergedDf,edin_cons_streets)
 
 s13 <- nrow(delete_na(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ],"Accident_Index"))
