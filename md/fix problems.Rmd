@@ -204,7 +204,7 @@ data$Junction_Detail[data$Junction_Detail == 2] <- "Mini-roundabout"
 data$Junction_Detail[data$Junction_Detail == 3] <- "T or staggered junction"
 data$Junction_Detail[data$Junction_Detail == 5] <- "Slip road"
 data$Junction_Detail[data$Junction_Detail == 6] <- "Crossroads"
-data$Junction_Detail[data$Junction_Detail == 7] <- "More than 4 arms(not roundabout"
+data$Junction_Detail[data$Junction_Detail == 7] <- "More than 4 arms(not roundabout)"
 data$Junction_Detail[data$Junction_Detail == 8] <- "Private drive or entrance"
 data$Junction_Detail[data$Junction_Detail == 9] <- "Other junction"
 data$Junction_Detail[data$Junction_Detail == -1] <- "data missing"
@@ -266,6 +266,11 @@ new_nearest_road <- spTransform(new_lines_existing,"+init=epsg:4326")
 new_nearest_road <-new_lines_existing@data
 new_nearest_road <- unique(merge(new_nearest_road,network_existing@data,by.x = "nearest_line_id" ,by.y = "ID"))
 
+#injuries that didn't find new layer
+d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road$Accident_Index),],"Accident_Index")
+leaflet_map(d1,edin_cons_streets)
+
+
 df1 <- new_nearest_road
 df1 <- df1[,-c(38,41,42,44,46,48)]
 ```
@@ -284,6 +289,10 @@ new_lines_30mph <- nearest_line(mergedDf,network_30mph)
 new_nearest_road_30mph <- spTransform(new_lines_30mph,"+init=epsg:4326")
 new_nearest_road_30mph <-new_lines_30mph@data
 new_nearest_road_30mph <- unique(merge(new_nearest_road_30mph,network_30mph@data,by.x = "nearest_line_id" ,by.y = "ID"))
+
+#injuries that didn't find new layer
+d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_30mph$Accident_Index),],"Accident_Index")
+leaflet_map(d1,edin_cons_streets)
 
 df2 <- new_nearest_road_30mph
 df2 <- df2[,-c(38,41,42,44,46,48)]
@@ -305,6 +314,10 @@ new_nearest_road_20mphlocal <- spTransform(new_lines_20mphlocal,"+init=epsg:4326
 new_nearest_road_20mphlocal <-new_lines_20mphlocal@data
 new_nearest_road_20mphlocal <- unique(merge(new_nearest_road_20mphlocal,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
 
+#injuries that didn't find new layer
+d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_20mphlocal$Accident_Index),],"Accident_Index")
+leaflet_map(d1,edin_cons_streets)
+
 df3 <- new_nearest_road_20mphlocal
 df3 <- df3[,-c(38,41,42,44,46,48)]
 ```
@@ -324,6 +337,10 @@ new_lines_20mphlocal <- nearest_line(mergedDf,network_20mphlocal)
 new_nearest_road_20mphlocal <- spTransform(new_lines_20mphlocal,"+init=epsg:4326")
 new_nearest_road_20mphlocal <-new_lines_20mphlocal@data
 new_nearest_road_20mphlocal <- unique(merge(new_nearest_road_20mphlocal,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
+
+#injuries that didn't find new layer
+d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_20mphlocal$Accident_Index),],"Accident_Index")
+leaflet_map(d1,edin_cons_streets)
 
 df4 <- new_nearest_road_20mphlocal
 df4 <- df4[,-c(38,41,42,44,46,48)]
@@ -345,6 +362,10 @@ new_nearest_road_20mphmain <- spTransform(new_lines_20mphmain,"+init=epsg:4326")
 new_nearest_road_20mphmain <-new_lines_20mphmain@data
 new_nearest_road_20mphmain <- unique(merge(new_nearest_road_20mphmain,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
 
+#injuries that didn't find new layer
+d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_20mphmain$Accident_Index),],"Accident_Index")
+leaflet_map(d1,edin_cons_streets)
+
 df5 <- new_nearest_road_20mphmain
 df5 <- df5[,-c(38,41,42,44,46,48)]
 ```
@@ -365,6 +386,10 @@ new_nearest_road_20mphmain <- spTransform(new_lines_20mphmain,"+init=epsg:4326")
 new_nearest_road_20mphmain <-new_lines_20mphmain@data
 new_nearest_road_20mphmain <- unique(merge(new_nearest_road_20mphmain,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
 
+#injuries that didn't find new layer
+d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_20mphmain$Accident_Index),],"Accident_Index")
+leaflet_map(d1,edin_cons_streets)
+
 df6 <- new_nearest_road_20mphmain
 df6 <- df6[,-c(38,41,42,44,46,48)]
 ```
@@ -383,6 +408,11 @@ new_lines_20mphexisting <- nearest_line(mergedDf,network_20mphexisting)
 new_nearest_road_20mphexisting <- spTransform(new_lines_20mphexisting,"+init=epsg:4326")
 new_nearest_road_20mphexisting <-new_lines_20mphexisting@data
 new_nearest_road_20mphexisting <- unique(merge(new_nearest_road_20mphexisting,network_20mphexisting@data,by.x = "nearest_line_id" ,by.y = "ID"))
+leaflet_map(new_nearest_road_20mphexisting,edin_cons_streets)
+
+#injuries that didn't find new layer
+d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_20mphexisting$Accident_Index),],"Accident_Index")
+leaflet_map(d1,edin_cons_streets)
 
 df7 <- new_nearest_road_20mphexisting
 df7 <- df7[,-c(38,41,42,44,46,48)]
@@ -401,6 +431,11 @@ new_lines_30mph <- nearest_line(mergedDf,network_30mph)
 new_nearest_road_30mph <- spTransform(new_lines_30mph,"+init=epsg:4326")
 new_nearest_road_30mph <-new_lines_30mph@data
 new_nearest_road_30mph <- unique(merge(new_nearest_road_30mph,network_30mph@data,by.x = "nearest_line_id" ,by.y = "ID"))
+leaflet_map(new_nearest_road_30mph,edin_cons_streets)
+
+#injuries that didn't find new layer
+d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_30mph$Accident_Index),],"Accident_Index")
+leaflet_map(d1,edin_cons_streets)
 
 df8 <- new_nearest_road_30mph
 df8 <- df8[,-c(38,41,42,44,46,48)]
