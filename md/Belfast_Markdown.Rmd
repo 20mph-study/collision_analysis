@@ -21,31 +21,34 @@ library(knitr)
 library(kableExtra)
 library(plyr)
 
-#Function for deleting Na points
-delete_na <- function(data, desiredCols) {
-  completeVec <- complete.cases(data[, desiredCols])
-  return(data[completeVec, ])
-}
-
 source('../functions/localSnapPointsToLines.R')
+source('../functions/nearest_line_belf.R')
+source('../functions/read_belf_controldata.R')
+source('../functions/time_plot_belf.R')
+source('../functions/belcount.R')
+source('../functions/read_bel_data.R')
+source('../functions/belcount_pre.R')
+source('../functions/read_belfcontrol_zone.R')
+source('../functions/delete_na.R')
+source('../functions/belcount_pre.R')
+source('../functions/read_belf_road.R')
+source('../functions/leaflet_map_belf.R')
+source('../functions/read_belf_impl_zones.R')
+source('../functions/belf_annual_table.R')
+source('../functions/buffer_data.R')
+source('../functions/belf_leaflet_zones.R')
 
+
+
+# Define network dir path
+dir_path <- "../data"
 ```
 
 > Belfast road network changed to 20mph
 
 ```{r ,echo=FALSE, warning=FALSE, message=FALSE, comment=FALSE}
-#1.GIS 
-# Define network dir path
-dir_path <- "../data"
-#Read geodatabase for Belfast
-
 #Road data 
-# Load data from the network drive for Belfast road network
-belfast_road_data <- readOGR(paste0(dir_path, '/20mph Speed Limit Streets/20mph_Speed_Limit_Streets.shp'), verbose = FALSE)
-# Tranform the data by applying a projection
-belfast_road_data <- spTransform(belfast_road_data, "+init=epsg:4326")
-belfast_road_data@data <-rowid_to_column(belfast_road_data@data, "ID")
-# Visualize using leaflet
+belfast_road_data <- read_belf_road(dir_path)
 leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>% setView(lng = -5.926437 , lat = 54.607868, zoom = 14)
 ```
 
@@ -53,14 +56,7 @@ leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>% setView(lng = -5
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #Output Areas 
-gdb_path_out <- paste0(dir_path, "/OA_ni-ESRI_format/OA_ni.shp")
-gdb_layers <- ogrListLayers(gdb_path_out)
-
-belf_impl_zones <- readOGR(dsn = gdb_path_out, layer="OA_ni", verbose = FALSE)
-belf_impl_zones <- spTransform(belf_impl_zones, "+init=epsg:4326")
-belf_impl_zones_out <- belf_impl_zones[belf_impl_zones@data$OA_CODE %in% c("95GG390015","95GG200003","95GG350003","95GG350004",
-                                                                           "95GG390013","95GG350001","95GG210002","95GG400007",
-                                                                           "95GG390012","95GG390011","95GG350005"),]
+belf_impl_zones_out <- read_belf_impl_zones(dir_path)
 leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons()
 ```
 
@@ -68,232 +64,98 @@ leaflet(belf_impl_zones_out) %>% addTiles() %>% addPolygons()
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #control zones
-belf_control_zones <- belf_impl_zones[belf_impl_zones@data$OA_CODE %in% c("95BB060001","95BB060002","95BB060003","95BB060004",
-                                                                                   "95BB060005","95BB060006","95BB060007","95BB060008",
-                                                                                   "95BB060009","95BB060010","95BB060011"),]
+belf_control_zones <- read_belfcontrol_zone(dir_path)
 leaflet(belf_control_zones) %>% addTiles() %>% addPolygons() 
 ```
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-#READ DATA
 #PSNI data
-belf_data <- read_csv( paste0(dir_path, "/Belfast/Belfast_data.csv"))
-belf_data <- delete_na(belf_data,c("X","Y"))
-belf_data <- belf_data %>% mutate(year = format(as.Date(belf_data$a_date, format="%m/%d/%Y"),"%Y"))
-belf_data <- belf_data %>% filter(belf_data$a_speed %in% c(20,30)) 
-
-belf_control_data <- read_csv( paste0(dir_path, "/Belfast/Belfast_control_data.csv"))
-belf_control_data <- delete_na(belf_control_data,c("X","Y"))
-belf_control_data <- belf_control_data %>% filter(belf_control_data$a_speed %in% c(20,30)) 
-belf_control_data <- belf_control_data %>% mutate(year = format(as.Date(belf_control_data$a_date, format="%m/%d/%Y"),"%Y"))
-#belf_data %>% group_by(year) %>% summarise()
+belf_data <- read_bel_data(dir_path)
+belf_control_data <- read_belf_controldata(dir_path)
 ```
 
 > Time series Analysis
 
 ```{r,echo=FALSE, warning=FALSE,message=FALSE}
-ggplot(belf_data) +
- aes(x = a_speed) +
- geom_histogram(bins = 30L, fill = "#a6d96a") +
- theme_minimal() +
- facet_wrap(vars(year))
-
-ggplot(belf_data) +
- aes(x = a_date, colour = a_speed) +
- geom_histogram(bins = 30L, fill = "#a6d96a") +
- scale_color_distiller(palette = "Greens") +
- theme_minimal()
-
-ggplot(belf_data) +
- aes(x = a_date, weight = a_speed) +
- geom_bar(fill = "#1a9850") +
- theme_minimal()
+time_plot_belf(belf_data)
 ```
 
-
-```{r ,echo=FALSE, message=FALSE, warning=FALSE}
+```{r,echo=FALSE, warning=FALSE,message=FALSE}
 #Nearest line
-df <- belf_data
-road_net <- belfast_road_data
-
-#Create planar(cartesian) projection 
-crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
-wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
-
-#Convert data to planar projection  
-road_net <- spTransform(road_net,crs)
-df <-  spTransform(SpatialPointsDataFrame(coords = df[25:26],proj4string = wgs84,data = df), crs)
-
-#Make sure our data have same projections
-proj4string(df) <- proj4string(road_net)
-
-#Find nearest line with maxDist=10m 
-nearest_line_sp <- localSnapPointsToLines(df,road_net,maxDist=10,withAttrs = T)
-
-#belfast_road_data@data <-rowid_to_column(belfast_road_data@data, "ID")
-nearest_line_sp <- spTransform(nearest_line_sp,"+init=epsg:4326")
-
-#Merge the dataframes based on the ID of the nearest line in order to connect geoinformation
-merged <- merge(data.frame(nearest_line_sp), belfast_road_data@data,by.x = "nearest_line_id" ,by.y = "ID")
-
-```
-
-
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-count <- function(data_df){
-  count2 <- aggregate(a_ID~a_speed,data_df,length)
-  return(count2)
-}
-
-count_pre <- function(data_df){
-  count2 <- aggregate(a_ID~a_speed,data_df,length)
-  return(count2)
-}
-
+merged <- nearest_line_belf(belf_data,belfast_road_data)
+total <- merged
 ```
 
 > Mapping accidents with roads: 2013
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-#Plot results
-total <- merged[merged$year >= "2013" & merged$year <= "2014", ]
-a <- c(nrow(total[total$a_date >="2013-07-31" & total$a_date <= "2014-12-30", ]))
-
-total <- total[total$year == "2013", ]
-leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines(group = 'roads') %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
-    options = layersControlOptions(collapsed = FALSE))
-count(total[total$year == "2013", ])
+leaflet_map_belf(belfast_road_data, merged[merged$year == "2013", ])
+belcount(merged[merged$year == "2013", ])
 ```
 
 > Mapping accidents with roads: 2014
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-total <- merged[merged$year >= "2014" & merged$year <= "2015", ]
-b <- c(nrow(total[total$a_date >="2014-07-31" & total$a_date <= "2015-12-30", ]))
-
-total <- total[total$year == "2014",]
-leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines(group = 'roads') %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
-    options = layersControlOptions(collapsed = FALSE))
-count(total[total$year == "2014", ])
+leaflet_map_belf(belfast_road_data,merged[merged$year == "2014", ])
+belcount(merged[merged$year == "2014", ])
 ```
 
 > Mapping accidents with roads: 2015
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-total <- merged[merged$year >= "2015" & merged$year <= "2016", ]
-c <- c(nrow(total[total$a_date >="2015-07-31" & total$a_date <= "2016-07-20", ]))
-
-total <- total[total$year == "2015",]
-leaflet(belfast_road_data) %>% addTiles() %>% addPolylines(group = 'roads') %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
-    options = layersControlOptions(collapsed = FALSE))
-count(total[total$year == "2015", ])
+leaflet_map_belf(belfast_road_data,merged[merged$year == "2015", ])
+belcount(merged[merged$year == "2015", ])
 ```
 
 > Mapping accidents with roads: 2016
 
 ```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=FALSE}
-total <- merged[merged$year == "2016", ]
-leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines(group = 'roads') %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
-    options = layersControlOptions(collapsed = FALSE))
-count(total[total$year == "2016", ])
+leaflet_map_belf(belfast_road_data,merged[merged$year == "2016", ])
+belcount(merged[merged$year == "2016", ])
 ```
 
 > Mapping accidents with roads: 2018
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-total <- merged[merged$year >= "2018" & merged$year <= "2019", ]
-d <- c(nrow(total[total$a_date >="2018-03-06" & total$a_date <= "2019-12-31", ]))
-
-total <- total[total$year == "2018",]
-leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines(group = 'roads') %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads', 'incidents','incidents linked to a road'),
-    options = layersControlOptions(collapsed = FALSE))
-count(total[total$year == "2018", ])
+leaflet_map_belf(belfast_road_data,merged[merged$year == "2018", ])
+belcount(merged[merged$year == "2018", ])
 ```
 
 > Mapping accidents with roads: 2019
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-total <- merged[merged$year == "2019" , ]
-leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines(group = 'roads') %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
-  addCircleMarkers(data = total,lng = total$X.1,lat=total$Y.1, group = 'incidents') %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed ), group = 'incidents linked to a road') %>% addLayersControl(overlayGroups = c('roads','incidents linked to a road', 'incidents'),
-    options = layersControlOptions(collapsed = FALSE))
-count(total[total$year == "2019", ])
+leaflet_map_belf(belfast_road_data,merged[merged$year == "2019", ])
+belcount(merged[merged$year == "2019", ])
 ```
 
 > Count pre 20mph
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-pre <- count_pre(merged[merged$year >="2013" & merged$year <= "2016", ])
+pre <- belcount_pre(merged[merged$year >="2013" & merged$year <= "2016", ])
 pre
 ```
 
 > Count post 20mph
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-post <- count(merged[merged$year >="2018" & merged$year <= "2019", ])
+post <- belcount(merged[merged$year >="2018" & merged$year <= "2019", ])
 post
 ```
 
 > Table: Average annual road traffic collision rates in the city of Belfast ( GIS )
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-
-sum_pre <- pre[pre$a_speed == 20,2] + pre[pre$a_speed == 30,2] 
-sum_post <- post[post$a_speed == 20,2] + post[post$a_speed == 30,2] 
-
-sum1 <- c(nrow(belf_data[belf_data$year >= "2013" & belf_data$year <= "2016",]))
-sum2 <- c(nrow(belf_data[belf_data$year >= "2018" & belf_data$year <= "2019",]))
-
-pre_not_changed <- sum1 - sum_pre
-post_not_changed <- sum2 - sum_post
-
-collisions_pre_20mph <- c(sum_pre, pre_not_changed, sum1)
-collisions_post_20mph <- c(sum_post, post_not_changed, sum2)
-
-rate_pre_20mph <- round(collisions_pre_20mph / 3, 2)
-rate_post_20mph <- round(collisions_post_20mph / 1, 2)
-
-diff_in_rates <- - rate_pre_20mph + rate_post_20mph
-percentage_diff_in_rates <- round(diff_in_rates / rate_pre_20mph * 100, 2)
-
-type <- c("Streets changed to 20mph"," Existing streets,not changed","All streets")
-df <- data.frame(type, collisions_pre_20mph, collisions_post_20mph, rate_pre_20mph, rate_post_20mph, diff_in_rates, percentage_diff_in_rates)
-colnames(df)=c("Type", "collisions pre-20mph", "collisions post-20mph", "rate pre-20mph", "rate post-20mph", "diff in rates", "Perc.diff.rates")
-kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Belfast (GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+belf_annual_table(belf_data,pre,post)
 ```
 
 > Effect estimate ( GIS )
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
+a <- c(nrow(merged[merged$a_date >="2013-07-31" & merged$a_date <= "2014-12-30", ]))
+b <- c(nrow(merged[merged$a_date >="2014-07-31" & merged$a_date <= "2015-12-30", ]))
+c <- c(nrow(merged[merged$a_date >="2015-07-31" & merged$a_date <= "2016-07-20", ]))
+d <- c(nrow(merged[merged$a_date >="2018-03-06" & merged$a_date <= "2019-12-31", ]))
+
 sum1 <- (a+b+c)/3
 sum2 <- d
 unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
@@ -320,132 +182,63 @@ head(merged[,c(25,13,36,37,41)])
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #Link every accident with a zone
-
-#Create planar(cartesian) projection 
-crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
-wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
-
-#Convert data to planar projection  
-belf_impl_zones_out <- spTransform(belf_impl_zones_out,crs)
-utm_data <-  spTransform(SpatialPointsDataFrame(coords = belf_data[25:26],proj4string = wgs84,data = belf_data), crs)
-
-#Make sure our data have same projections
-proj4string(utm_data) <- proj4string(belf_impl_zones_out)
-
-#add a buffer around the point
-points_polygons <- gBuffer(utm_data, width=5, byid = TRUE )
-count_zones <- over(points_polygons,belf_impl_zones_out,returnList = FALSE)
-count_zones <- rowid_to_column(count_zones,"ID")
-belf_data <- rowid_to_column(belf_data,"index_ID")
-total_zones <- merge(belf_data,count_zones,by.x="index_ID",by.y="ID")
-
-#Convert data projections back to lat/long to plot with leaflet
-belf_impl_zones_out <- spTransform(belf_impl_zones_out,"+init=epsg:4326")
-#total_zones <- spTransform(total_zones, "+init=epsg:4326")
-belf_impl_out <- belf_impl_zones_out
-belf_impl_out <- st_as_sf(belf_impl_out)
-#df_na <- na.omit(df_zones[1:4]) # check how many are missing
+belf_data <- rename(belf_data,c("X" = "Longitude","Y" = "Latitude"))
+total_zones <- buffer_data(belf_data ,belf_impl_zones_out)
+total_zones <- cbind(Zone_info = "Implementation zone", total_zones)
 
 total_zones <- delete_na(total_zones,c("X_COORD" ,"Y_COORD"))
 total_zones$a_type <- as.character(total_zones$a_type )
 total_zones$a_type [total_zones$a_type  == 1] <- "fatal collision"
 total_zones$a_type [total_zones$a_type  == 2] <- "Serious collision"
 total_zones$a_type [total_zones$a_type  == 3] <- "Slight collision"
-
-buffer_data <-function(data,zone){
-  #Create planar(cartesian) projection 
-  crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
-  wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
-  
-  zone <- spTransform(zone,crs) 
-  data <-  spTransform(SpatialPointsDataFrame(coords = data[26:27],proj4string = wgs84,data = data), crs)
-  
-  proj4string(data) <- proj4string(zone)
-  counts2 <- rgeos::gWithin(data, zone, byid=TRUE)
-  print(length(counts2[counts2 == TRUE]))
-  return(length(counts2[counts2 == TRUE]))
-}
-
 ```
 
 > Mapping accidents with zones: 2013
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$a_date >="2013-01-01" & total_zones$a_date <= "2013-12-31", ]
-leaflet(belf_impl_out) %>% addTiles() %>% addPolygons() %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed, "<br>",
-                           "Accident severity: " , total$a_type ))
-s_13 <- buffer_data(total,belf_impl_zones_out)
-
+belf_leaflet_zones(belf_impl_zones_out,total)
+s_13 <- nrow(buffer_data(total,belf_impl_zones_out))
 ```
 
 > Mapping accidents with zones: 2014
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$a_date >="2014-01-01" & total_zones$a_date <= "2014-12-31", ]
-leaflet(belf_impl_out) %>% addTiles() %>% addPolygons() %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed , "<br>",
-                           "Accident severity: " , total$a_type ))
-s_14 <- buffer_data(total,belf_impl_zones_out)
+belf_leaflet_zones(belf_impl_zones_out,total)
+s_14 <- nrow(total)
 ```
 
 > Mapping accidents with zones: 2015
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$a_date >="2015-01-01" & total_zones$a_date <= "2015-12-31", ]
-leaflet(belf_impl_out) %>% addTiles() %>% addPolygons() %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed, "<br>",
-                           "Accident severity: " , total$a_type  ))
-s_15 <- buffer_data(total,belf_impl_zones_out)
+belf_leaflet_zones(belf_impl_zones_out,total)
+s_15 <- nrow(buffer_data(total,belf_impl_zones_out))
 ```
 
 > Mapping accidents with zones: 2016
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$a_date >="2016-01-01" & total_zones$a_date <= "2016-12-20", ]
-leaflet(belf_impl_out) %>% addTiles() %>% addPolygons() %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed, "<br>",
-                           "Accident severity: " , total$a_type  ))
-s_16 <- buffer_data(total,belf_impl_zones_out)
+belf_leaflet_zones(belf_impl_zones_out,total)
+s_16 <- nrow(buffer_data(total,belf_impl_zones_out))
 ```
 
 > Mapping accidents with zones: 2018
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$a_date >="2018-03-06" & total_zones$a_date <= "2018-12-31", ]
-leaflet(belf_impl_out) %>% addTiles() %>% addPolygons() %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed , "<br>",
-                           "Accident severity: " , total$a_type ))
-s_18 <- buffer_data(total,belf_impl_zones_out)
-
+belf_leaflet_zones(belf_impl_zones_out,total)
+s_18 <- nrow(buffer_data(total,belf_impl_zones_out))
 ```
 
 > Mapping accidents with zones: 2019
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$year == "2019", ]
-leaflet(belf_impl_out) %>% addTiles() %>% addPolygons() %>%
-  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>% 
-  addMarkers(lng = total$X, lat = total$Y, 
-             popup = paste("Accident index: ", total$a_ID, "<br>",
-                           "Speed limit: ", total$a_speed, "<br>",
-                           "Accident severity: " , total$a_type  ))
-s_19 <- buffer_data(total,belf_impl_zones_out)
+belf_leaflet_zones(belf_impl_zones_out,total)
+s_19 <- nrow(buffer_data(total,belf_impl_zones_out))
 ```
 
 > Total accidents in the implementation zone
@@ -457,23 +250,10 @@ s_13 + s_14 + s_15 + s_16 + s_18 + s_19
 > Count accidents in Control Zone : City Center --> Central ( Ards )
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-buffer_control_data <-function(data,zone){
-  #Create planar(cartesian) projection 
-  crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
-  wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
-  
-  zone <- spTransform(zone,crs) 
-  data <-  spTransform(SpatialPointsDataFrame(coords = data[25:26],proj4string = wgs84,data = data), crs)
-  
-  proj4string(data) <- proj4string(zone)
-  counts2 <- raster::intersect(data,zone) 
-  return(counts2@data)
-}
-
-control_data_df <- buffer_control_data(belf_control_data,belf_control_zones)
-
-leaflet(belf_control_zones) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_data_df$X,  lat = control_data_df$Y) %>% setView(lng = -5.69092, lat = 54.59236, zoom = 13)
-
+belf_control_data <- rename(belf_control_data,c("X" = "Longitude","Y" = "Latitude"))
+control_data_df <- buffer_data(belf_control_data,belf_control_zones)
+control_data_df <- cbind(Zone_info = "Control zone", control_data_df)
+leaflet(belf_control_zones) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_data_df$Longitude,  lat = control_data_df$Latitude) %>% setView(lng = -5.69092, lat = 54.59236, zoom = 13)
 nrow(control_data_df)
 ```
 
@@ -487,18 +267,18 @@ head(total_zones[,c(25,13,34)])
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 merged_1 <- merged[,-c(1,29:35,38:40,42:47)]
-total_zones_1 <- total_zones[,-c(29:33)]
-updated_dataset <- merge(merged_1,total_zones_1,by.x="a_ID",by.y="a_ID")
-updated_dataset <-updated_dataset[,-c(31:57)]
-updated_dataset <- rename(updated_dataset,c("Police_Force.x"="Police_Force", "a_type.x" = "a_type", "a_veh.x"="a_veh","a_cas.x"="a_cas",
-                                        "a_date.x"="a_date","a_day.x"="a_day","a_time.x"="a_time","a_gd1.x"="a_gd1","a_gd2.x"="a_gd2","LGDNAME.x"="LGDNAME",
-                                        "a_ctype.x"="a_ctype","a_speed.x"="a_speed","a_jdet.x"="a_jdet","a_jcont.x"="a_jcont","a_pedhum.x"="a_pedhum",
-                                        "a_pedphys.x" ="a_pedphys","a_light.x" ="a_light","a_weat.x"="a_weat","a_roadsc.x"="a_roadsc","a_speccs.x"="a_speccs",                                         "a_chaz.x" ="a_chaz","a_scene.x"="a_scene","Urban_Rural.x"="Urban_Rural","X.x"="X","Y.x"="Y","year.x"="year"))
-head(updated_dataset[,c(1,13,29,30,31)])
-updated_dataset$a_time <- as.character(updated_dataset$a_time)
-control_data_df <- control_data_df[,-c(28:32)]
+merged_1$a_time <- as.character(merged_1$a_time)
+merged_1 <- rename(merged_1,c("X" = "Longitude","Y" = "Latitude"))
+
+total_zones_1 <- total_zones[,-c(28:32)]
+total_zones_1$a_time <- as.character(total_zones_1$a_time)
+updated_dataset <- rbind.fill(merged_1,total_zones_1)
+
+control_data_df$a_time <- as.character(control_data_df$a_time)
+
 #final_dataset
 final_df <- rbind.fill(updated_dataset,control_data_df)
+final_df <- final_df[,-c(32,34:37)]
 #Create new csv file with the cleaned data
-write.csv(final_df, file = paste0(dir_path, "/Belfast/final_Belfast_data.csv"),row.names=FALSE)
+write.csv(final_df, file = paste0(dir_path, "/Belfast/final_Belfast_data.csv"),row.names = FALSE)
 ```
