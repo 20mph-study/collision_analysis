@@ -507,7 +507,15 @@ new_lines_20mphmain <- nearest_line(mergedDf,network_20mphmain)
 new_nearest_road_20mphmain <- spTransform(new_lines_20mphmain,"+init=epsg:4326")
 new_nearest_road_20mphmain <-new_lines_20mphmain@data
 new_nearest_road_20mphmain <- unique(merge(new_nearest_road_20mphmain,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
-leaflet_map_compararison(new_nearest_road_20mphmain,edin_cons_streets)
+
+#leaflet_map_compararison(new_nearest_road_20mphmain,edin_cons_streets)
+s13 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$Date >= "2013-01-01" & new_nearest_road_20mphmain$Date <= "2013-12-31", ],"Accident_Index"))
+s14 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$Date >= "2014-01-01" & new_nearest_road_20mphmain$Date <= "2014-12-31", ],"Accident_Index"))
+s15 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$Date >= "2015-01-01" & new_nearest_road_20mphmain$Date <= "2015-12-31", ],"Accident_Index"))
+s16 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$Date >= "2016-01-01" & new_nearest_road_20mphmain$Date <= "2016-12-31", ],"Accident_Index"))
+s18 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$Date >= "2018-01-01" & new_nearest_road_20mphmain$Date <= "2018-12-31", ],"Accident_Index"))
+s19 <- nrow(delete_na(new_nearest_road_20mphmain[new_nearest_road_20mphmain$year == "2019" , ],"Accident_Index"))
+data_frame(s13,s14,s15,s16,s18,s19)
 ```
 
 
@@ -541,7 +549,10 @@ s19 <- nrow(delete_na(mergedDf[mergedDf$year == "2019" , ],"Accident_Index"))
 data_frame(s13,s14,s15,s16,s18,s19)
 
 df6 <- mergedDf[,-c(41,42,44)]
+```
 
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
 final_changed <- rbind(df1,df2,df3,df4,df5,df6)
 
 newdf <- data[!(data$Accident_Index %in% final_changed$Accident_Index),]

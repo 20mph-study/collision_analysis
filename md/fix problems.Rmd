@@ -246,10 +246,10 @@ NEW
 #"20mph local streets","20mph main streets","30mph","Part time 20mph","20mph existing streets"
 #data1 <- data
 #data1 <-data [data$year == "2019",]
+#leaflet_map ( data1,edin_cons_streets)
 data1 <- delete_na(data[data$X2nd_Road_Class != "-1", ],"Accident_Index")
-summary <- aggregate(Accident_Index~X1st_Road_Class + LAYER ,data1,length)
-summary1 <- aggregate(Accident_Index~X1st_Road_Class,data1,length)
-summary2 <- aggregate(Accident_Index~X1st_Road_Class ,data1,length)
+aggregate(Accident_Index~X1st_Road_Class + LAYER ,data1,length)
+aggregate(Accident_Index~X1st_Road_Class,data1,length)
 ```
 
 
@@ -257,18 +257,17 @@ summary2 <- aggregate(Accident_Index~X1st_Road_Class ,data1,length)
 mergedDf <- data1[data1$LAYER == "20mph existing streets" & data1$Speed_limit == 30, ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
+leaflet_map(mergedDf,edin_cons_streets)
 
 network_existing <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
-
+ 
 new_lines_existing <- nearest_line(mergedDf,network_existing)
 new_nearest_road <- spTransform(new_lines_existing,"+init=epsg:4326")
 new_nearest_road <-new_lines_existing@data
 new_nearest_road <- unique(merge(new_nearest_road,network_existing@data,by.x = "nearest_line_id" ,by.y = "ID"))
 
-
 df1 <- new_nearest_road
 df1 <- df1[,-c(38,41,42,44,46,48)]
-
 ```
 
 > layer = 30mph 
@@ -297,7 +296,7 @@ df2 <- df2[,-c(38,41,42,44,46,48)]
 ```{r,echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphlocal <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph", "20mph main streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph local streets")  & data1$Speed_limit == 20, ]
-#mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
+mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
@@ -317,7 +316,7 @@ df3 <- df3[,-c(38,41,42,44,46,48)]
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphlocal <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph main streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph local streets") & data1$Speed_limit == 30, ]
-#mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
+mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
@@ -337,7 +336,7 @@ df4 <- df4[,-c(38,41,42,44,46,48)]
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph main streets") & data1$Speed_limit == 30, ]
-#mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
+mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
@@ -357,7 +356,7 @@ NEW
 ```{r}
 network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph main streets") & data1$Speed_limit == 20, ]
-#mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
+mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
@@ -410,142 +409,29 @@ df8 <- df8[,-c(38,41,42,44,46,48)]
 >new data
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-
 #changed_2019 <- rbind(df1,df2,df3,df4,df5,df6,df7,df8)
-changed <- rbind(df1,df2,df3,df4,df5,df6,df7,df8)
+changed <- rbind(df1,df2,df3,df4,df5,df6)
 
-changed <- rbind(changed,changed_2019)
-changed <- 
-leaflet_map_compararison(changed,edin_cons_streets)
+#changed <- rbind(changed,changed_2019)
+#changed19 <- delete_na(changed[changed$year == "2019",],"Accident_Index")
+#leaflet_map_compararison(changed,edin_cons_streets)
 
-changed1 <- delete_na(changed[changed$X1st_Road_Class != "Unclassified",],"Accident_Index")
-changed1$LAYER.x <- changed1$LAYER.y
-changed1 <- rename(changed1,c("LAYER.x"="LAYER"))
-not_changed <- delete_na(data[!(data$Accident_Index %in% changed1$Accident_Index),],"Accident_Index")
-all <- rbind.fill(changed1,not_changed)
+#changed1 <- delete_na(changed[changed$X1st_Road_Class != "Unclassified",],"Accident_Index")
+changed$LAYER.x <- changed$LAYER.y
+#changed1 <- rename(changed1,c("LAYER.x"="LAYER"))
+#changed19$LAYER.x <- changed19$LAYER.y
+#changed19 <- rename(changed19,c("LAYER.x"="LAYER"))
+#changed1 <- rbind(changed1,changed19)
+not_changed <- delete_na(data[!(data$Accident_Index %in% changed$Accident_Index),],"Accident_Index")
+all <- rbind.fill(changed,not_changed)
 ```
-
-
-```{r}
-data1 <- all
-
-mergedDf <- data1[data1$LAYER == "20mph existing streets" & data1$Speed_limit == 30, ]
-mergedDf <- mergedDf[,-2]
-
-leaflet_map(mergedDf,edin_cons_streets)
-
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
-data_frame(s13,s14,s15,s16,s18,s19)
-```
-
-```{r}
-mergedDf <- data1[data1$LAYER == "30mph" &data1$Speed_limit == 20, ]
-mergedDf <- mergedDf[,-2]
-leaflet_map(mergedDf,edin_cons_streets)
- 
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
-data_frame(s13,s14,s15,s16,s18,s19)
-```
-
-
-```{r}
-mergedDf <- data1[data1$LAYER == "20mph local streets" & data1$Speed_limit == 20, ]
-leaflet_map(mergedDf,edin_cons_streets)
-
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
-data_frame(s13,s14,s15,s16,s18,s19)
-```
-
-```{r}
-mergedDf <- data1[data1$LAYER == c("20mph local streets") & data1$Speed_limit == 30, ]
-leaflet_map(mergedDf,edin_cons_streets)
-
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
-data_frame(s13,s14,s15,s16,s18,s19)
-```
-
-```{r}
-mergedDf <- data[data$LAYER == c("20mph main streets") & data$Speed_limit == 30, ]
-leaflet_map(mergedDf,edin_cons_streets)
-
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
-data_frame(s13,s14,s15,s16,s18,s19)
-```
-
-```{r}
-mergedDf <- data[data$LAYER == c("20mph main streets") & data$Speed_limit == 20, ]
-leaflet_map(mergedDf,edin_cons_streets)
-
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
-data_frame(s13,s14,s15,s16,s18,s19)
-```
-
-```{r}
-mergedDf <- data[data$LAYER == "30mph" & data$Speed_limit == 30, ]
-leaflet_map(mergedDf,edin_cons_streets)
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
-data_frame(s13,s14,s15,s16,s18,s19)
-```
-
-```{r}
-mergedDf <- data[data$LAYER == "20mph existing streets" & data$Speed_limit == 20, ]
-leaflet_map(mergedDf,edin_cons_streets)
-s13 <- nrow(mergedDf[mergedDf$Date >= "2013-01-01" & mergedDf$Date <= "2013-12-31", ])
-s14 <- nrow(mergedDf[mergedDf$Date >= "2014-01-01" & mergedDf$Date <= "2014-12-31", ])
-s15 <- nrow(mergedDf[mergedDf$Date >= "2015-01-01" & mergedDf$Date <= "2015-12-31", ])
-s16 <- nrow(mergedDf[mergedDf$Date >= "2016-01-01" & mergedDf$Date <= "2016-12-31", ])
-s18 <- nrow(mergedDf[mergedDf$Date >= "2018-01-01" & mergedDf$Date <= "2018-12-31", ])
-s19 <- nrow(mergedDf[mergedDf$year == "2019" , ])
-data_frame(s13,s14,s15,s16,s18,s19)
-```
-
-
 
 ```{r}
 mergedDf <- all
 mergedDf$LAYER <- as.character((mergedDf$LAYER)) 
 mergedDf$Date <- as.character(mergedDf$Date)
-pre13 <- count_post(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,])
-pre14 <- count_post(mergedDf[mergedDf$Date >= "2014-07-31" & mergedDf$Date <= "2015-07-30" ,])
-pre15 <- count_post(mergedDf[mergedDf$Date >= "2015-07-31" & mergedDf$Date <= "2016-07-30" ,])
 pre <- count_pre(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2016-07-30" ,])
 post <- count_pre(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
-po <- count_post(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
 ```
 
 ```{r}
