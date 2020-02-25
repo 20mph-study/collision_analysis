@@ -1,5 +1,5 @@
 #Function for the nearest line
-nearest_line <-function(df,road_net){
+nearest_line <-function(df,road_net,tolerance){
   #Create planar(cartesian) projection 
   crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
   wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
@@ -12,7 +12,7 @@ nearest_line <-function(df,road_net){
   proj4string(df) <- proj4string(road_net)
   
   #Find nearest line with maxDist=6m 
-  nearest_line_sp <- localSnapPointsToLines(df,road_net,maxDist=10,withAttrs=TRUE)
+  nearest_line_sp <- localSnapPointsToLines(df,road_net,maxDist = tolerance,withAttrs=TRUE)
   
   return(nearest_line_sp)
 }

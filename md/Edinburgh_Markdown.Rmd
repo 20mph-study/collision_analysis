@@ -78,7 +78,7 @@ leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #Read shapefile
-edin_impl_zones <- readOGR(dsn = gdb_path, layer="ImplementationZones", verbose = FALSE)
+edin_impl_zones <- readOGR(dsn = gdb_path, layer= "ImplementationZones", verbose = FALSE)
 #Transform to long/lat
 edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
 #Change zone 1
@@ -139,7 +139,36 @@ time_plot(edin_road_data)
 ```
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-#Get nearest line for pre and post 20mph using the nearest_line function, use only layers we care edin_road network
+line <- edin_road_network
+points <- edin_road_data[edin_road_data$Date >= "2013-08-01" & edin_road_data$Date <= "2013-09-04",]
+tolerance <- 10
+
+nearest_road <- nearest_line(points,line,tolerance)
+nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
+
+# calculate network distance along our line to each snapped point
+dists <- nearest_road$snap_dist
+
+# we want to recursively do the following:
+# 1. calculate the network distance from our point to the next closest line
+# 2. keep the snapped point for that id that was closest *along the network*  to the previous id
+# 3. set the newly snapped point as our the point
+# 4. repeat
+  
+# get distances from our reference point to the next point id
+for(i in nearest_road$id : (nearest_road$id-1)){
+  #afairw to idi iparxon layer kai psaxnw xwris maxDist
+  line <- line - nearest_road$LAYER 
+  new_road <- nearest_line(....)
+  next_dist <- which.min(abs(nearest_road[nearest_road$Accident_Index == i ,]$snap_dist - new_road[new_road$Accident_Index == i,]$snap_dist ))
+  next_option <- nearest_road[nearest_road$id == i +1,]
+  nearest_pt <- nearest_pt %>% filter(id != i+1 | option == next_option)
+}
+
+```
+
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
 nearest_road <- nearest_line(edin_road_data,edin_road_network)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
 head(nearest_road[,c(2,37,38)])
