@@ -237,9 +237,7 @@ edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
 edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 ```
 
-> layer =  existing 20mph
-> speed limit = 30mph
-NEW
+
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #exclude 20mph existing streets and link again accidents to the remaining layers
@@ -248,16 +246,27 @@ NEW
 #data1 <-data [data$year == "2019",]
 #leaflet_map ( data1,edin_cons_streets)
 data1 <- delete_na(data[data$X2nd_Road_Class != "-1", ],"Accident_Index")
+
 aggregate(Accident_Index~X1st_Road_Class + LAYER ,data1,length)
 aggregate(Accident_Index~X1st_Road_Class,data1,length)
+aggregate(Accident_Index~X1st_Road_Class + Speed_limit + LAYER ,data1,length)
+
+data_20 <- delete_na(data[data$LAYER == "20mph existing streets" & data$X1st_Road_Class == c("A","B"), ],"Accident_Index")
+leaflet_map ( data_20,edin_cons_streets)
+
+data_20 <- delete_na(data[data$Speed_limit == 20 & data$X1st_Road_Class == c("A","B"), ],"Accident_Index")
+leaflet_map ( data_20,edin_cons_streets)
 ```
 
+> layer =  existing 20mph
+> speed limit = 30mph
+NEW
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 mergedDf <- data1[data1$LAYER == "20mph existing streets" & data1$Speed_limit == 30, ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
-leaflet_map(mergedDf,edin_cons_streets)
+#leaflet_map(mergedDf,edin_cons_streets)
 
 network_existing <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
  
@@ -268,8 +277,16 @@ new_nearest_road <- unique(merge(new_nearest_road,network_existing@data,by.x = "
 
 #injuries that didn't find new layer
 d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road$Accident_Index),],"Accident_Index")
-leaflet_map(d1,edin_cons_streets)
 
+#with A as 1st road class
+d1 <- d1[d1$X1st_Road_Class == "A",]
+#leaflet_map(d1,edin_cons_streets)
+
+#aggregate(Accident_Index~X1st_Road_Class + LAYER + Speed_limit ,d1,length)
+#aggregate(Accident_Index~X1st_Road_Class + LAYER.y + Speed_limit ,d1,length)
+
+#aggregate(Accident_Index~X1st_Road_Class + LAYER.x + Speed_limit ,new_nearest_road,length)
+#aggregate(Accident_Index~X1st_Road_Class + LAYER.y + Speed_limit ,new_nearest_road,length)
 
 df1 <- new_nearest_road
 df1 <- df1[,-c(38,41,42,44,46,48)]
@@ -292,7 +309,10 @@ new_nearest_road_30mph <- unique(merge(new_nearest_road_30mph,network_30mph@data
 
 #injuries that didn't find new layer
 d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_30mph$Accident_Index),],"Accident_Index")
-leaflet_map(d1,edin_cons_streets)
+#leaflet_map(d1,edin_cons_streets)
+
+aggregate(Accident_Index~X1st_Road_Class + LAYER.x + Speed_limit ,new_nearest_road_30mph,length)
+aggregate(Accident_Index~X1st_Road_Class + LAYER.y + Speed_limit ,new_nearest_road_30mph,length)
 
 df2 <- new_nearest_road_30mph
 df2 <- df2[,-c(38,41,42,44,46,48)]
@@ -305,7 +325,7 @@ df2 <- df2[,-c(38,41,42,44,46,48)]
 ```{r,echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphlocal <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph", "20mph main streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph local streets")  & data1$Speed_limit == 20, ]
-mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
+#mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
@@ -316,7 +336,13 @@ new_nearest_road_20mphlocal <- unique(merge(new_nearest_road_20mphlocal,network_
 
 #injuries that didn't find new layer
 d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_20mphlocal$Accident_Index),],"Accident_Index")
-leaflet_map(d1,edin_cons_streets)
+#with A as 1st road class
+d1 <- d1[d1$X1st_Road_Class == "A",]
+#leaflet_map(d1,edin_cons_streets)
+#leaflet_map(d1,edin_cons_streets)
+
+aggregate(Accident_Index~X1st_Road_Class + LAYER.x + Speed_limit ,new_nearest_road_20mphlocal,length)
+aggregate(Accident_Index~X1st_Road_Class + LAYER.y + Speed_limit ,new_nearest_road_20mphlocal,length)
 
 df3 <- new_nearest_road_20mphlocal
 df3 <- df3[,-c(38,41,42,44,46,48)]
@@ -329,7 +355,7 @@ df3 <- df3[,-c(38,41,42,44,46,48)]
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphlocal <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph main streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph local streets") & data1$Speed_limit == 30, ]
-mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
+#mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
@@ -340,7 +366,10 @@ new_nearest_road_20mphlocal <- unique(merge(new_nearest_road_20mphlocal,network_
 
 #injuries that didn't find new layer
 d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_20mphlocal$Accident_Index),],"Accident_Index")
-leaflet_map(d1,edin_cons_streets)
+#leaflet_map(d1,edin_cons_streets)
+
+#aggregate(Accident_Index~X1st_Road_Class + LAYER.x ,new_nearest_road_20mphlocal,length)
+#aggregate(Accident_Index~X1st_Road_Class + LAYER.y ,new_nearest_road_20mphlocal,length)
 
 df4 <- new_nearest_road_20mphlocal
 df4 <- df4[,-c(38,41,42,44,46,48)]
@@ -353,7 +382,7 @@ df4 <- df4[,-c(38,41,42,44,46,48)]
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph main streets") & data1$Speed_limit == 30, ]
-mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
+#mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
@@ -364,7 +393,10 @@ new_nearest_road_20mphmain <- unique(merge(new_nearest_road_20mphmain,network_20
 
 #injuries that didn't find new layer
 d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_20mphmain$Accident_Index),],"Accident_Index")
-leaflet_map(d1,edin_cons_streets)
+#leaflet_map(d1,edin_cons_streets)
+
+aggregate(Accident_Index~X1st_Road_Class + LAYER.x ,new_nearest_road_20mphmain,length)
+aggregate(Accident_Index~X1st_Road_Class + LAYER.y ,new_nearest_road_20mphmain,length)
 
 df5 <- new_nearest_road_20mphmain
 df5 <- df5[,-c(38,41,42,44,46,48)]
@@ -375,9 +407,9 @@ df5 <- df5[,-c(38,41,42,44,46,48)]
 NEW
 
 ```{r}
-network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets","20mph existing streets","Part time 20mph"),]
+network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c("30mph","20mph local streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph main streets") & data1$Speed_limit == 20, ]
-mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
+#mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
@@ -388,7 +420,10 @@ new_nearest_road_20mphmain <- unique(merge(new_nearest_road_20mphmain,network_20
 
 #injuries that didn't find new layer
 d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_20mphmain$Accident_Index),],"Accident_Index")
-leaflet_map(d1,edin_cons_streets)
+#leaflet_map(d1,edin_cons_streets)
+
+aggregate(Accident_Index~X1st_Road_Class + LAYER.x ,new_nearest_road_20mphmain,length)
+aggregate(Accident_Index~X1st_Road_Class + LAYER.y ,new_nearest_road_20mphmain,length)
 
 df6 <- new_nearest_road_20mphmain
 df6 <- df6[,-c(38,41,42,44,46,48)]
@@ -400,7 +435,7 @@ df6 <- df6[,-c(38,41,42,44,46,48)]
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphexisting <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets","20mph main streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph existing streets") & data1$Speed_limit == 20, ]
-#mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
+mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
 mergedDf <- mergedDf[,-2]
 mergedDf <- rename(mergedDf,c("snap_dist" = "snap_dist_before"))
 
@@ -411,8 +446,8 @@ new_nearest_road_20mphexisting <- unique(merge(new_nearest_road_20mphexisting,ne
 leaflet_map(new_nearest_road_20mphexisting,edin_cons_streets)
 
 #injuries that didn't find new layer
-d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_20mphexisting$Accident_Index),],"Accident_Index")
-leaflet_map(d1,edin_cons_streets)
+#d1 <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% new_nearest_road_20mphexisting$Accident_Index),],"Accident_Index")
+#leaflet_map(d1,edin_cons_streets)
 
 df7 <- new_nearest_road_20mphexisting
 df7 <- df7[,-c(38,41,42,44,46,48)]
@@ -459,17 +494,37 @@ changed$LAYER.x <- changed$LAYER.y
 #changed1 <- rbind(changed1,changed19)
 not_changed <- delete_na(data[!(data$Accident_Index %in% changed$Accident_Index),],"Accident_Index")
 all <- rbind.fill(changed,not_changed)
+
+aggregate(Accident_Index~X1st_Road_Class + LAYER.y ,all,length)
+aggregate(Accident_Index~X1st_Road_Class + LAYER.y + Speed_limit ,all,length)
+
 ```
+
+```{r}
+all <- all[,-c(40,43:46)]
+all <- rename(all,c("LAYER.y" = "LAYER")) 
+```
+
 
 ```{r}
 mergedDf <- all
 mergedDf$LAYER <- as.character((mergedDf$LAYER)) 
 mergedDf$Date <- as.character(mergedDf$Date)
+
+#Count accidents per layer
+count_pre <- function(data_df){
+  count1 <-  aggregate(Accident_Index~LAYER,data_df,length)
+  return(count1)
+}
+
+
 pre <- count_pre(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2016-07-30" ,])
 post <- count_pre(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "2019-06-31" ,])
 ```
 
 ```{r}
+#not working at the moment
+source('../functions/table_annual.R')
 table_annual(pre,post)
 ```
 
