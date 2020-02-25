@@ -77,6 +77,11 @@ belf_control_data <- read_belf_controldata(dir_path)
 > Time series Analysis
 
 ```{r,echo=FALSE, warning=FALSE,message=FALSE}
+
+```
+
+
+```{r,echo=FALSE, warning=FALSE,message=FALSE}
 time_plot_belf(belf_data)
 ```
 
@@ -84,6 +89,11 @@ time_plot_belf(belf_data)
 #Nearest line
 merged <- nearest_line_belf(belf_data,belfast_road_data)
 total <- merged
+
+#leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines( ) %>%
+#  setView(lng = -5.926437 , lat = 54.607868, zoom = 11) %>%
+#  addMarkers(data = total,lng = total$X,lat=total$Y)
+
 ```
 
 > Mapping accidents with roads: 2013
@@ -114,6 +124,13 @@ leaflet_map_belf(belfast_road_data,merged[merged$year == "2016", ])
 belcount(merged[merged$year == "2016", ])
 ```
 
+> Mapping accidents with roads: 2017
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE, comment=FALSE}
+leaflet_map_belf(belfast_road_data,merged[merged$year == "2017", ])
+belcount(merged[merged$year == "2017", ])
+```
+
 > Mapping accidents with roads: 2018
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
@@ -131,45 +148,47 @@ belcount(merged[merged$year == "2019", ])
 > Count pre 20mph
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-pre <- belcount_pre(merged[merged$year >="2013" & merged$year <= "2016", ])
+pre <- belcount_pre(merged[merged$a_date >= "2013-02-01" & merged$a_date <= "2016-01-31", ])
 pre
 ```
 
 > Count post 20mph
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-post <- belcount(merged[merged$year >="2018" & merged$year <= "2019", ])
+post <- belcount(merged[merged$a_date >= "2016-02-02" & merged$a_date <= "2019-03-31", ])
 post
 ```
 
 > Table: Average annual road traffic collision rates in the city of Belfast ( GIS )
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-belf_annual_table(belf_data,pre,post)
+belf_annual_table(total_zones,total,pre,post)
 ```
 
 > Effect estimate ( GIS )
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-a <- c(nrow(merged[merged$a_date >="2013-07-31" & merged$a_date <= "2014-12-30", ]))
-b <- c(nrow(merged[merged$a_date >="2014-07-31" & merged$a_date <= "2015-12-30", ]))
-c <- c(nrow(merged[merged$a_date >="2015-07-31" & merged$a_date <= "2016-07-20", ]))
-d <- c(nrow(merged[merged$a_date >="2018-03-06" & merged$a_date <= "2019-12-31", ]))
+a <- c(nrow(total_zones[total_zones$a_date >= "2013-02-01" & total_zones$a_date <= "2014-01-31", ]))
+b <- c(nrow(total_zones[total_zones$a_date >= "2014-02-01" & total_zones$a_date <= "2015-01-31", ]))
+c <- c(nrow(total_zones[total_zones$a_date >= "2015-02-01" & total_zones$a_date <= "2016-01-31", ]))
+e <- c(nrow(total_zones[total_zones$a_date >= "2016-02-02" & total_zones$a_date <= "2017-12-31", ]))
+d <- c(nrow(total_zones[total_zones$a_date >= "2018-01-01" & total_zones$a_date <= "2019-03-31", ]))
 
 sum1 <- (a+b+c)/3
-sum2 <- d
+sum2 <- (d + e) / 3.15 
 unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
 secular_trend <- ( (a-b) / a  + (b-c) / b ) / 2
 f <- ( unadjusted_estimate - secular_trend ) * 100
 
-Y_2013_14 <- c(a," ", round(f,digits = 2))
-Y_2014_15 <- c(b," "," ")
-Y_2015_16 <- c(c," "," ")
-Y_2018_19 <- c(d," "," ")
+Y_2013_14 <- c(a,round(a, digits = 2)," ",round(f,digits = 2))
+Y_2014_15 <- c(b,b," "," ")
+Y_2015_16 <- c(c,c," "," ")
+Y_2016_17 <- c(e,round(e/1.9,digits = 2)," "," ")
+Y_2018_19 <- c(d,round(d/1.25 ,digits = 2)," "," ")
 
-Tax_year <- c("Annual number of collisions in roads changed to 20mph"," ","Effect estimate ")
-df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2018_19)
-colnames(df)=c("Tax year", "2013/14","2014/15","2015/16", "2018/19")
+Tax_year <- c("Annual number of collisions in roads changed to 20mph","Rate per year"," ","% reduction in collisions ")
+df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2016_17,Y_2018_19)
+colnames(df)=c("Tax year", "2013/14","2014/15","2015/16","2016/17", "2018/19")
 kable(df,caption = "Effect estimate(GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
@@ -191,6 +210,7 @@ total_zones$a_type <- as.character(total_zones$a_type )
 total_zones$a_type [total_zones$a_type  == 1] <- "fatal collision"
 total_zones$a_type [total_zones$a_type  == 2] <- "Serious collision"
 total_zones$a_type [total_zones$a_type  == 3] <- "Slight collision"
+
 ```
 
 > Mapping accidents with zones: 2013
