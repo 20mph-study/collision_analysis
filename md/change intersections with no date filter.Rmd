@@ -145,7 +145,7 @@ data$Road_Type[data$Road_Type == -1] <- "data missing"
 ```{r , echo=FALSE, warning=FALSE,message=FALSE}
 gdb_path <- paste0(dir_path, "/20mph.gdb")
 gdb_layers <- ogrListLayers(gdb_path)
-
+ 
 #Read shapefile
 edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets", verbose = FALSE)
 #Put ID column as variable 
