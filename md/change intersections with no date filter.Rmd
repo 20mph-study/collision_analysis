@@ -248,7 +248,7 @@ df5 <- new_nearest_road_20mphmain[,-c(38,41,42,44,46,48)]
 > Speed limit = 20
 NEW
 
-```{r}
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c("30mph","20mph local streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph main streets") & data1$Speed_limit == 20, ]
 
@@ -303,7 +303,7 @@ all <- all[,-c(40,43:46)]
 ```
 
 
-```{r}
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
 mergedDf <- all
 mergedDf$LAYER <- as.character((mergedDf$LAYER)) 
 mergedDf$Date <- as.character(mergedDf$Date)
@@ -315,7 +315,6 @@ post <- count_pre(mergedDf[mergedDf$Date >= "2018-03-06" & mergedDf$Date <= "201
 #post$Accident_Index <- as.numeric(post$Accident_Index)
 ```
 
-```{r}
-#not working at the moment
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
 table_annual(pre,post)
 ```
