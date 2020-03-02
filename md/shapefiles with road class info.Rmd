@@ -1,0 +1,106 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+# Load libraries
+library(rgdal)
+library(leaflet)
+library(tidyverse)
+library(rgeos)
+library(raster)
+library(ggplot2)
+library(sf)
+library(mapview)
+library(maptools)
+library(sp)
+library(readxl)
+library(readr)
+library(knitr)
+library(plyr)
+
+source('../functions/localSnapPointsToLines.R')
+source('../functions/nearest_line.R')
+source('../functions/leaflet_map.R')
+source('../functions/read_road_data.R')
+source('../functions/filter_data.R')
+source('../functions/delete_na.R')
+
+
+##1.Data path 
+dir_path <- "../data"
+```
+
+> Edinburgh's road network
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE} 
+#Read geodatabase for Edinburgh
+#Path
+gdb_path <- paste0(dir_path, "/20mph.gdb")
+gdb_layers <- ogrListLayers(gdb_path)
+
+#Read shapefile
+edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets", verbose = FALSE)
+#Put ID column as variable 
+#edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
+```
+
+> Edinburgh's implementation zones
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#Read shapefile
+edin_impl_zones <- readOGR(dsn = gdb_path, layer= "ImplementationZones", verbose = FALSE)
+#Change zone 1
+edin_impl_zones@data$ImplementationZone <- as.integer(edin_impl_zones@data$ImplementationZone)
+edin_impl_zones@data[6,]$ImplementationZone <- 7
+```
+
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#Read geodatabase for Edinburgh
+#Path
+gdb_path <- paste0(dir_path, "/class")
+gdb_layers <- ogrListLayers(gdb_path)
+
+#Read shapefile
+edin_aclass_streets <- readOGR(dsn = gdb_path,layer="a_road_polyline", verbose = FALSE)
+proj4string(edin_aclass_streets) <- proj4string(edin_cons_streets)
+edin_aclass_streets <- spTransform(edin_aclass_streets, "+init=epsg:4326")
+```
+
+
+
+```{r}
+#Transform to long/lat
+edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
+edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
+edin_road_network <- edin_cons_streets
+edin_road_network <- edin_road_network[edin_road_network@data$LAYER  %in% c("20mph existing streets", "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
+edin_road_network <- spTransform(edin_road_network,"+init=epsg:4326")
+```
+
+
+```{r}
+proj4string(edin_aclass_streets) <- proj4string(edin_road_network)
+result <- intersect(edin_aclass_streets,edin_road_network)
+```
+
+
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#compute intersection
+#proj4string(edin_aclass_streets) <- proj4string(edin_impl_zones)
+#inter <- intersect(edin_aclass_streets,edin_impl_zones)
+
+#proj4string(inter) <- proj4string(edin_road_network)
+#ainter <- over(edin_road_network,inter)
+#ainter <- delete_na(ainter,"ImplementationZone")
+#ainter <- ainter[,-c(1,5:9)]
+
+#Aa <- edin_aclass_streets[edin_aclass_streets@data$OSODR %in% inter@data$OSODR,]
+#Aa <- spTransform(Aa, "+init=epsg:4326")
+#leaflet(Aa) %>% addTiles() %>% addPolylines()
+#inter_result <- intersect(Aa,edin_road_network)
+```

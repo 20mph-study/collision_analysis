@@ -59,7 +59,7 @@ gdb_layers <- ogrListLayers(gdb_path)
 #Read shapefile
 edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets", verbose = FALSE)
 #Put ID column as variable 
-edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
+#edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
 #Transform to long/lat
 edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 
@@ -68,10 +68,10 @@ edin_road_network <- edin_road_network[edin_road_network@data$LAYER  %in% c("20m
 edin_road_network <- spTransform(edin_road_network,"+init=epsg:4326")
 
 #Visualize with leaflet
-col = c("#bf812d","#80cdc1","#d6604d","#525252","#1a9850","#cab2d6","#e6f598","#4393c3")
+#col = c("#bf812d","#80cdc1","#d6604d","#525252","#1a9850","#cab2d6","#e6f598","#4393c3")
 #my.palette <- brewer.pal(n = 8, name = "Set3")
-spplot(edin_cons_streets,'LAYER',col.regions = col)
-leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
+#spplot(edin_cons_streets,'LAYER',col.regions = col)
+#leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
 ```
 
 > Edinburgh's implementation zones
@@ -86,10 +86,78 @@ edin_impl_zones@data$ImplementationZone <- as.integer(edin_impl_zones@data$Imple
 edin_impl_zones@data[6,]$ImplementationZone <- 7
 #Visualize with leaflet
 #display.brewer.all()
-my.palette <- brewer.pal(n = 7, name = "Pastel2")
-spplot(edin_impl_zones,"ImplementationZone",col.regions = my.palette, cuts = 7)
-leaflet(edin_impl_zones) %>% addTiles() %>% addPolygons()
+#my.palette <- brewer.pal(n = 7, name = "Pastel2")
+#spplot(edin_impl_zones,"ImplementationZone",col.regions = my.palette, cuts = 7)
+#leaflet(edin_impl_zones) %>% addTiles() %>% addPolygons()
 ```
+
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#Read geodatabase for Edinburgh
+#Path
+gdb_path <- paste0(dir_path, "/class")
+gdb_layers <- ogrListLayers(gdb_path)
+#print(gdb_layers)
+
+#Read shapefile
+edin_aclass_streets <- readOGR(dsn = gdb_path,layer="a_road_polyline", verbose = FALSE)
+proj4string(edin_aclass_streets) <- proj4string(edin_cons_streets)
+
+
+edin_aclass_streets <- spTransform(edin_aclass_streets, "+init=epsg:4326")
+
+
+#leaflet(edin_aclass_streets) %>% addTiles() %>% addPolygons()
+```
+
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#compute intersection
+proj4string(edin_aclass_streets) <- proj4string(edin_impl_zones)
+inter <- intersect(edin_aclass_streets,edin_impl_zones)
+#inter <- intersect(Aa,edin_road_network)
+
+proj4string(inter) <- proj4string(edin_road_network)
+ainter <- over(edin_road_network,inter)
+ainter <- delete_na(ainter,"ImplementationZone")
+ainter <- ainter[,-c(1,5:9)]
+
+#aclass <- edin_aclass_streets
+Aa <- edin_aclass_streets[edin_aclass_streets@data$OSODR %in% inter@data$OSODR,]
+
+Aa <- spTransform(Aa, "+init=epsg:4326")
+
+
+leaflet(Aa) %>% addTiles() %>% addPolylines()
+
+inter_result <- intersect(Aa,edin_road_network)
+
+```
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#Read shapefile
+edin_bclass_streets <- readOGR(dsn = gdb_path,layer="b_road_polyline", verbose = FALSE)
+
+#Read shapefile
+#edin_minorclass_streets <- readOGR(dsn = gdb_path,layer="minor_rd_polyline", verbose = FALSE)
+
+#library(raster)
+#x <- bind(edin_aclass_streets, edin_bclass_streets, edin_minorclass_streets)
+#Transform to long/lat
+
+```
+
+```{r}
+leaflet(x) %>% addTiles() %>% addPolygons()
+##union the  SpatialPolygonsDataFrame
+subs_union <- union(x,edin_cons_streets)
+leaflet(subs_union) %>% addTiles() %>% addPolygons()
+```
+
+
 
 > Edinburgh's control zones
 
@@ -138,45 +206,19 @@ leaflet(edin_cons_streets) %>% addTiles() %>% addPolylines() %>% addMarkers(lng 
 time_plot(edin_road_data)
 ```
 
-```{r, echo=FALSE, warning=FALSE,message=FALSE}
-line <- edin_road_network
-points <- edin_road_data[edin_road_data$Date >= "2013-08-01" & edin_road_data$Date <= "2013-09-04",]
-tolerance <- 10
-
-nearest_road <- nearest_line(points,line,tolerance)
-nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
-
-# calculate network distance along our line to each snapped point
-dists <- nearest_road$snap_dist
-
-# we want to recursively do the following:
-# 1. calculate the network distance from our point to the next closest line
-# 2. keep the snapped point for that id that was closest *along the network*  to the previous id
-# 3. set the newly snapped point as our the point
-# 4. repeat
-  
-# get distances from our reference point to the next point id
-for(i in nearest_road$id : (nearest_road$id-1)){
-  #afairw to idi iparxon layer kai psaxnw xwris maxDist
-  line <- line - nearest_road$LAYER 
-  new_road <- nearest_line(....)
-  next_dist <- which.min(abs(nearest_road[nearest_road$Accident_Index == i ,]$snap_dist - new_road[new_road$Accident_Index == i,]$snap_dist ))
-  next_option <- nearest_road[nearest_road$id == i +1,]
-  nearest_pt <- nearest_pt %>% filter(id != i+1 | option == next_option)
-}
-
-```
-
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-nearest_road <- nearest_line(edin_road_data,edin_road_network)
+nearest_road <- nearest_line(edin_road_data,edin_road_network,10)
+nearest_road <- nearest_line(edin_road_data,inter,10)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
 head(nearest_road[,c(2,37,38)])
+mergedDf <- unique(merge(data.frame(nearest_road),inter@data,by.x = "nearest_line_id" ,by.y = "ID"))
 ```
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #Merge the dataframes based on the ID of the nearest line in order to connect geoinformation with stasts19
 #Then merge Casualty severity column with collisions dataset
+
 mergedDf_original <- unique(merge(data.frame(nearest_road),edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID"))
 mergedDf <- unique(merge(data.frame(nearest_road),edin_road_network@data,by.x = "nearest_line_id" ,by.y = "ID"))
 mer <- mergedDf [mergedDf$year == "2019",]
