@@ -158,8 +158,8 @@ edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #exclude 20mph existing streets and link again accidents to the remaining layers
-#data1 <- data
-data1 <- delete_na(data[data$X2nd_Road_Class != "-1", ],"Accident_Index")
+data1 <- data
+#data1 <- delete_na(data[data$X2nd_Road_Class != "-1", ],"Accident_Index")
 data1 <- data1[,-2]
 data1 <- rename(data1,c("snap_dist" = "snap_dist_before"))
 ```
@@ -203,7 +203,7 @@ df2 <- new_nearest_road_30mph[,-c(38,41,42,44,46,48)]
 ```{r,echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphlocal <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph", "20mph main streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph local streets")  & data1$Speed_limit == 20, ]
-mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
+#mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
 
 new_lines_20mphlocal <- nearest_line(mergedDf,network_20mphlocal,10)
 new_nearest_road_20mphlocal <- spTransform(new_lines_20mphlocal,"+init=epsg:4326")
@@ -220,7 +220,7 @@ df3 <- new_nearest_road_20mphlocal[,-c(38,41,42,44,46,48)]
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphlocal <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph main streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph local streets") & data1$Speed_limit == 30, ]
-mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
+#mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
 
 new_lines_20mphlocal <- nearest_line(mergedDf,network_20mphlocal,10)
 new_nearest_road_20mphlocal <- spTransform(new_lines_20mphlocal,"+init=epsg:4326")
@@ -237,7 +237,7 @@ df4 <- new_nearest_road_20mphlocal[,-c(38,41,42,44,46,48)]
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph main streets") & data1$Speed_limit == 30, ]
-mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
+#mergedDf <- mergedDf[mergedDf$Date >="2018-01-01" & mergedDf$Date <= "2019-07-31" , ]
 
 new_lines_20mphmain <- nearest_line(mergedDf,network_20mphmain,10)
 new_nearest_road_20mphmain <- spTransform(new_lines_20mphmain,"+init=epsg:4326")
@@ -254,7 +254,7 @@ NEW
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c("30mph","20mph local streets","20mph existing streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph main streets") & data1$Speed_limit == 20, ]
-mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
+#mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
 
 new_lines_20mphmain <- nearest_line(mergedDf,network_20mphmain,10)
 new_nearest_road_20mphmain <- spTransform(new_lines_20mphmain,"+init=epsg:4326")
@@ -270,7 +270,6 @@ df6 <- new_nearest_road_20mphmain[,-c(38,41,42,44,46,48)]
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 network_20mphexisting <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets","20mph main streets","Part time 20mph"),]
 mergedDf <- data1[data1$LAYER == c("20mph existing streets") & data1$Speed_limit == 20, ]
-mergedDf <- mergedDf[mergedDf$Date >="2013-07-31" & mergedDf$Date <= "2016-07-31" , ]
 
 new_lines_20mphexisting <- nearest_line(mergedDf,network_20mphexisting,10)
 new_nearest_road_20mphexisting <- spTransform(new_lines_20mphexisting,"+init=epsg:4326")
@@ -295,14 +294,31 @@ new_nearest_road_30mph <- unique(merge(new_nearest_road_30mph,network_30mph@data
 df8 <- new_nearest_road_30mph[,-c(38,41,42,44,46,48)]
 ```
 
+
+```{r}
+network_20mphpartime <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets","20mph main streets","20mph existing streets"),]
+mergedDf <- data1[data1$LAYER == c("Part time 20mph"), ]
+
+new_lines_20mphexisting <- nearest_line(mergedDf,network_20mphpartime,10)
+new_nearest_road_20mphexisting <- spTransform(new_lines_20mphexisting,"+init=epsg:4326")
+new_nearest_road_20mphexisting <-new_lines_20mphexisting@data
+new_nearest_road_20mphexisting <- unique(merge(new_nearest_road_20mphexisting,network_20mphexisting@data,by.x = "nearest_line_id" ,by.y = "ID"))
+
+df9 <- new_nearest_road_20mphexisting[,-c(38,41,42,44,46,48)]
+```
+
+
 >new data
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
-changed <- rbind(df1,df2,df3,df4,df5,df6,df7,df8)
+changed <- rbind(df1,df2,df3,df4,df5,df6,df7,df8,df9)
 #changed <- rbind(df1,df2,df3,df4,df5,df6)
 changed <- rename(changed,c("LAYER.y" = "LAYER")) 
 
 not_changed <- delete_na(data[!(data$Accident_Index %in% changed$Accident_Index),],"Accident_Index")
+
+#leaflet_map(changed,edin_cons_streets)
+
 all <- rbind.fill(changed,not_changed)
 all <- all[,-c(40,43:46)]
 ```
