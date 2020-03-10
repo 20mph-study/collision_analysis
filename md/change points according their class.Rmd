@@ -1,0 +1,365 @@
+---
+title: "Untitled"
+author: "edin"
+date: "2/21/2020"
+output: html_document
+---
+
+```{r , echo=FALSE, warning=FALSE,message=FALSE}
+# Load libraries
+library(rgdal)
+library(leaflet)
+library(tidyverse)
+library(rgeos)
+library(raster)
+library(ggplot2)
+library(sf)
+library(mapview)
+library(maptools)
+library(sp)
+library(readxl)
+library(readr)
+library(grid)
+library(gridExtra)
+library(xtable)
+library(knitr)
+library(kableExtra)
+library(plyr)
+library(RColorBrewer)
+
+source('../functions/read_road_data.R')
+source('../functions/localSnapPointsToLines.R')
+source('../functions/count_pre.R')
+source('../functions/table_annual.R')
+source('../functions/nearest_line.R')
+source('../functions/delete_na.R')
+
+new_nearest_line <-function(df,road_net,tolerance){
+  #Create planar(cartesian) projection 
+  crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
+  wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
+  
+  #Convert data to planar projection  
+  road_net <- spTransform(road_net,crs)
+  coord <- data.frame(df$X,df$Y)
+  df <-  spTransform(SpatialPointsDataFrame(coords = coord,proj4string = wgs84,data = df), crs)
+  
+  #Make sure our data have same projections
+  proj4string(df) <- proj4string(road_net)
+  
+  #Find nearest line with maxDist=10m 
+  nearest_line_sp <- localSnapPointsToLines(df,road_net,maxDist = tolerance,withAttrs=TRUE)
+  
+  return(nearest_line_sp)
+}
+
+#Function for leaflet visualisations
+leaflet_map <- function(final_df,edin_streets){
+  crs <- CRS( "+proj=utm +zone=32 +ellps=WGS72 +units=m +no_defs")     # UTM zone = 32 N
+  wgs84 <- CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")  # long/lat
+  
+  #Convert data to planar projection  
+  edin_streets <- spTransform(edin_streets,crs)
+  coordinates(final_df) <- ~ X + Y
+  
+  #Convert data projections back to lat/long to plot with leaflet
+  edin_streets <- spTransform(edin_streets,"+init=epsg:4326")
+  
+  #Same projections
+  proj4string(final_df) <- proj4string(edin_streets)
+  
+  edin_streets <- st_as_sf(edin_streets)
+  #Leaflet maps of the road network , accidents and their projections
+  road_existing_20 <-edin_streets%>% filter(edin_streets$LAYER == "20mph existing streets")
+  road_local_20 <- filter(edin_streets, edin_streets$LAYER == "20mph local streets")
+  road_main_20 <- filter(edin_streets, edin_streets$LAYER == "20mph main streets")
+  road_30 <- filter(edin_streets, edin_streets$LAYER == "30mph")
+  road_part <- filter(edin_streets, edin_streets$LAYER == "Part time 20mph")
+  road_40 <- filter(edin_streets, edin_streets$LAYER == "40mph")
+  road_50 <- filter(edin_streets, edin_streets$LAYER == "50, 60 or 70mph")
+  road_trunk <- filter(edin_streets, edin_streets$LAYER == "Trunk roads")
+  
+  #Visualize
+  map <- leaflet() %>% addTiles() %>% addPolylines(data = edin_streets)
+  
+  map_near <-map %>% leaflet() %>% addTiles() %>% addMarkers(lng =final_df$X, lat = final_df$Y,
+                                                             popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
+                                                                          "Date: ",final_df$Date ,"<br>",
+                                                                          "Speed limit: ", final_df$Speed_limit ,"<br>",
+                                                                          "Layer: ",final_df$LAYER ,"<br>",
+                                                                          "Distance: ",final_df$snap_dist,"<br>",
+                                                                          "Road type: ",final_df$Road_Type,"<br>",
+                                                                          "Police 1st road class: ",final_df$X1st_Road_Class,"<br>",
+                                                                          "Class road network: ",final_df$CODE), 
+                                                            group = 'incidents linked to a road')
+  
+  map3 <- map_near %>% addCircleMarkers(lng =final_df$Longitude , lat = final_df$Latitude,
+                                        popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
+                                                     "Speed limit: ", final_df$Speed_limit ,"<br>",
+                                                     "Date: ",final_df$Date), group = 'all incidents')
+  
+  
+  map3 <- map3 %>% addLegend("bottomright",colors =c("#41ab5d",  "#fc4e2a", "#4eb3d3",  "#08306b","#6a51a3","#c51b8a","#6a51a3","#ec7014"),
+                             labels= c("existing 20mph", "local 20mph","main 20 mph","30mph", "part time 20mph","40mph","50,60 or 70mph","Trunk roads"),
+                             title= "Road network",opacity = 1)
+  
+  map3 %>%
+    setView(lng = -3.188267 , lat = 55.953251, zoom = 11)%>%
+    addPolylines(data = road_existing_20, color= "#41ab5d", group = 'existing 20mph' ) %>%
+    addPolylines(data = road_local_20,color= "#fc4e2a" , group = 'local 20mph' ) %>%
+    addPolylines(data = road_main_20,color= "#4eb3d3" , group = 'main 20mph')%>%
+    addPolylines(data = road_30,color= "#08306b" , group = '30mph') %>% 
+    addPolylines(data = road_part,color= "#6a51a3" , group = 'part time 20mph')%>%
+    addPolylines(data = road_40,color= "#c51b8a" , group = '40mph')%>%
+    addPolylines(data = road_50,color= "#6a51a3" , group = '50,60 or 70mph')%>%
+    addPolylines(data = road_trunk,color= "#ec7014", group = 'Trunk roads') %>%
+    addLayersControl(overlayGroups = c( 'existing 20mph','local 20mph','main 20mph','30mph','part time 20mph',"40mph","50,60 or 70mph","Trunk roads",
+                                        'incidents linked to a road', 'all incidents'),options = layersControlOptions(collapsed = FALSE))
+}
+
+find_class_line <- function(data1,class,inter_type){
+  new_lines_u <- nearest_line(delete_na(data1[data1$X1st_Road_Class == class, ],"X1st_Road_Class"),inter_type,20)
+  new_lines_u <- spTransform(new_lines_u, "+init=epsg:4326")
+  new_lines_u <- unique(merge(data.frame(new_lines_u),inter_type@data, by.x = "nearest_line_id", by.y = "ID"))
+  new_lines_u <- new_lines_u[,-c(1)]
+  return (new_lines_u)
+}
+
+changed_layer <- function(data1,edin_cons_streets){
+  mergedDf <- delete_na(data1[data1$LAYER == "20mph existing streets", ],"Accident_Index")
+  network_existing <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
+ 
+  new_lines_existing <- nearest_line(mergedDf,network_existing,10)
+  new_nearest_road <- spTransform(new_lines_existing,"+init=epsg:4326")
+  new_nearest_road <-new_lines_existing@data
+  new_nearest_road <- unique(merge(new_nearest_road,network_existing@data,by.x = "nearest_line_id" ,by.y = "ID"))
+  #[,-c(38,41,42,44,46,48)]
+  df1 <- new_nearest_road
+
+  network_30mph <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","20mph existing streets","Part time 20mph"),]
+  mergedDf <- delete_na(data1[data1$LAYER == "30mph", ],"Accident_Index")
+
+  new_lines_30mph <- nearest_line(mergedDf,network_30mph,10)
+  new_nearest_road_30mph <- spTransform(new_lines_30mph,"+init=epsg:4326")
+  new_nearest_road_30mph <-new_lines_30mph@data
+  new_nearest_road_30mph <- unique(merge(new_nearest_road_30mph,network_30mph@data,by.x = "nearest_line_id" ,by.y = "ID"))
+  df2 <- new_nearest_road_30mph
+
+  network_20mphlocal <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph", "20mph main streets","20mph existing streets","Part time 20mph"),]
+  mergedDf <- delete_na(data1[data1$LAYER == c("20mph local streets"), ],"Accident_Index")
+
+  new_lines_20mphlocal <- nearest_line(mergedDf,network_20mphlocal,10)
+  new_nearest_road_20mphlocal <- spTransform(new_lines_20mphlocal,"+init=epsg:4326")
+  new_nearest_road_20mphlocal <-new_lines_20mphlocal@data
+  new_nearest_road_20mphlocal <- unique(merge(new_nearest_road_20mphlocal,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
+  df3 <- new_nearest_road_20mphlocal
+
+  network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets","20mph existing streets","Part time 20mph"),]
+  mergedDf <- delete_na(data1[data1$LAYER == c("20mph main streets"), ],"Accident_Index")
+
+  new_lines_20mphmain <- nearest_line(mergedDf,network_20mphmain,10)
+  new_nearest_road_20mphmain <- spTransform(new_lines_20mphmain,"+init=epsg:4326")
+  new_nearest_road_20mphmain <-new_lines_20mphmain@data
+  new_nearest_road_20mphmain <- unique(merge(new_nearest_road_20mphmain,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
+  df4 <- new_nearest_road_20mphmain
+  df <- unique(rbind.fill(df1,df2,df3,df4))
+  return(df)
+}
+
+
+change_class_with_layers_1st <- function(all,network_main,network_minor){
+  new_lines <- nearest_line(delete_na(all[all$X1st_Road_Class == "A" &
+                                            all$LAYER == c("20mph local streets","20mph existing streets"),],"Accident_Index"),network_main,10)
+  new_nearest_road <- spTransform(new_lines,"+init=epsg:4326")
+  dfa <- unique(merge(data.frame(new_nearest_road),network_main@data,by.x = "nearest_line_id" ,by.y = "ID"))
+
+
+  new_lines <- nearest_line(delete_na(all[all$X1st_Road_Class == c("B","C","Unclassified") & 
+                                            all$LAYER == c("20mph main streets","30mph","Part time 20mph"), ],"Accident_Index"),network_minor,10)
+  new_nearest_road <- spTransform(new_lines,"+init=epsg:4326")
+  dfb <- unique(merge(data.frame(new_nearest_road),network_minor@data,by.x = "nearest_line_id" ,by.y = "ID"))
+  dfmerge <- rbind.fill(dfa,dfb)
+  return(dfmerge)
+}
+```
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#Read geodatabase for Edinburgh
+#Path
+dir_path <- "../data"
+gdb_path <- paste0(dir_path, "/20mph.gdb")
+gdb_layers <- ogrListLayers(gdb_path)
+
+#Read shapefile
+edin_cons_streets <- readOGR(dsn = gdb_path,layer="Consultation20mphStreets", verbose = FALSE)
+#Put ID column as variable 
+edin_cons_streets@data <-rowid_to_column(edin_cons_streets@data, "ID")
+```
+
+> Edinburgh's implementation zones
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#Read shapefile
+edin_impl_zones <- readOGR(dsn = gdb_path, layer= "ImplementationZones", verbose = FALSE)
+#Change zone 1
+edin_impl_zones@data$ImplementationZone <- as.integer(edin_impl_zones@data$ImplementationZone)
+edin_impl_zones@data[6,]$ImplementationZone <- 7
+
+#Read geodatabase for Edinburgh
+#Path
+gdb_path <- paste0(dir_path, "/class")
+gdb_layers <- ogrListLayers(gdb_path)
+#Read shapefile
+edin_aclass_streets <- readOGR(dsn = gdb_path, layer = "a_road_polyline", verbose = FALSE)
+proj4string(edin_aclass_streets) <- proj4string(edin_cons_streets)
+edin_bclass_streets <- readOGR(dsn = gdb_path, layer = "b_road_polyline", verbose = FALSE)
+proj4string(edin_bclass_streets) <- proj4string(edin_cons_streets)
+edin_cclass_streets <- readOGR(dsn = gdb_path, layer = "minor_rd_polyline", verbose = FALSE)
+proj4string(edin_cclass_streets) <- proj4string(edin_cons_streets)
+edin_aclass_streets <- spTransform(edin_aclass_streets, "+init=epsg:4326")
+edin_bclass_streets <- spTransform(edin_bclass_streets, "+init=epsg:4326")
+edin_cclass_streets <- spTransform(edin_cclass_streets, "+init=epsg:4326")
+```
+
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#Transform to long/lat
+edin_impl_zones <- spTransform(edin_impl_zones, "+init=epsg:4326")
+edin_cons_streets <- spTransform(edin_cons_streets, "+init=epsg:4326")
+edin_road_network <- edin_cons_streets
+edin_road_network <- edin_road_network[edin_road_network@data$LAYER  %in% c("20mph existing streets", "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
+edin_road_network <- spTransform(edin_road_network,"+init=epsg:4326")
+```
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+inter_a <- intersect(edin_aclass_streets,edin_impl_zones)
+inter_b <- intersect(edin_bclass_streets,edin_impl_zones)
+inter_c <- intersect(edin_cclass_streets,edin_impl_zones)
+inter <- bind(inter_a,inter_b,inter_c)
+inter <- spTransform(inter, "+init=epsg:4326")
+inter@data <-rowid_to_column(inter@data, "ID")
+
+edin_road_data <- read_road_data()
+
+edin_road_data$X1st_Road_Class[edin_road_data$X1st_Road_Class == 0] <- "Not a junction or within 20meters"
+edin_road_data$X1st_Road_Class[edin_road_data$X1st_Road_Class == 1] <- "Motorway"
+edin_road_data$X1st_Road_Class[edin_road_data$X1st_Road_Class == 2] <- "A(M)"
+edin_road_data$X1st_Road_Class[edin_road_data$X1st_Road_Class == 3] <- "A"
+edin_road_data$X1st_Road_Class[edin_road_data$X1st_Road_Class == 4] <- "B"
+edin_road_data$X1st_Road_Class[edin_road_data$X1st_Road_Class == 5] <- "C"
+edin_road_data$X1st_Road_Class[edin_road_data$X1st_Road_Class == 6] <- "Unclassified"
+
+network_main <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c("20mph main streets","30mph","Part time 20mph"),]
+network_main <- spTransform(network_main, "+init=epsg:4326")
+network_minor <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c("20mph existing streets","20mph local streets"),]
+network_minor <- spTransform(network_minor, "+init=epsg:4326")
+```
+
+
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+#exclude 20mph existing streets and link again accidents to the remaining layers
+data1 <- edin_road_data
+data1$X1st_Road_Class <- as.character(data1$X1st_Road_Class)
+```
+
+```{r}
+nearest_road <- nearest_line(edin_road_data,edin_road_network,10)
+nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
+mergedDf <- unique(merge(data.frame(nearest_road),edin_road_network@data,by.x = "nearest_line_id" ,by.y = "ID"))
+mergedDf <- mergedDf[,-c(1,2,38,41,42,44)]
+```
+
+> Change data with wrong matches between class and road segment
+
+```{r}
+first_change <- change_class_with_layers_1st(mergedDf,network_main,network_minor)[,-c(1,40,43,44,46)]
+first_change$LAYER <- first_change$LAYER.y
+```
+
+
+> Collisions in intersections that change type of road segment
+
+```{r}
+intersectiondf <- changed_layer(mergedDf,edin_cons_streets)
+```
+
+> A class
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+inter_a <- inter[inter@data$CODE == 3001, ]
+inter_a <- spTransform(inter_a, "+init=epsg:4326")
+df1 <- find_class_line(intersectiondf,"A", inter_a)[,-c(39,40,42:44,47,50,52:63)]
+df1$X1st_Road_Class <- "A"
+```
+
+> B class 
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+inter_b <- inter[inter@data$CODE == 3002, ]
+inter_b <- spTransform(inter_b, "+init=epsg:4326")
+df2 <- find_class_line(intersectiondf,"B",inter_b)[,-c(39,40,42:44,47,50,52:63)]
+#df2 <- df2
+
+int <- intersectiondf[intersectiondf$X1st_Road_Class == "B", ]
+leaflet(inter_b) %>% addTiles() %>% addPolylines() %>% addMarkers(lng = int$Longitude, lat= int$Latitude)
+
+```
+
+> C class / Unclassified
+
+```{r,echo=FALSE, warning=FALSE,message=FALSE}
+inter_c <- inter[inter@data$CODE == 3004, ]
+inter_c <- spTransform(inter_c, "+init=epsg:4326")
+df3 <- find_class_line(intersectiondf,"C",inter_c)[,-c(39,40,42:44,47,50,52:63)]
+df3$X1st_Road_Class <- "C"
+df4 <- find_class_line(intersectiondf,"Unclassified",inter_c)[,-c(39,40,42:44,47,50,52:63)]
+df4$X1st_Road_Class <- "Unclassified"
+```
+
+
+```{r}
+changed <- rbind(df1,df3,df4)
+
+changed$LAYER <- changed$LAYER.x
+changed[changed$CODE == 3001 & changed$LAYER.y %in% c("20mph main streets","30mph","Part time 20mph"),]$LAYER <- 
+  changed[changed$CODE == 3001 & changed$LAYER.y %in% c("20mph main streets","30mph","Part time 20mph"),]$LAYER.y
+
+changed[changed$CODE == 3004 & changed$LAYER.y %in% c("20mph local streets","20mph existing streets"),]$LAYER <- 
+  changed[changed$CODE == 3004 & changed$LAYER.y %in% c("20mph local streets","20mph existing streets"),]$LAYER.y
+
+```
+
+
+```{r}
+first_changed <- delete_na(intersectiondf[(intersectiondf$Accident_Index %in% first_change$Accident_Index),],"Accident_Index")
+leaflet_map(first_changed,edin_cons_streets)
+```
+
+
+```{r}
+not_changed <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% changed$Accident_Index),],"Accident_Index")
+results <- rbind.fill(not_changed,changed)[,-c(39:45)]
+leaflet_map(changed,edin_cons_streets)
+```
+
+
+```{r}
+all <- results
+all$LAYER <- as.character((all$LAYER)) 
+all$Date <- as.character(all$Date)
+all$X1st_Road_Class <- as.character(all$X1st_Road_Class)
+aggregate(Accident_Index~X1st_Road_Class + LAYER ,all,length)
+
+pre <- count_pre(all[all$Date >= "2013-07-31" & all$Date <= "2016-07-30", ])
+post <- count_pre(all[all$Date >= "2018-03-06" & all$Date <= "2019-06-31", ])
+```
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+table_annual(pre,post)
+```
+```
+

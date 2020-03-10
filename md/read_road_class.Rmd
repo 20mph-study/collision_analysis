@@ -109,6 +109,7 @@ inter_c <- intersect(edin_cclass_streets,edin_impl_zones)
 inter <- bind(inter_a,inter_b,inter_c)
 inter <- spTransform(inter, "+init=epsg:4326")
 inter@data <-rowid_to_column(inter@data, "ID")
+
 edin_road_data <- read_road_data()
 
 edin_road_data$X1st_Road_Class[edin_road_data$X1st_Road_Class == 0] <- "Not a junction or within 20meters"
@@ -126,7 +127,7 @@ finaldf <- nearest_line(edin_road_data,inter,15)
 finaldf <- spTransform(finaldf, "+init=epsg:4326")
 
 mergedclass <- unique(merge(data.frame(finaldf), inter, by.x = "nearest_line_id", by.y = "ID"))
-mergeclass <- mergeclass[,-c(1,2,38,41,46,47,48)]
+mergedclass <- mergedclass[,-c(1,2,38,41,46,47,48)]
   
 new_lines <- new_nearest_line(mergedclass,edin_road_network,20)
 new_lines <- spTransform(new_lines, "+init=epsg:4326")
@@ -136,75 +137,6 @@ new_linesdf <- unique(merge(data.frame(new_lines), edin_road_network, by.x = "ne
 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-Aa <- edin_aclass_streets[edin_aclass_streets@data$OSODR %in% inter_a@data$OSODR,]
-Aa <- spTransform(Aa, "+init=epsg:4326")
-Bb <- edin_bclass_streets[edin_bclass_streets@data$OSODR %in% inter_b@data$OSODR,]
-Bb <- spTransform(Bb, "+init=epsg:4326")
-minor <- edin_cclass_streets[edin_cclass_streets@data$OSODR %in% inter_c@data$OSODR,]
-minor <- spTransform(minor, "+init=epsg:4326")
-```
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-leaflet(Aa) %>% addTiles() %>% addPolylines()
-leaflet(Bb) %>% addTiles() %>% addPolylines(popup = paste(Bb$ROAD_NAME,Bb$NUMBER))
-```
-
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-leaflet(minor) %>% addTiles() %>% addPolylines(popup = paste(Cc$ROAD_NAME))
-```
-
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-leaflet(aclass) %>% addTiles() %>% addPolylines( popup = paste(aclass$ROAD_NAME))
-leaflet(bclass) %>% addTiles() %>% addPolylines(popup = paste(bclass$ROAD_NAME,bclass$NUMBER))
-leaflet(minorclass) %>% addTiles() %>% addPolylines(popup = paste(minorclass$ROAD_NAME))
-```
-
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-Aa <- aclass[aclass@data$OSODR %in% result$OSODR,]
-Aa <- spTransform(Aa, "+init=epsg:4326")
-leaflet(Aa) %>% addTiles() %>% addPolylines( popup = paste(Aa$ROAD_NAME,Aa$NUMBER))
-
-Bb <- bclass[bclass@data$OSODR %in% result$OSODR, ]
-Bb <- spTransform(Bb, "+init=epsg:4326")
-leaflet(Bb) %>% addTiles() %>% addPolylines( popup = paste(Bb$ROAD_NAME,Bb$NUMBER))
-
-minor <- minorclass[minorclass@data$OSODR %in% result$OSODR,]
-minor <- spTransform(minor, "+init=epsg:4326")
-leaflet(minor) %>% addTiles() %>% addPolylines( popup = paste(minor$ROAD_NAME,minor$NUMBER))
-```
-
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-aclass_sf <- st_as_sf(Aa)
-leaflet() %>%
-  addTiles() %>%
-  addPolylines(data = aclass_sf, color = c("red"))
-bclass_sf <- st_as_sf(Bb)
-minorclass_sf <- st_as_sf(minor)
-edin_road_network_sf <- st_as_sf(edin_road_network)
-edin_class <- rbind(aclass_sf,bclass_sf,minorclass_sf)
-
-
-result <-  st_intersection(edin_road_network_sf,edin_class)
-leaflet() %>% addTiles() %>% addPolylines(data = result)
-result$geometry_type <- st_geometry_type(result)
-#result <- result[result$geometry_type == "MULTIPOINT",]
-result_a <- st_intersection(edin_road_network_sf,aclass_sf)
-result_a$geometry_type <- st_geometry_type(result_a)
-#result_a <- result_a[result_a$geometry_type == "MULTIPOINT",]
-result_b <- st_intersection(edin_road_network_sf,bclass_sf)
-result_b$geometry_type <- st_geometry_type(result_b)
-#result_b <- result_b[result_b$geometry_type == "MULTIPOINT",]
-result_minor <- st_intersection(edin_road_network_sf,minorclass_sf)
-result_minor$geometry_type <- st_geometry_type(result_minor)
-#result_minor <- result_minor[result_minor$geometry_type == "MULTIPOINT",]
-
-
-final_result <- rbind(result_a,result_b,result_minor)
-
 
 df <- data.frame(nearest_road)
 
@@ -313,12 +245,16 @@ final <- unique(final)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 not_found <- delete_na(merged[!(merged$Accident_Index %in% final$Accident_Index),],"Accident_Index")
 not_found_2019 <- mergedDf[mergedDf$year == "2019", ]
+
+not <- delete_na(not_changed[not_changed$X1st_Road_Class== "Unclassified" & not_changed$LAYER == "30mph", ], "Accident_Index")
+leaflet_map(not,edin_cons_streets)
+
 ```
 
 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-leaflet_map(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2014-07-30" ,],edin_cons_streets)
+leaflet_map(mergedDf[mergedDf$Date >= "2013-07-31" & mergedDf$Date <= "2013-07-30" ,],edin_cons_streets)
 ```
 
 
