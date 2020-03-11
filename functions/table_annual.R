@@ -23,7 +23,7 @@ table_annual <- function(pre,post){
   type <- c("at 30mph","at 20mph","Part time 20mph : a traffic calming measure in specific hours per day. 
                                        e.g outside of schools, at the start and end of the school day","at 30mph changed to 20mph","All streets")
   df <- data.frame(type,collisions_pre_20mph,collisions_post_20mph,rate_pre_20mph,rate_post_20mph,diff_in_rates,percentage_diff_in_rates)
-  colnames(df)=c(" ", "collisions pre-20mph ( 2013 / 2016 - 3 years )","collisions post-20mph ( 2018 / 2019 - 16 months )","rate pre-20mph ",
+  colnames(df)=c(" ", "collisions pre-20mph ( 2013 / 2016 - 3 years )","collisions post-20mph ( 2018 / 2019 - 22 months )","rate pre-20mph ",
                  "rate post-20mph ","diff in rates = pre - post", "Perc.diff.rates = (pre - post) / pre * 100")
   
   kable(df,caption = "Table 1: Average annual road traffic collision rates in the city of Edinburgh (council data)") %>% 
