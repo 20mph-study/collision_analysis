@@ -118,69 +118,51 @@ leaflet_map <- function(final_df,edin_streets){
 }
 
 find_class_line <- function(data1,class,inter_type){
-  new_lines_u <- nearest_line(delete_na(data1[data1$X1st_Road_Class == class, ],"X1st_Road_Class"),inter_type,20)
+  new_lines_u <- nearest_line(delete_na(data1[data1$X1st_Road_Class == class, ],"X1st_Road_Class"),inter_type,15)
   new_lines_u <- spTransform(new_lines_u, "+init=epsg:4326")
   new_lines_u <- unique(merge(data.frame(new_lines_u),inter_type@data, by.x = "nearest_line_id", by.y = "ID"))
-  new_lines_u <- new_lines_u[,-c(1)]
-  return (new_lines_u)
+  return (new_lines_u[,-c(1)])
 }
 
 changed_layer <- function(data1,edin_cons_streets){
+  #20mph existing
   mergedDf <- delete_na(data1[data1$LAYER == "20mph existing streets", ],"Accident_Index")
   network_existing <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","30mph","Part time 20mph"),]
- 
   new_lines_existing <- nearest_line(mergedDf,network_existing,10)
   new_nearest_road <- spTransform(new_lines_existing,"+init=epsg:4326")
-  new_nearest_road <-new_lines_existing@data
-  new_nearest_road <- unique(merge(new_nearest_road,network_existing@data,by.x = "nearest_line_id" ,by.y = "ID"))
-  #[,-c(38,41,42,44,46,48)]
-  df1 <- new_nearest_road
-
+  df1<- unique(merge(data.frame(new_nearest_road),network_existing@data,by.x = "nearest_line_id" ,by.y = "ID"))
+  #30mph
   network_30mph <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "20mph local streets","20mph main streets","20mph existing streets","Part time 20mph"),]
   mergedDf <- delete_na(data1[data1$LAYER == "30mph", ],"Accident_Index")
-
   new_lines_30mph <- nearest_line(mergedDf,network_30mph,10)
   new_nearest_road_30mph <- spTransform(new_lines_30mph,"+init=epsg:4326")
-  new_nearest_road_30mph <-new_lines_30mph@data
-  new_nearest_road_30mph <- unique(merge(new_nearest_road_30mph,network_30mph@data,by.x = "nearest_line_id" ,by.y = "ID"))
-  df2 <- new_nearest_road_30mph
-
+  df2<- unique(merge(data.frame(new_nearest_road_30mph),network_30mph@data,by.x = "nearest_line_id" ,by.y = "ID"))
+  #20mph local
   network_20mphlocal <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph", "20mph main streets","20mph existing streets","Part time 20mph"),]
   mergedDf <- delete_na(data1[data1$LAYER == c("20mph local streets"), ],"Accident_Index")
-
   new_lines_20mphlocal <- nearest_line(mergedDf,network_20mphlocal,10)
   new_nearest_road_20mphlocal <- spTransform(new_lines_20mphlocal,"+init=epsg:4326")
-  new_nearest_road_20mphlocal <-new_lines_20mphlocal@data
-  new_nearest_road_20mphlocal <- unique(merge(new_nearest_road_20mphlocal,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
-  df3 <- new_nearest_road_20mphlocal
-
+  df3 <- unique(merge(data.frame(new_nearest_road_20mphlocal),network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
+  #20mph main
   network_20mphmain <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets","20mph existing streets","Part time 20mph"),]
   mergedDf <- delete_na(data1[data1$LAYER == c("20mph main streets"), ],"Accident_Index")
-
   new_lines_20mphmain <- nearest_line(mergedDf,network_20mphmain,10)
   new_nearest_road_20mphmain <- spTransform(new_lines_20mphmain,"+init=epsg:4326")
-  new_nearest_road_20mphmain <-new_lines_20mphmain@data
-  new_nearest_road_20mphmain <- unique(merge(new_nearest_road_20mphmain,network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
-  df4 <- new_nearest_road_20mphmain
-  df <- unique(rbind.fill(df1,df2,df3,df4))
-  return(df)
+  df4 <- unique(merge(data.frame(new_nearest_road_20mphmain),network_20mphmain@data,by.x = "nearest_line_id" ,by.y = "ID"))
+  return(unique(rbind.fill(df1,df2,df3,df4)))
 }
 
 
-change_class_with_layers_1st <- function(all,network_main,network_minor){
-  new_lines <- nearest_line(delete_na(all[all$X1st_Road_Class == "A" &
-                                            all$LAYER == c("20mph local streets","20mph existing streets"),],"Accident_Index"),network_main,10)
-  new_nearest_road <- spTransform(new_lines,"+init=epsg:4326")
-  dfa <- unique(merge(data.frame(new_nearest_road),network_main@data,by.x = "nearest_line_id" ,by.y = "ID"))
-
-
-  new_lines <- nearest_line(delete_na(all[all$X1st_Road_Class == c("B","C","Unclassified") & 
-                                            all$LAYER == c("20mph main streets","30mph","Part time 20mph"), ],"Accident_Index"),network_minor,10)
-  new_nearest_road <- spTransform(new_lines,"+init=epsg:4326")
-  dfb <- unique(merge(data.frame(new_nearest_road),network_minor@data,by.x = "nearest_line_id" ,by.y = "ID"))
-  dfmerge <- rbind.fill(dfa,dfb)
-  return(dfmerge)
+changed_class <- function(data1,edin_cons_streets){
+  #A
+  mergedDf <- delete_na(data1[data1$X1st_Road_Class == "A", ],"Accident_Index")
+  network_existing <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c("20mph main streets","30mph","Part time 20mph"),]
+  new_lines_existing <- nearest_line(mergedDf,network_existing,10)
+  new_nearest_road <- spTransform(new_lines_existing,"+init=epsg:4326")
+  df1 <- unique(merge(data.frame(new_nearest_road),network_existing@data,by.x = "nearest_line_id" ,by.y = "ID"))
+  return(unique(rbind.fill(df1)))
 }
+
 ```
 
 
@@ -210,7 +192,7 @@ edin_impl_zones@data[6,]$ImplementationZone <- 7
 #Path
 gdb_path <- paste0(dir_path, "/class")
 gdb_layers <- ogrListLayers(gdb_path)
-#Read shapefile
+#Read road class network
 edin_aclass_streets <- readOGR(dsn = gdb_path, layer = "a_road_polyline", verbose = FALSE)
 proj4string(edin_aclass_streets) <- proj4string(edin_cons_streets)
 edin_bclass_streets <- readOGR(dsn = gdb_path, layer = "b_road_polyline", verbose = FALSE)
@@ -243,6 +225,7 @@ inter <- spTransform(inter, "+init=epsg:4326")
 inter@data <-rowid_to_column(inter@data, "ID")
 
 edin_road_data <- read_road_data()
+edin_road_data$X1st_Road_Class <- as.character(edin_road_data$X1st_Road_Class)
 
 edin_road_data$X1st_Road_Class[edin_road_data$X1st_Road_Class == 0] <- "Not a junction or within 20meters"
 edin_road_data$X1st_Road_Class[edin_road_data$X1st_Road_Class == 1] <- "Motorway"
@@ -258,71 +241,53 @@ network_minor <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c("20mph e
 network_minor <- spTransform(network_minor, "+init=epsg:4326")
 ```
 
-
-
-```{r, echo=FALSE, warning=FALSE,message=FALSE}
-#exclude 20mph existing streets and link again accidents to the remaining layers
-data1 <- edin_road_data
-data1$X1st_Road_Class <- as.character(data1$X1st_Road_Class)
-```
-
 ```{r}
 nearest_road <- nearest_line(edin_road_data,edin_road_network,10)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
-mergedDf <- unique(merge(data.frame(nearest_road),edin_road_network@data,by.x = "nearest_line_id" ,by.y = "ID"))
-mergedDf <- mergedDf[,-c(1,2,38,41,42,44)]
+mergedDf <- unique(merge(data.frame(nearest_road),edin_road_network@data,by.x = "nearest_line_id" ,by.y = "ID"))[,-c(1,2,38,41,42,44)]
 ```
 
-> Change data with wrong matches between class and road segment
+> Change data with A class and existing/local type of road
 
 ```{r}
-first_change <- change_class_with_layers_1st(mergedDf,network_main,network_minor)[,-c(1,40,43,44,46)]
+first_change <- changed_class(mergedDf,edin_cons_streets)
+aggregate(Accident_Index~X1st_Road_Class + LAYER.y ,first_change,length)
+first_change$LAYER.y <- as.character(first_change$LAYER.y)
 first_change$LAYER <- first_change$LAYER.y
-```
 
+not <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% first_change$Accident_Index),],"Accident_Index")
+
+final <- unique(rbind.fill(not,first_change))
+final$LAYER <- as.character(final$LAYER)
+aggregate(Accident_Index~X1st_Road_Class + LAYER ,final,length)
+final <- final[,-c(39:47)]
+
+final$LAYER <- as.character((final$LAYER)) 
+final$Date <- as.character(final$Date)
+final$X1st_Road_Class <- as.character(final$X1st_Road_Class)
+```
 
 > Collisions in intersections that change type of road segment
 
 ```{r}
-intersectiondf <- changed_layer(mergedDf,edin_cons_streets)
+#collisions that change type of road segment
+intersectiondf <- changed_layer(final,edin_cons_streets)
+
+#For these collisions find the road class 
+new_class <- nearest_line(intersectiondf,inter,15)
+new_class <- spTransform(new_class, "+init=epsg:4326")
+new_class <- unique(merge(data.frame(new_class),inter@data, by.x = "nearest_line_id", by.y = "ID"))[,-c(1,40,46:48,51,53:60)]
+aggregate(Accident_Index~X1st_Road_Class + CODE ,new_class,length)
+new_class[new_class$CODE == 3001 ,]$X1st_Road_Class <- "A"
+new_class[new_class$CODE == 3002 ,]$X1st_Road_Class <- "B"
+new_class[new_class$CODE == 3004 ,]$X1st_Road_Class <- "Unclassified"
 ```
-
-> A class
-
-```{r, echo=FALSE, warning=FALSE,message=FALSE}
-inter_a <- inter[inter@data$CODE == 3001, ]
-inter_a <- spTransform(inter_a, "+init=epsg:4326")
-df1 <- find_class_line(intersectiondf,"A", inter_a)[,-c(39,40,42:44,47,50,52:63)]
-df1$X1st_Road_Class <- "A"
-```
-
-> B class 
-
-```{r, echo=FALSE, warning=FALSE,message=FALSE}
-inter_b <- inter[inter@data$CODE == 3002, ]
-inter_b <- spTransform(inter_b, "+init=epsg:4326")
-df2 <- find_class_line(intersectiondf,"B",inter_b)[,-c(39,40,42:44,47,50,52:63)]
-#df2 <- df2
-
-int <- intersectiondf[intersectiondf$X1st_Road_Class == "B", ]
-leaflet(inter_b) %>% addTiles() %>% addPolylines() %>% addMarkers(lng = int$Longitude, lat= int$Latitude)
-
-```
-
-> C class / Unclassified
-
-```{r,echo=FALSE, warning=FALSE,message=FALSE}
-inter_c <- inter[inter@data$CODE == 3004, ]
-inter_c <- spTransform(inter_c, "+init=epsg:4326")
-df3 <- find_class_line(intersectiondf,"C",inter_c)[,-c(39,40,42:44,47,50,52:63)]
-df3$X1st_Road_Class <- "C"
-df4 <- find_class_line(intersectiondf,"Unclassified",inter_c)[,-c(39,40,42:44,47,50,52:63)]
-df4$X1st_Road_Class <- "Unclassified"
-```
-
 
 ```{r}
-changed <- rbind(df1,df3,df4)
+#Update new layer
+changed <- new_class
+changed$LAYER.x <- as.character(changed$LAYER.x)
+changed$LAYER.y <- as.character(changed$LAYER.y)
 
 changed$LAYER <- changed$LAYER.x
 changed[changed$CODE == 3001 & changed$LAYER.y %in% c("20mph main streets","30mph","Part time 20mph"),]$LAYER <- 
@@ -335,15 +300,8 @@ changed[changed$CODE == 3004 & changed$LAYER.y %in% c("20mph local streets","20m
 
 
 ```{r}
-first_changed <- delete_na(intersectiondf[(intersectiondf$Accident_Index %in% first_change$Accident_Index),],"Accident_Index")
-leaflet_map(first_changed,edin_cons_streets)
-```
-
-
-```{r}
-not_changed <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% changed$Accident_Index),],"Accident_Index")
+not_changed <- delete_na(final[!(final$Accident_Index %in% changed$Accident_Index),],"Accident_Index")
 results <- rbind.fill(not_changed,changed)[,-c(39:45)]
-leaflet_map(changed,edin_cons_streets)
 ```
 
 
@@ -355,11 +313,10 @@ all$X1st_Road_Class <- as.character(all$X1st_Road_Class)
 aggregate(Accident_Index~X1st_Road_Class + LAYER ,all,length)
 
 pre <- count_pre(all[all$Date >= "2013-07-31" & all$Date <= "2016-07-30", ])
-post <- count_pre(all[all$Date >= "2018-03-06" & all$Date <= "2019-06-31", ])
+post <- count_pre(all[all$Date >= "2018-03-06" & all$Date <= "2019-12-31", ])
 ```
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 table_annual(pre,post)
-```
 ```
 

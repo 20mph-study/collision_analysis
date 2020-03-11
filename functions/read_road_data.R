@@ -13,11 +13,13 @@ read_road_data <- function(){
   
   #rd_2019 <- read_csv(paste0(dir_path, "/data2019.csv"))
   #2019 data
-  rd_2019 <- read_excel(paste0(dir_path, "/2019 DataJune.xls"))
+  rd_2019a <- read_excel(paste0(dir_path, "/2019 DataJune.xls"))
+
+  rd_2019b <- read_excel(paste0(dir_path, "/2019 Data - July to December.xls"))
+  rd_2019 <- rbind(rd_2019a,rd_2019b)
   rd_2019 <- rd_2019 %>% filter(rd_2019$`Speed Limit` %in% c(20,30)) 
   coord <- rd_2019 %>% st_as_sf(coords = c("Grid Ref: Easting","Grid Ref: Northing"), crs = 27700) %>% st_transform(4326) %>% st_coordinates() %>% as_tibble()
   rd_2019 <- data.frame(rd_2019,coord)
-  
   
   #rename columns
   rd_2019 <- rename(rd_2019,c("Reference.Number"="Accident_Index" ,   "Speed.Limit" = "Speed_limit",

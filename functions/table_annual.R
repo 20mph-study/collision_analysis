@@ -13,7 +13,7 @@ table_annual <- function(pre,post){
   
   #rate per year
   rate_pre_20mph <- round(collisions_pre_20mph/3,2)
-  rate_post_20mph <- round(collisions_post_20mph/1.33,2)
+  rate_post_20mph <- round(collisions_post_20mph/1.83,2)
   
   diff_in_rates <-  rate_pre_20mph - rate_post_20mph
   percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2) 
