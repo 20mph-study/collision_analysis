@@ -32,10 +32,8 @@ leaflet_map <- function(final_df,edin_streets){
                                                                           "Speed limit: ", final_df$Speed_limit ,"<br>",
                                                                           "Layer: ",final_df$LAYER,"<br>",
                                                                           "Casualty severity: ",final_df$Casualty_Severity,"<br>",
-                                                                          "Class from road network: ",final_df$class,"<br>",
-                                                                          "Class from dataset: ",final_df$X1st_Road_Class,"<br>",
-                                                                          "Class from dataset: ",final_df$ROAD_NAME,"<br>",
-                                                                          "Class from dataset: ",final_df$CODE), group = 'incidents linked to a road')
+                                                                          "Date: ",final_df$Date,"<br>",
+                                                                          "1st class road : ",final_df$X1st_Road_Class), group = 'incidents linked to a road')
 
   map3 <- map_near %>% addCircleMarkers(lng =final_df$Longitude , lat = final_df$Latitude,
                                         popup =paste("Accident index: ", final_df$Accident_Index, "<br>",
