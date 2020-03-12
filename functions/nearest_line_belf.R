@@ -16,7 +16,7 @@ nearest_line_belf <- function(belf_data,belfast_road_data){
   proj4string(df) <- proj4string(road_net)
   
   #Find nearest line with maxDist=10m 
-  nearest_line_sp <- localSnapPointsToLines(df,road_net,maxDist=10,withAttrs = T)
+  nearest_line_sp <- localSnapPointsToLines(df,road_net,maxDist=12,withAttrs = T)
   
   #belfast_road_data@data <-rowid_to_column(belfast_road_data@data, "ID")
   nearest_line_sp <- spTransform(nearest_line_sp,"+init=epsg:4326")

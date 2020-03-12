@@ -77,13 +77,9 @@ belf_control_data <- read_belf_controldata(dir_path)
 > Time series Analysis
 
 ```{r,echo=FALSE, warning=FALSE,message=FALSE}
-
-```
-
-
-```{r,echo=FALSE, warning=FALSE,message=FALSE}
 time_plot_belf(belf_data)
 ```
+
 
 ```{r,echo=FALSE, warning=FALSE,message=FALSE}
 #Nearest line
@@ -157,39 +153,6 @@ pre
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 post <- belcount(merged[merged$a_date >= "2016-02-02" & merged$a_date <= "2019-03-31", ])
 post
-```
-
-> Table: Average annual road traffic collision rates in the city of Belfast ( GIS )
-
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-belf_annual_table(total_zones,total,pre,post)
-```
-
-> Effect estimate ( GIS )
-
-```{r,echo=FALSE,warning=FALSE,message=FALSE}
-a <- c(nrow(total_zones[total_zones$a_date >= "2013-02-01" & total_zones$a_date <= "2014-01-31", ]))
-b <- c(nrow(total_zones[total_zones$a_date >= "2014-02-01" & total_zones$a_date <= "2015-01-31", ]))
-c <- c(nrow(total_zones[total_zones$a_date >= "2015-02-01" & total_zones$a_date <= "2016-01-31", ]))
-e <- c(nrow(total_zones[total_zones$a_date >= "2016-02-02" & total_zones$a_date <= "2017-12-31", ]))
-d <- c(nrow(total_zones[total_zones$a_date >= "2018-01-01" & total_zones$a_date <= "2019-03-31", ]))
-
-sum1 <- (a+b+c)/3
-sum2 <- (d + e) / 3.15 
-unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
-secular_trend <- ( (a-b) / a  + (b-c) / b ) / 2
-f <- ( unadjusted_estimate - secular_trend ) * 100
-
-Y_2013_14 <- c(a,round(a, digits = 2)," ",round(f,digits = 2))
-Y_2014_15 <- c(b,b," "," ")
-Y_2015_16 <- c(c,c," "," ")
-Y_2016_17 <- c(e,round(e/1.9,digits = 2)," "," ")
-Y_2018_19 <- c(d,round(d/1.25 ,digits = 2)," "," ")
-
-Tax_year <- c("Annual number of collisions in roads changed to 20mph","Rate per year"," ","% reduction in collisions ")
-df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2016_17,Y_2018_19)
-colnames(df)=c("Tax year", "2013/14","2014/15","2015/16","2016/17", "2018/19")
-kable(df,caption = "Effect estimate(GIS)") %>% kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
 > Output column: Changed to 20 mph
@@ -266,6 +229,44 @@ s_19 <- nrow(buffer_data(total,belf_impl_zones_out))
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 s_13 + s_14 + s_15 + s_16 + s_18 + s_19 
 ```
+
+> Table: Average annual road traffic collision rates in the city of Belfast ( GIS )
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+belf_annual_table(total_zones,merged,pre,post)
+```
+
+> Effect estimate ( GIS )
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+a <- c(nrow(total_zones[total_zones$a_date >= "2013-02-01" & total_zones$a_date <= "2014-01-31", ]))
+b <- c(nrow(total_zones[total_zones$a_date >= "2014-02-01" & total_zones$a_date <= "2015-01-31", ]))
+c <- c(nrow(total_zones[total_zones$a_date >= "2015-02-01" & total_zones$a_date <= "2016-01-31", ]))
+
+e <- c(nrow(total_zones[total_zones$a_date >= "2016-02-02" & total_zones$a_date <= "2017-01-31", ]))
+d <- c(nrow(total_zones[total_zones$a_date >= "2017-02-01" & total_zones$a_date <= "2018-01-31", ]))
+h <- c(nrow(total_zones[total_zones$a_date >= "2018-02-01" & total_zones$a_date <= "2019-03-31", ]))
+
+sum1 <- (a+b+c)/3
+sum2 <- (d + e + h) / 3.166 
+unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
+secular_trend <- ( (a-b) / a  + (b-c) / b ) / 2
+f <- ( unadjusted_estimate - secular_trend ) * 100
+
+Y_2013_14 <- c(a,round(a, digits = 2)," ",round(f,digits = 2))
+Y_2014_15 <- c(b,b," "," ")
+Y_2015_16 <- c(c,c," "," ")
+Y_2016_17 <- c(e,round(e,digits = 2)," "," ")
+Y_2017_18 <- c(d,round(d ,digits = 2)," "," ")
+Y_2018_19 <- c(h,round(h / 1.166 ,digits = 2)," "," ")
+
+Tax_year <- c("Annual number of collisions in roads changed to 20mph","Rate per year"," ","% reduction in collisions ")
+df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2016_17,Y_2017_18,Y_2018_19)
+colnames(df)=c("Tax year", "2013/14","2014/15","2015/16","2016/17","2017/18", "2018/19")
+kable(df,caption = "Effect estimate") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+
 
 > Count accidents in Control Zone : City Center --> Central ( Ards )
 
