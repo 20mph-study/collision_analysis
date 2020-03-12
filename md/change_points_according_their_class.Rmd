@@ -149,13 +149,7 @@ changed_layer <- function(data1,edin_cons_streets){
   new_lines_20mphmain <- nearest_line(mergedDf,network_20mphmain,12)
   new_nearest_road_20mphmain <- spTransform(new_lines_20mphmain,"+init=epsg:4326")
   df4 <- unique(merge(data.frame(new_nearest_road_20mphmain),network_20mphmain@data,by.x = "nearest_line_id" ,by.y = "ID"))
-  #Trunk road
-  network_20mphlocal <- edin_cons_streets[edin_cons_streets@data$LAYER  %in% c( "30mph","20mph local streets", "20mph main streets","20mph existing streets","Part time 20mph"),]
-  mergedDf <- delete_na(data1[data1$LAYER == c('Trunk roads'), ],"Accident_Index")
-  new_lines_20mphlocal <- nearest_line(mergedDf,network_20mphlocal,12)
-  new_nearest_road_20mphlocal <- spTransform(new_lines_20mphlocal,"+init=epsg:4326")
-  df5 <- unique(merge(data.frame(new_nearest_road_20mphlocal),network_20mphlocal@data,by.x = "nearest_line_id" ,by.y = "ID"))
-  return(unique(rbind.fill(df1,df2,df3,df4,df5)))
+  return(unique(rbind.fill(df1,df2,df3,df4)))
 }
 
 
@@ -259,7 +253,6 @@ out <- delete_na(edin_road_data[!(edin_road_data$Accident_Index %in% mergedDf$Ac
 nearest_out <- nearest_line(out,edin_cons_streets,12)
 nearest_out <- spTransform(nearest_out,"+init=epsg:4326")
 mergedDf_out <- unique(merge(data.frame(nearest_out),edin_cons_streets@data,by.x = "nearest_line_id" ,by.y = "ID"))[,-c(1,2)]
-
 ```
 
 > Change data with A class and existing/local type of road
@@ -294,21 +287,32 @@ table_annual(pre,post)
 
 ```{r}
 #collisions that change type of road segment
-intersectiondf <- changed_layer(final[,-c(42:46)],edin_cons_streets)[,-c(1,37,40,41,43,46,47,49)]
+df2019 <- final[final$year == "2019", ] [,-c(42:46)]
+intersectiondf <- changed_layer(df2019,edin_cons_streets)[,-c(1,37,40,41,43,46,47,49)]
 
 #For these collisions find the road class 
 new_class <- new_nearest_line(intersectiondf,inter,15)
 new_class <- spTransform(new_class, "+init=epsg:4326")
 new_class <- unique(merge(data.frame(new_class),inter@data, by.x = "nearest_line_id", by.y = "ID"))[,-c(1)]
 
-new_class_2019 <- new_class[new_class$year == "2019", ]
-new_class_2019[new_class_2019$CODE == 3001 ,]$X1st_Road_Class <- "A"
-new_class_2019[new_class_2019$CODE == 3002 ,]$X1st_Road_Class <- "B"
-new_class_2019[new_class_2019$CODE == 3004 ,]$X1st_Road_Class <- "Unclassified"
-new_class <- rbind.fill(new_class[new_class$year != "2019", ],new_class_2019)[,-c(42:45,47,50:54)]
+new_class[new_class$CODE == 3001 ,]$X1st_Road_Class <- "A"
+new_class[new_class$CODE == 3002 ,]$X1st_Road_Class <- "B"
+new_class[new_class$CODE == 3004 ,]$X1st_Road_Class <- "Unclassified"
+new_class$LAYER <- new_class$LAYER.x
+new_class <- new_class[,-c(36:45,47:54)]
+
+second_change <- changed_A_class(new_classdf,edin_cons_streets)
+second_change$LAYER <- second_change$LAYER.y
+
+aggregate(Accident_Index~X1st_Road_Class + LAYER ,new_class,length)
+aggregate(Accident_Index~X1st_Road_Class + LAYER ,second_change,length)
+
+second_not <- delete_na(final[!(final$Accident_Index %in% second_change$Accident_Index),],"Accident_Index")
+
+second_final <- unique(rbind.fill(second_not,second_change))
 
 
-#aggregate(Accident_Index~X1st_Road_Class + LAYER.x ,new_class,length)
+aggregate(Accident_Index~X1st_Road_Class + LAYER ,second_final,length)
 #aggregate(Accident_Index~X1st_Road_Class + LAYER.y ,new_class,length)
 ```
 
@@ -336,7 +340,7 @@ results <- rbind.fill(not_changed,changed)
 
 
 ```{r}
-all <- results
+all <- second_final
 all$LAYER <- as.character((all$LAYER)) 
 all$Date <- as.character(all$Date)
 all$X1st_Road_Class <- as.character(all$X1st_Road_Class)

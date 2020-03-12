@@ -4,11 +4,11 @@ table_annual <- function(pre,post){
   s2 <- post[post$LAYER == "20mph main streets",2] + post[post$LAYER == "20mph local streets",2]
   
   #sum all streets pre and post
-  sum_pre <-sum(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],pre[pre$LAYER == "Part time 20mph",2],s1)
+  sum_pre <-sum(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "Trunk roads",2],pre[pre$LAYER == "20mph existing streets",2],pre[pre$LAYER == "Part time 20mph",2],s1)
   sum_post <-sum(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],post[post$LAYER == "Part time 20mph",2],s2)
   
   #create column pre and post
-  collisions_pre_20mph <- c(pre[pre$LAYER == "30mph",2],pre[pre$LAYER == "20mph existing streets",2],pre[pre$LAYER == "Part time 20mph",2],s1,sum_pre)
+  collisions_pre_20mph <- c(pre[pre$LAYER == "30mph",2]+pre[pre$LAYER == "Trunk roads",2],pre[pre$LAYER == "20mph existing streets",2],pre[pre$LAYER == "Part time 20mph",2],s1,sum_pre)
   collisions_post_20mph <- c(post[post$LAYER == "30mph",2],post[post$LAYER == "20mph existing streets",2],post[post$LAYER == "Part time 20mph",2],s2,sum_post)
   
   #rate per year
