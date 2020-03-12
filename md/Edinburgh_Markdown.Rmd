@@ -130,10 +130,10 @@ mergedDf <- mergedDf[,-c(36,39,40,42:48)]
 
 ```{r, echo=FALSE, warning=FALSE,message=FALSE}
 #check problems in longitude/latitude
-data0 <- edin_road_data[edin_road_data$Date >= "2016-01-01" & edin_road_data$Date <= "2016-12-31", ]
-write.csv(data0, file = paste0(dir_path, "/problems_2016_data.csv"), row.names = FALSE )
-leaflet(edin_cons_streets) %>% addTiles() %>% addPolylines() %>% addMarkers(lng =data0$Longitude, lat = data0$Latitude) %>% 
-  addCircleMarkers(lng = data0$Longitude.before, lat = data0$Latitude.before)
+#data0 <- edin_road_data[edin_road_data$Date >= "2016-01-01" & edin_road_data$Date <= "2016-12-31", ]
+#write.csv(data0, file = paste0(dir_path, "/problems_2016_data.csv"), row.names = FALSE )
+#leaflet(edin_cons_streets) %>% addTiles() %>% addPolylines() %>% addMarkers(lng =data0$Longitude, lat = data0$Latitude) %>% 
+#  addCircleMarkers(lng = data0$Longitude.before, lat = data0$Latitude.before)
 ```
 
 > Time series analysis
@@ -220,7 +220,7 @@ post
 > Output column: Layer
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-#head(mergedDf[,c(3,20,40)])
+head(mergedDf[,c(1,38)])
 ```
 
 > Table: Average annual road traffic collision rates in the city of Edinburgh 
@@ -271,7 +271,6 @@ kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic
     footnote(general = " ", number =c("A : accidents 2013/14 ( 1 year )","B : accidents 2014/15 ( 1 year ) ","C : accidents 2015/16 ( 1 year )","D : accidents 2018/19 ( 1 year )","E : accidents 2019/20 ( 10 months )")) 
 ```
  
-> Data used for the implementation and control zones (2013-2018)
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #We add data into edin_road_data and control_zone_data to proceed with implementation zone counting 
@@ -314,7 +313,6 @@ total <- total_zones[total_zones$Date >= "2013-07-31" & total_zones$Date <= "201
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
-nrow(total)
 ```
 
 > Mapping accidents with implementation zones: 2014
@@ -326,7 +324,6 @@ map_zones %>%
   addMarkers(lng =total$Longitude, lat = total$Latitude, 
              popup =paste("Accident index: ", total$Accident_Index, "<br>",
                           "Zone: ", total$ImplementationZone))
-nrow(total)
 ``` 
 
 > Mapping accidents with implementation zones: 2015
@@ -336,7 +333,6 @@ total <- total_zones[total_zones$Date >= "2015-01-01" & total_zones$Date <= "201
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
-nrow(total)
 ```
 
 > Mapping accidents with implementation zones: 2016
@@ -346,7 +342,6 @@ total <- total_zones[total_zones$Date >= "2016-01-01" & total_zones$Date <= "201
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
-nrow(total)
 ```
 
 > Mapping accidents with implementation zones: 2017
@@ -356,7 +351,6 @@ total <- total_zones[total_zones$Date >= "2017-01-01" & total_zones$Date <= "201
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
-nrow(total)
 ```
 
 > Mapping accidents with implementation zones: 2018
@@ -366,13 +360,12 @@ total <- total_zones[total_zones$Date >= "2018-01-01" & total_zones$Date <= "201
 map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude, 
                          popup =paste("Accident index: ", total$Accident_Index, "<br>",
                                       "Zone: ", total$ImplementationZone))
-nrow(total)
 ```
 
 > Output column: Implementation Zone
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-#head(total_zones[,c(2,19,40)])
+head(total_zones[,c(2,39)])
 ```
 
 > Table: Average annual road traffic collision rates in the city of Edinburgh per implementation zone
@@ -465,12 +458,17 @@ nrow(control_zone_6_df)
 > Updated dataset for Edinburgh
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-#final_dataset
 #control zones data
 control_zones_df <-rbind.fill(control_zone_1a_df,control_zone_1b_df,control_zone_3_df,control_zone_4_df,control_zone_5_df,control_zone_6_df)
+head(control_zones_df[,c(2,1)])
+```
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#final_dataset
 final_df <- rbind.fill(total_zones,control_zones_df)
 final_df <- final_df[,-c(1,36:38,43:48)]
-#head(final_df[,c(1,38,39,40)])
+head(final_df[,c(1,34:38)])
 #Create new csv file with the cleaned data
 write.csv(final_df, file = paste0(dir_path, "/final_Edinburgh_data.csv"),row.names=FALSE)
 ```
