@@ -158,6 +158,13 @@ inter <- bind(inter_a,inter_b,inter_c)
 inter <- spTransform(inter, "+init=epsg:4326")
 inter@data <-rowid_to_column(inter@data, "ID")
 
+
+edin_streets <- st_as_sf(inter)
+#Leaflet maps of the road network , accidents and their projections
+road_A <-edin_streets %>% filter(edin_streets$CODE==3001)
+road_B <- filter(edin_streets, edin_streets$CODE==3002)
+road_minor <- filter(edin_streets, edin_streets$CODE==3004)
+
 edin_road_data <- read_road_data()
 edin_road_data$X1st_Road_Class <- as.character(edin_road_data$X1st_Road_Class)
 
@@ -174,8 +181,10 @@ edin_road_data$X1st_Road_Class[edin_road_data$X1st_Road_Class == 6] <- "Unclassi
 nearest_road <- nearest_line(edin_road_data,edin_road_network,12)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
 mergedDf <- unique(merge(data.frame(nearest_road),edin_road_network@data,by.x = "nearest_line_id" ,by.y = "ID"))[,-c(1,2)]
+#aggregate(Accident_Index~X1st_Road_Class + LAYER ,mergedDf,length)
 
 intersections <- mergedDf[mergedDf$X2nd_Road_Class != -1 ,]
+#aggregate(Accident_Index~X1st_Road_Class + LAYER ,intersections,length)
 
 #data that not found a line
 out <- delete_na(edin_road_data[!(edin_road_data$Accident_Index %in% mergedDf$Accident_Index),],"Accident_Index")
@@ -198,8 +207,8 @@ not <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% first_change$Accident_I
 final <- unique(rbind.fill(not,first_change))
 final$LAYER <- as.character(final$LAYER)
 
-aggregate(Accident_Index~X1st_Road_Class + LAYER ,mergedDf,length)
-aggregate(Accident_Index~X1st_Road_Class + LAYER ,final,length)
+#aggregate(Accident_Index~X1st_Road_Class + LAYER ,mergedDf,length)
+#aggregate(Accident_Index~X1st_Road_Class + LAYER ,final,length)
 
 
 final$LAYER <- as.character((final$LAYER)) 
@@ -214,8 +223,9 @@ final$X1st_Road_Class <- as.character(final$X1st_Road_Class)
 df2019 <- final[final$year == "2019", ] [,-c(42:46)]
 intersectiondf <- changed_layer(df2019,edin_cons_streets)[,-c(1,37,40,41,43,46,47,49)]
 
+
 #For these collisions find the road class 
-new_class <- new_nearest_line(intersectiondf,inter,20)
+new_class <- new_nearest_line(intersectiondf,inter, 12)
 new_class <- spTransform(new_class, "+init=epsg:4326")
 new_class <- unique(merge(data.frame(new_class),inter@data, by.x = "nearest_line_id", by.y = "ID"))[,-c(1)]
 
@@ -225,20 +235,36 @@ new_class[new_class$CODE == 3004 ,]$X1st_Road_Class <- "Unclassified"
 new_class$LAYER <- new_class$LAYER.x
 new_class <- new_class[,-c(36:45,47:54)]
 
+#aggregate(Accident_Index~X1st_Road_Class + LAYER ,new_class,length)
+
 second_change <- changed_A_class(new_class,edin_cons_streets)
 second_change$LAYER <- second_change$LAYER.y
 
-aggregate(Accident_Index~X1st_Road_Class + LAYER ,new_class,length)
+#aggregate(Accident_Index~X1st_Road_Class + LAYER ,second_change,length)
 
 second_not <- delete_na(final[!(final$Accident_Index %in% second_change$Accident_Index),],"Accident_Index")
 
 second_final <- unique(rbind.fill(second_not,second_change))
 
-aggregate(Accident_Index~X1st_Road_Class + LAYER ,second_final,length)
-
 write.csv(second_final, file = paste0(dir_path, "/final_data.csv"), row.names = FALSE )
+```
+
+
+```{r}
+#Visualize
+#map3 <- map %>% addLegend("bottomright",colors =c("#41ab5d",  "#fc4e2a", "#2b8cbe"),
+#                              labels= c("A class streets", "B class streets","minor streets"),title= "Class road network",opacity = 1)
+#map3 %>%
+#      addMarkers(lng= new_class$Longitude,lat= new_class$Latitude) %>%
+#     setView(lng = -3.188267 , lat = 55.953251, zoom = 11)%>%
+#     addPolylines(data = road_A, color= "#41ab5d", group = 'A class' ) %>%
+#     addPolylines(data = road_B,color= "#fc4e2a" , group = 'B class' ) %>%
+#     addPolylines(data = road_minor,color= "#2b8cbe" , group = 'minor streets')%>%
+#      addLayersControl(overlayGroups = c( "A class streets","B class streets","minor streets"),options = layersControlOptions(collapsed = FALSE))
 
 ```
+
+
 
 ```{r}
 all <- second_final
