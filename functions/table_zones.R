@@ -23,6 +23,7 @@ table_zones <- function(total_zones){
   
   rate_pre_20mph <- round(collisions_pre_20mph/3,2)
   rate_post_20mph <- round(collisions_post_20mph/c(2.6,2.6,2,2,1.5,1.5,0.9),2)
+  rate_post_20mph[8] <- sum(rate_post_20mph[1:7])
   
   diff_in_rates <-  rate_pre_20mph - rate_post_20mph
   percentage_diff_in_rates <- round(diff_in_rates/rate_pre_20mph,2)
