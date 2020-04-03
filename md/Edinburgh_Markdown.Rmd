@@ -74,7 +74,7 @@ edin_road_network <- spTransform(edin_road_network,"+init=epsg:4326")
 #col = c("#bf812d","#80cdc1","#d6604d","#525252","#1a9850","#cab2d6","#e6f598","#4393c3")
 #my.palette <- brewer.pal(n = 8, name = "Set3")
 #spplot(edin_cons_streets,'LAYER',col.regions = col)
-#leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
+leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
 ```
 
 > Edinburgh's implementation zones
@@ -91,7 +91,7 @@ edin_impl_zones@data[6,]$ImplementationZone <- 7
 #display.brewer.all()
 #my.palette <- brewer.pal(n = 7, name = "Pastel2")
 #spplot(edin_impl_zones,"ImplementationZone",col.regions = my.palette, cuts = 7)
-#leaflet(edin_impl_zones) %>% addTiles() %>% addPolygons()
+leaflet(edin_impl_zones) %>% addTiles() %>% addPolygons()
 ```
 
 > Edinburgh's control zones
@@ -116,7 +116,7 @@ edin_control_zone <- readOGR(dsn = control_gdb_path,layer="SG_DataZone_Bdry_2011
 edin_control_zone <- spTransform(edin_control_zone, "+init=epsg:4326")
 control_zone_all <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_all,]
 
-#leaflet(control_zone_all) %>% addTiles() %>% addPolygons()
+leaflet(control_zone_all) %>% addTiles() %>% addPolygons()
 ```
 
 
@@ -160,8 +160,6 @@ mergedDf <- unique(rbind.fill(acc_sev,mer))
 mergedDf$LAYER <- as.character(mergedDf$LAYER)
 mergedDf$Date <- as.character(mergedDf$Date)
 mergedDf$Speed_limit <- as.numeric(mergedDf$Speed_limit)
-
-#write.csv(mergedDf[,-c(45)], file = paste0(dir_path, "/merged_data.csv"), row.names = FALSE )
 ```
 
 > Mapping accidents with roads: 2013/2014
