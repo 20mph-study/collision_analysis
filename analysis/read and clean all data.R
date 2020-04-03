@@ -97,18 +97,22 @@ write.csv(control_zone_data, file = paste0(dir_path, "/edin_control_data.csv"),r
 #Create new csv file with 2019 cleaned data 
 write.csv(rd_2019, file = paste0(dir_path, "/data2019.csv"),row.names=FALSE)
 
+
+dir_path <- "../data"
 ##Read casualties data
 cs_source <- read_csv(paste0(dir_path, "/Casualties2005to2014.csv"))
 cs_2015 <- read_csv(paste0(dir_path, "/Casualties2015.csv"))
 cs_2016 <- read_csv(paste0(dir_path, "/Casualties2016.csv"))
+cs_2017 <- read_csv(paste0(dir_path, "/Casualties2017.csv"))
 cs_2018 <- read_csv(paste0(dir_path, "/Casualties2018.csv"))
 cs_2018$Accident_Index <- as.character(cs_2018$Accident_Index)
 cs_source <- cs_source[,c(1,8)]
 cs_2015 <- cs_2015[,c(1,8)]
 cs_2016 <- cs_2016[,c(1,8)]
+cs_2017 <- cs_2017[,c(1,8)]
 cs_2018 <- cs_2018[,c(1,8)]
 
-casualties_data <- rbind(cs_source,cs_2015,cs_2016,cs_2018)
+casualties_data <- rbind(cs_source,cs_2015,cs_2016,cs_2017,cs_2018)
 #casualties_data <- merge(edin_road_data,casualties_data,by.x = "Accident_Index" ,by.y = "Accident_Index")
 casualties_data <-delete_na(casualties_data,c("Accident_Index"))
 
