@@ -121,10 +121,21 @@ leaflet(control_zone_all) %>% addTiles() %>% addPolygons()
 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
-#Read data
-edin_road_data <- read_road_data()
+#Read data, read_road_data() function cleans data keeping only those with selected dates,speed limits,districts, we write this dataset in csv.file
+#edin_road_data <- read_road_data()
+#write.csv(edin_road_data, file = paste0(dir_path, "/edin_road_data.csv"),row.names=FALSE)
+
+edin_road_data <- read_csv(paste0(dir_path, "/edin_road_data.csv"))
 casualties_data <- read_csv(paste0(dir_path, "/edin_casualties_data.csv"))
+
+#Nearest line
+nearest_road <- nearest_line(edin_road_data,edin_road_network,12)
+nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
+
+#We reassign some roads according to their 1st road class using the data_manipulation() function
 mergedDf <- data_manipulation(edin_road_network,edin_road_data)
+write.csv(mergedDf, file = paste0(dir_path, "/mergedDf.csv"),row.names=FALSE)
+mergedDf <- read_csv(paste0(dir_path, "/mergedDf.csv"))
 mergedDf <- mergedDf[,-c(36:40,42:46)]
 ```
 
@@ -271,8 +282,11 @@ kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #We add data into edin_road_data and control_zone_data to proceed with implementation zone counting 
-#read 2017, part of 2016 & 2018 data
-rd <- add_zone_data()
+#read 2017, part of 2016 & 2018 data with add_zone_data() function
+#rd <- add_zone_data()
+#write.csv(rd, file = paste0(dir_path, "/edin_zone_data.csv"),row.names=FALSE)
+
+rd <- read_csv(paste0(dir_path, "/edin_zone_data.csv"))
 rd$Date <- as.character(rd$Date)
 edin_zone_rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% "923" )
 edin_zone_rd <-  rename(edin_zone_rd,c("Longitude"="Longitude before","Latitude"="Latitude before")) 
@@ -370,7 +384,9 @@ table_zones(total_zones)
 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-control_zone_data <- read_controlzone_data()
+#control_zone_data <- read_controlzone_data()
+#write.csv(control_zone_data, file = paste0(dir_path, "/control_zone_data.csv"),row.names=FALSE)
+control_zone_data <- read_csv(paste0(dir_path, "/control_zone_data.csv"))
 ```
 
 > Control zone 1a:City center --> George St/Harbour, Aberdeen 
