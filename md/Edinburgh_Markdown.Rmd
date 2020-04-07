@@ -133,8 +133,8 @@ nearest_road <- nearest_line(edin_road_data,edin_road_network,12)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
 
 #We reassign some roads according to their 1st road class using the data_manipulation() function
-mergedDf <- data_manipulation(edin_road_network,edin_road_data)
-write.csv(mergedDf, file = paste0(dir_path, "/mergedDf.csv"),row.names=FALSE)
+#mergedDf <- data_manipulation(edin_road_network,edin_road_data)
+#write.csv(mergedDf, file = paste0(dir_path, "/mergedDf.csv"),row.names=FALSE)
 mergedDf <- read_csv(paste0(dir_path, "/mergedDf.csv"))
 mergedDf <- mergedDf[,-c(36:40,42:46)]
 ```
