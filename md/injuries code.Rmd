@@ -1,0 +1,160 @@
+---
+title: "Untitled"
+author: "model injuries"
+date: "14 March 2020"
+output: html_document
+---
+
+#2013 estimates
+#Injury accidents - power model
+
+```{r}
+injuries <- readxl::read_excel(paste0(dir_path, "/injuries data.xlsx"))
+volume <- readxl::read_excel(paste0(dir_path, "/volume accidents.xlsx"))
+collisions <- injuries$injuries_before
+mean_speed_after <- injuries$`speed after`
+mean_speed_before <- injuries$speed_before
+injuries$years <- as.numeric(injuries$years)
+injuries$injuries_bef_rate <- round(injuries$injuries_before / 3,0)
+
+
+injuries$collisions_predicted_power <-round((collisions/3) * ( ( mean_speed_after / mean_speed_before ) ^ 2.1),0)
+injuries$injuries_after_rate <- round(injuries$injuries_after/injuries$years,0)
+injuries$injuries_after_rate[8] <- sum(injuries$injuries_after_rate[1:7])
+
+volume$dif <- (volume$volume_after - volume$volume_before)
+volume$volume_change <-  round(volume$dif/volume$volume_before,4)
+volume$volume_change_percentage <- volume$volume_change * 100
+
+injuries$inj_vol_predicted_PM <- round((injuries$collisions_predicted_power*volume$volume_change) + injuries$collisions_predicted_power,0)
+
+injuries
+volume
+```
+#Injury accidents - exponential model
+
+```{r}
+injuries <- readxl::read_excel(paste0(dir_path, "/injuries data.xlsx"))
+volume <- readxl::read_excel(paste0(dir_path, "/volume accidents.xlsx"))
+collisions <- injuries$injuries_before
+mean_speed_after <- injuries$`speed after`
+mean_speed_before <- injuries$speed_before
+injuries$years <- as.numeric(injuries$years)
+injuries$injuries_bef_rate <- round(injuries$injuries_before / 3,0)
+
+volume$dif <- (volume$volume_after - volume$volume_before)
+volume$volume_change <-  round(volume$dif/volume$volume_before,4)
+volume$volume_change_percentage <- volume$volume_change * 100
+
+injuries$collisions_predicted_expon <-round((collisions/3) * ( exp((mean_speed_after - mean_speed_before ) * 0.034)),0)
+injuries$injuries_after_rate <- round(injuries$injuries_after/injuries$years,0)
+injuries$injuries_after_rate[8] <- sum(injuries$injuries_after_rate[1:7])
+
+injuries$inj_vol_predicted_exp <- round((injuries$collisions_predicted_expon*volume$volume_change) + injuries$collisions_predicted_expon,0)
+
+injuries
+volume
+```
+
+#Fatal accidents - power model
+
+```{r}
+injuries <- readxl::read_excel(paste0(dir_path, "/fatal accidents.xlsx"))
+volume <- readxl::read_excel(paste0(dir_path, "/volume accidents.xlsx"))
+collisions <- injuries$fatal_10year_bef
+mean_speed_after <- injuries$`speed after`
+mean_speed_before <- injuries$speed_before
+injuries$years <- as.numeric(injuries$years)
+injuries$fatal_bef_rate <- round(injuries$fatal_10year_bef / 10,1)
+
+volume$dif <- (volume$volume_after - volume$volume_before)
+volume$volume_change <-  round(volume$dif/volume$volume_before,4)
+volume$volume_change_percentage <- volume$volume_change * 100
+
+injuries$fatal_predicted_power <-round((collisions/10) * ( ( mean_speed_after / mean_speed_before ) ^ 4.2),1)
+injuries$fatal_after_rate <- round(injuries$fatal_after/injuries$years,1)
+injuries$fatal_after_rate[8] <- sum(injuries$fatal_after_rate[1:7])
+
+injuries$inj_vol_predicted_pm <- round((injuries$fatal_predicted_power*volume$volume_change) + injuries$fatal_predicted_power,1)
+
+injuries
+volume
+```
+
+
+#Fatal accidents - exponential model
+
+```{r}
+injuries <- readxl::read_excel(paste0(dir_path, "/fatal accidents.xlsx"))
+volume <- readxl::read_excel(paste0(dir_path, "/volume accidents.xlsx"))
+collisions <- injuries$fatal_10year_bef
+mean_speed_after <- injuries$`speed after`
+mean_speed_before <- injuries$speed_before
+injuries$years <- as.numeric(injuries$years)
+injuries$fatal_bef_rate <- round(injuries$fatal_10year_bef / 10,1)
+
+volume$dif <- (volume$volume_after - volume$volume_before)
+volume$volume_change <-  round(volume$dif/volume$volume_before,4)
+volume$volume_change_percentage <- volume$volume_change * 100
+
+injuries$fatal_predicted_expon <-round((collisions/10) * ( exp((mean_speed_after - mean_speed_before ) * 0.069)),1)
+injuries$fatal_after_rate <- round(injuries$fatal_after/injuries$years,1)
+injuries$fatal_after_rate[8] <- sum(injuries$fatal_after_rate[1:7])
+
+injuries$inj_vol_predicted_exp <- round((injuries$fatal_predicted_expon*volume$volume_change) + injuries$fatal_predicted_expon,1)
+
+injuries
+volume
+```
+
+#Serious accidents - power model
+
+```{r}
+injuries <- readxl::read_excel(paste0(dir_path, "/serious accidents.xlsx"))
+volume <- readxl::read_excel(paste0(dir_path, "/volume accidents.xlsx"))
+collisions <- injuries$serious_before
+mean_speed_after <- injuries$`speed after`
+mean_speed_before <- injuries$speed_before
+injuries$years <- as.numeric(injuries$years)
+injuries$serious_bef_rate <- round(injuries$serious_before / 3,0)
+
+volume$dif <- (volume$volume_after - volume$volume_before)
+volume$volume_change <-  round(volume$dif/volume$volume_before,4)
+volume$volume_change_percentage <- volume$volume_change * 100
+
+injuries$serious_predicted_power <-round((collisions/3) * ( ( mean_speed_after / mean_speed_before ) ^ 2.1),0)
+injuries$serious_after_rate <- round(injuries$serious_after/injuries$years,0)
+injuries$serious_after_rate[8] <- sum(injuries$serious_after_rate[1:7])
+
+injuries$inj_vol_predicted_exp <- round((injuries$serious_predicted_power*volume$volume_change) + injuries$serious_predicted_power,0)
+
+injuries
+volume
+```
+
+#Serious accidents - exponential model
+
+```{r}
+injuries <- readxl::read_excel(paste0(dir_path, "/serious accidents.xlsx"))
+volume <- readxl::read_excel(paste0(dir_path, "/volume accidents.xlsx"))
+collisions <- injuries$serious_before
+mean_speed_after <- injuries$`speed after`
+mean_speed_before <- injuries$speed_before
+injuries$years <- as.numeric(injuries$years)
+injuries$serious_bef_rate <- round(injuries$serious_before / 3,0)
+
+volume$dif <- (volume$volume_after - volume$volume_before)
+volume$volume_change <-  round(volume$dif/volume$volume_before,4)
+volume$volume_change_percentage <- volume$volume_change * 100
+
+injuries$collisions_predicted_expon <-round((collisions/3) * ( exp((mean_speed_after - mean_speed_before ) * 0.034)),0)
+injuries$serious_after_rate <- round(injuries$serious_after/injuries$years,0)
+injuries$serious_after_rate[8] <- sum(injuries$serious_after_rate[1:7])
+
+injuries$inj_vol_predicted_exp <- round((injuries$collisions_predicted_expon*volume$volume_change) + injuries$collisions_predicted_expon,0)
+
+injuries
+volume
+```
+
+
