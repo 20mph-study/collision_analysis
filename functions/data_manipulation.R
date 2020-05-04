@@ -97,8 +97,10 @@ data_manipulation <- function(edin_road_network,edin_road_data){
   mergedDf <- unique(merge(data.frame(nearest_road),edin_road_network@data,by.x = "nearest_line_id" ,by.y = "ID"))[,-c(1,2)]
   intersections <- mergedDf %>% filter(mergedDf$X2nd_Road_Class != -1 )
   
-  changed <- changed_A_class(mergedDf,edin_cons_streets)[,-c(1,37,40,41,43,44,47,48,50)]
+  changed <- changed_A_class(mergedDf,edin_cons_streets)
   changed$LAYER <- as.character(changed$LAYER.y)
+  changed <- changed[,-c(1,36:49)]
+  
   
   not_changed <- delete_na(mergedDf[!(mergedDf$Accident_Index %in% changed$Accident_Index),],"Accident_Index")
   final <- unique(rbind.fill(not_changed,changed))

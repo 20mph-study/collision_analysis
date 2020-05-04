@@ -18,7 +18,7 @@ read_controlzone_data <- function(){
   rd_2015$Date <- as.Date(rd_2015$Date,format="%d/%m/%Y")
   
   #2016 data
-  rd_2016 <- read_csv(paste0(dir_path, "/collisions_2016.csv"))
+  rd_2016 <- read_csv(paste0(dir_path, "/collisions 2016.csv"))
   rd_2016$Date <- as.Date(rd_2016$Date,format="%d/%m/%Y")
   
   #2017 data
