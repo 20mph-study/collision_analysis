@@ -71,9 +71,10 @@ edin_road_network <- edin_road_network[edin_road_network@data$LAYER  %in% c("20m
 edin_road_network <- spTransform(edin_road_network,"+init=epsg:4326")
 
 #Visualize with leaflet
-#col = c("#bf812d","#80cdc1","#d6604d","#525252","#1a9850","#cab2d6","#e6f598","#4393c3")
-#my.palette <- brewer.pal(n = 8, name = "Set3")
-#spplot(edin_cons_streets,'LAYER',col.regions = col)
+#select colours from here: https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3
+col = c("#bf812d","#80cdc1","#d6604d","#525252","#1a9850","#cab2d6","#e6f598","#4393c3")
+#or from here: my.palette <- brewer.pal(n = 8, name = "Set3")
+spplot(edin_cons_streets,'LAYER',col.regions = col)
 leaflet(edin_cons_streets) %>% addTiles() %>% addPolygons()
 ```
 
@@ -89,9 +90,11 @@ edin_impl_zones@data$ImplementationZone <- as.integer(edin_impl_zones@data$Imple
 edin_impl_zones@data[6,]$ImplementationZone <- 7
 #Visualize with leaflet
 #display.brewer.all()
-#my.palette <- brewer.pal(n = 7, name = "Pastel2")
-#spplot(edin_impl_zones,"ImplementationZone",col.regions = my.palette, cuts = 7)
+edin_impl_zones@data$ImplementationZone <- as.factor(edin_impl_zones@data$ImplementationZone)
+my.palette <- brewer.pal(n = 7, name = "Pastel2")
+spplot(edin_impl_zones,"ImplementationZone",col.regions = my.palette, cuts = 7)
 leaflet(edin_impl_zones) %>% addTiles() %>% addPolygons()
+edin_impl_zones@data$ImplementationZone <- as.integer(edin_impl_zones@data$ImplementationZone)
 ```
 
 > Edinburgh's control zones
@@ -120,12 +123,16 @@ leaflet(control_zone_all) %>% addTiles() %>% addPolygons()
 ```
 
 
+
+
 ```{r,echo=FALSE,warning=FALSE,message=FALSE} 
 #Read data, read_road_data() function cleans data keeping only those with selected dates,speed limits,districts, we write this dataset in csv.file
-#edin_road_data <- read_road_data()
-#write.csv(edin_road_data, file = paste0(dir_path, "/edin_road_data.csv"),row.names=FALSE)
+edin_road_data <- read_road_data()
+```
 
-edin_road_data <- read_csv(paste0(dir_path, "/edin_road_data.csv"))
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE} 
 casualties_data <- read_csv(paste0(dir_path, "/edin_casualties_data.csv"))
 
 #Nearest line
@@ -133,10 +140,11 @@ nearest_road <- nearest_line(edin_road_data,edin_road_network,12)
 nearest_road <- spTransform(nearest_road,"+init=epsg:4326")
 
 #We reassign some roads according to their 1st road class using the data_manipulation() function
-#mergedDf <- data_manipulation(edin_road_network,edin_road_data)
-#write.csv(mergedDf, file = paste0(dir_path, "/mergedDf.csv"),row.names=FALSE)
-mergedDf <- read_csv(paste0(dir_path, "/mergedDf.csv"))
-mergedDf <- mergedDf[,-c(36:40,42:46)]
+mergedDf <- data_manipulation(edin_road_network,edin_road_data)
+
+mergedDf$Accident_Index <- as.character(mergedDf$Accident_Index)
+mergedDf$LAYER <- as.character(mergedDf$LAYER)
+mergedDf <- mergedDf[,-c(35:39,41)]
 ```
 
 
@@ -228,7 +236,7 @@ post
 > Output column: Layer
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-head(mergedDf[,c(1,36)])
+head(mergedDf[,c(1,35)])
 ```
 
 > Table: Average annual road traffic collision rates in the city of Edinburgh 
@@ -283,10 +291,10 @@ kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 #We add data into edin_road_data and control_zone_data to proceed with implementation zone counting 
 #read 2017, part of 2016 & 2018 data with add_zone_data() function
-#rd <- add_zone_data()
+rd <- add_zone_data()
 #write.csv(rd, file = paste0(dir_path, "/edin_zone_data.csv"),row.names=FALSE)
 
-rd <- read_csv(paste0(dir_path, "/edin_zone_data.csv"))
+#rd <- read_csv(paste0(dir_path, "/edin_zone_data.csv"))
 rd$Date <- as.character(rd$Date)
 edin_zone_rd <- rd %>% filter(rd$`Local_Authority_(District)` %in% "923" )
 edin_zone_rd <-  rename(edin_zone_rd,c("Longitude"="Longitude before","Latitude"="Latitude before")) 
@@ -306,6 +314,7 @@ data <- unique(rowid_to_column(data,"index_ID")[,-c(38)])
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 total_zones <- unique(buffer_data(data,edin_impl_zones))
 total_zones_cas <- merge(total_zones,casualties_data,by.x="Accident_Index",by.y="Accident_Index")
+total_zones$LAYER <- as.character(total_zones$LAYER)
 ```
 
 
@@ -372,7 +381,7 @@ map_zones %>% addMarkers(lng =total$Longitude, lat = total$Latitude,
 > Output column: Implementation Zone
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-head(total_zones[,c(2,39)])
+head(total_zones[,c(2,40)])
 ```
 
 > Table: Average annual road traffic collision rates in the city of Edinburgh per implementation zone
@@ -384,9 +393,9 @@ table_zones(total_zones)
 
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-#control_zone_data <- read_controlzone_data()
+control_zone_data <- read_controlzone_data()
 #write.csv(control_zone_data, file = paste0(dir_path, "/control_zone_data.csv"),row.names=FALSE)
-control_zone_data <- read_csv(paste0(dir_path, "/control_zone_data.csv"))
+#control_zone_data <- read_csv(paste0(dir_path, "/control_zone_data.csv"))
 ```
 
 > Control zone 1a:City center --> George St/Harbour, Aberdeen 
@@ -395,7 +404,7 @@ control_zone_data <- read_csv(paste0(dir_path, "/control_zone_data.csv"))
 control_zone_1 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_1,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in%  c("910"))
 con_data <- con_data[con_data$Date >= "2013-07-31" & con_data$Date <= "2018-12-31", ]
-con_data <- con_data[con_data$Date != "2016-07-31", ]
+#con_data <- con_data[con_data$Date != "2016-07-31", ]
 control_zone_1a_df <- data.frame(buffer_data(con_data,control_zone_1))
 control_zone_1a_df <- cbind(Control_zone = "1a", control_zone_1a_df)
 leaflet(control_zone_1) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_1a_df$Longitude, lat = control_zone_1a_df$Latitude,popup = control_zone_1a_df$Name) %>% setView(lng = -2.099075 , lat = 57.149651, zoom = 13)
@@ -408,7 +417,7 @@ nrow(control_zone_1a_df)
 control_zone_7 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_7,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("925"))
 con_data <- con_data[con_data$Date >= "2013-07-31" & con_data$Date <= "2018-12-31", ]
-con_data <- con_data[con_data$Date != "2016-07-31", ]
+#con_data <- con_data[con_data$Date != "2016-07-31", ]
 control_zone_1b_df <- data.frame(buffer_data(con_data,control_zone_7))
 control_zone_1b_df <- cbind(Control_zone = "1b", control_zone_1b_df)
 leaflet(control_zone_7) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_1b_df$Longitude, lat = control_zone_1b_df$Latitude) %>% setView(lng = -2.8833 , lat = 56.3833, zoom = 11)
@@ -420,8 +429,8 @@ nrow(control_zone_1b_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_3 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_3,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("918"))
-con_data <- con_data[con_data$Date >= "2014-02-28" & con_data$Date <= "2018-12-31", ]
-con_data <- con_data[con_data$Date != "2017-02-28", ]
+con_data <- con_data[con_data$Date >= "2013-07-31" & con_data$Date <= "2018-12-31", ]
+#con_data <- con_data[con_data$Date != "2017-02-28", ]
 control_zone_3_df <- data.frame(buffer_data(con_data,control_zone_3))
 control_zone_3_df <- cbind(Control_zone = "3", control_zone_3_df)
 leaflet(control_zone_3) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_3_df$Longitude, lat = control_zone_3_df$Latitude)
@@ -433,8 +442,8 @@ nrow(control_zone_3_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_4 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_4,]
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("935"))
-con_data <- con_data[con_data$Date >= "2014-08-16" & con_data$Date <= "2018-12-31", ]
-con_data <- con_data[con_data$Date != "2017-08-16", ]
+con_data <- con_data[con_data$Date >= "2013-07-31" & con_data$Date <= "2018-12-31", ]
+#con_data <- con_data[con_data$Date != "2017-08-16", ]
 control_zone_4_df <- data.frame(buffer_data(con_data,control_zone_4))
 control_zone_4_df <- cbind(Control_zone = "4", control_zone_4_df)
 leaflet(control_zone_4) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_4_df$Longitude, lat = control_zone_4_df$Latitude)
@@ -446,8 +455,8 @@ nrow(control_zone_4_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_5 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_5,]        
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("926"))
-con_data <- con_data[con_data$Date >= "2014-08-16" & con_data$Date <= "2018-12-31", ]
-con_data <- con_data[con_data$Date != "2017-08-16", ]
+con_data <- con_data[con_data$Date >= "2013-07-31" & con_data$Date <= "2018-12-31", ]
+#con_data <- con_data[con_data$Date != "2017-08-16", ]
 control_zone_5_df <- data.frame(buffer_data(con_data,control_zone_5))
 control_zone_5_df <- cbind(Control_zone = "5", control_zone_5_df)
 leaflet(control_zone_5) %>% addTiles() %>% addPolygons()%>% addMarkers(lng = control_zone_5_df$Longitude, lat = control_zone_5_df$Latitude) %>% setView(lng = -4.25763 , lat = 55.86515, zoom = 12)
@@ -459,8 +468,8 @@ nrow(control_zone_5_df)
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
 control_zone_6 <- edin_control_zone[edin_control_zone@data$DataZone %in%  control_6,]    
 con_data <- control_zone_data %>% filter(control_zone_data$`Local_Authority_(District)` %in% c("935"))
-con_data <- con_data[con_data$Date >= "2015-03-05" & con_data$Date <= "2018-12-31", ]
-con_data <- con_data[con_data$Date != "2018-03-05", ]
+con_data <- con_data[con_data$Date >= "2013-07-31" & con_data$Date <= "2018-12-31", ]
+#con_data <- con_data[con_data$Date != "2018-03-05", ]
 control_zone_6_df <- data.frame(buffer_data(con_data,control_zone_6))
 control_zone_6_df <- cbind(Control_zone = "6", control_zone_6_df)
 leaflet(control_zone_6) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_zone_6_df$Longitude, lat = control_zone_6_df$Latitude)
@@ -482,6 +491,112 @@ final_df <- rbind.fill(total_zones,control_zones_df)
 final_df <- final_df[,-c(1,38:39,44:49)]
 head(final_df[,c(1,36:38)])
 #Create new csv file with the cleaned data
-write.csv(final_df, file = paste0(dir_path, "/final_Edinburgh_data.csv"),row.names=FALSE)
+
+final_df$LAYER <- as.character(final_df$LAYER)
+final_df$Control_zone <- as.character(final_df$Control_zone)
+final_df$DataZone <- as.character(final_df$DataZone)
+final_df$Name <- as.character(final_df$Name)
+final_df$X1st_Road_Class <- as.character(final_df$X1st_Road_Class)
+write.csv(final_df, file = paste0(dir_path, "/final_Edin_data.csv"),row.names=FALSE)
 ```
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#Injuries modelling
+#count accidents in the pre period
+zone_1a <- total_zones %>% filter(total_zones$Date >= "2013-07-31" & total_zones$Date <= "2016-07-30" & total_zones$ImplementationZone %in% c("1"))
+zone_1b <- total_zones %>% filter(total_zones$Date >= "2013-07-31" & total_zones$Date <= "2016-07-30" & total_zones$ImplementationZone %in% c("7"))
+zone_2 <- total_zones %>% filter(total_zones$Date >= "2014-02-28" & total_zones$Date <= "2017-02-27" & total_zones$ImplementationZone %in% c("2"))
+zone_3 <- total_zones %>% filter(total_zones$Date > "2014-02-28" & total_zones$Date <= "2017-02-27" & total_zones$ImplementationZone %in% c("3"))
+zone_4 <- total_zones %>% filter(total_zones$Date >= "2014-08-16" & total_zones$Date <= "2017-08-15" & total_zones$ImplementationZone %in% c("4"))
+zone_5 <- total_zones %>% filter(total_zones$Date >= "2014-08-16" & total_zones$Date <= "2017-08-15" & total_zones$ImplementationZone %in% c("5"))
+zone_6 <- total_zones %>% filter(total_zones$Date >= "2015-03-05" & total_zones$Date <= "2018-03-04" & total_zones$ImplementationZone %in% c("6"))
+  
+pre_all <- rbind.fill(zone_1a,zone_1b,zone_2,zone_3,zone_4,zone_5,zone_6)
+#find counts of all injury accidents per zone
+aggregate( Accident_Index ~ ImplementationZone  ,pre_all,length)
+#find counts of accidents per accident severity
+aggregate( Accident_Index ~  Accident_Severity ,pre_all,length)
+#find counts of accidents per zone and accident severity
+aggregate( Accident_Index ~ ImplementationZone + Accident_Severity ,pre_all,length)
+```
+
+
+```{r}
+#count accidents in part of the pre period ( add them with the "10 years" counts for fatal accidents)
+zone_1a <- total_zones %>% filter(total_zones$Date >= "2015-01-01" & total_zones$Date <= "2016-07-30" & total_zones$ImplementationZone %in% c("1"))
+zone_1b <- total_zones %>% filter(total_zones$Date >= "2015-01-01" & total_zones$Date <= "2016-07-30" & total_zones$ImplementationZone %in% c("7"))
+zone_2 <- total_zones %>% filter(total_zones$Date >= "2015-01-01" & total_zones$Date <= "2017-02-27" & total_zones$ImplementationZone %in% c("2"))
+zone_3 <- total_zones %>% filter(total_zones$Date > "2015-01-01" & total_zones$Date <= "2017-02-27" & total_zones$ImplementationZone %in% c("3"))
+zone_4 <- total_zones %>% filter(total_zones$Date >= "2015-01-01" & total_zones$Date <= "2017-08-15" & total_zones$ImplementationZone %in% c("4"))
+zone_5 <- total_zones %>% filter(total_zones$Date >= "2015-01-01" & total_zones$Date <= "2017-08-15" & total_zones$ImplementationZone %in% c("5"))
+zone_6 <- total_zones %>% filter(total_zones$Date >= "2015-01-01" & total_zones$Date <= "2018-03-04" & total_zones$ImplementationZone %in% c("6"))
+  
+pre_fatal <- rbind.fill(zone_1a,zone_1b,zone_2,zone_3,zone_4,zone_5,zone_6)
+
+#find counts of accidents per zone and accident severity --> use it for 10 years fatal accident counts
+aggregate( Accident_Index ~ ImplementationZone + Accident_Severity ,pre_fatal,length)
+
+```
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#find post period data
+zone_1a_p <- total_zones %>% filter(total_zones$Date > "2016-07-31"  & total_zones$ImplementationZone %in% c("1"))
+zone_1b_p <- total_zones %>% filter(total_zones$Date > "2016-07-31"  & total_zones$ImplementationZone %in% c("7"))
+zone_2_p <-  total_zones %>% filter(total_zones$Date > "2017-02-28"  & total_zones$ImplementationZone %in% c("2"))
+zone_3_p <-  total_zones %>% filter(total_zones$Date > "2017-02-28"  & total_zones$ImplementationZone %in% c("3"))
+zone_4_p <-  total_zones %>% filter(total_zones$Date > "2017-08-16"  & total_zones$ImplementationZone %in% c("4"))
+zone_5_p <-  total_zones %>% filter(total_zones$Date > "2017-08-16"  & total_zones$ImplementationZone %in% c("5"))
+zone_6_p <-  total_zones %>% filter(total_zones$Date > "2018-03-05"  & total_zones$ImplementationZone %in% c("6"))
+all_post <- rbind.fill(zone_1a_p,zone_1b_p,zone_2_p,zone_3_p,zone_4_p,zone_5_p,zone_6_p)
+
+#find counts of accidents per zone and accident severity
+aggregate( Accident_Index ~ ImplementationZone  ,all_post,length)
+aggregate( Accident_Index ~ ImplementationZone + Accident_Severity ,all_post,length)
+```
+
+
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#read and clean data to count fatal accidents
+#10 years period
+rd_source <- read_csv(paste0(dir_path,"/collisions 2005 to 2014.csv")) 
+rd_source$Date <- as.Date(rd_source$Date,format="%d/%m/%Y")
+edin <- filter_data(rd_source)
+#edin <- edin %>% filter(edin$Speed_limit %in% c(20,30)) 
+edin <- rd_source  %>% filter(rd_source$`Local_Authority_(District)` %in% 923) 
+edin <- edin %>% filter(edin$Accident_Severity %in% c(1)) 
+nearest <- nearest_line(edin,edin_road_network,12)
+nearest <- spTransform(nearest,"+init=epsg:4326")
+nearest <- unique(merge(data.frame(nearest),edin_road_network@data,by.x = "nearest_line_id" ,by.y = "ID"))
+total_edin <- unique(buffer_data(nearest,edin_impl_zones))
+```
+
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+#10 years period per zone for fatal accidents
+total_zones <- total_edin[,-c(1,34:38,40:42)]
+zone_1a <- total_zones %>% filter(total_zones$Date >= "2006-07-31" & total_zones$Date < "2013-07-31" & total_zones$ImplementationZone %in% c("1"))
+zone_1b <- total_zones %>% filter(total_zones$Date >= "2006-07-31" & total_zones$Date < "2013-07-31" & total_zones$ImplementationZone %in% c("7"))
+zone_2 <- total_zones %>% filter(total_zones$Date >= "2007-02-28" & total_zones$Date < "2014-02-28" & total_zones$ImplementationZone %in% c("2"))
+zone_3 <- total_zones %>% filter(total_zones$Date >= "2007-02-28" & total_zones$Date < "2014-02-28" & total_zones$ImplementationZone %in% c("3"))
+zone_4 <- total_zones %>% filter(total_zones$Date >= "2007-08-16" & total_zones$Date < "2014-08-16" & total_zones$ImplementationZone %in% c("4"))
+zone_5 <- total_zones %>% filter(total_zones$Date >= "2007-08-16" & total_zones$Date < "2014-08-16" & total_zones$ImplementationZone %in% c("5"))
+zone_6 <- total_zones %>% filter(total_zones$Date >= "2008-03-05" & total_zones$Date < "2015-03-05" & total_zones$ImplementationZone %in% c("6"))
+
+all <- rbind.fill(zone_1a,zone_1b,zone_2,zone_3,zone_4,zone_5,zone_6)
+aggregate( Accident_Index ~ ImplementationZone ,all,length)
+```
+
+
+
+
+
+
+
+
+
+
 
