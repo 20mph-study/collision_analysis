@@ -44,12 +44,50 @@ source('../functions/belf_leaflet_zones.R')
 dir_path <- "../data"
 ```
 
+
+```{r}
+#Belfast Road Network
+#Belfast SA
+#Belfast OA
+gdb_path <- paste0(dir_path, "/Belfast Road Network")
+gdb_layers <- ogrListLayers(gdb_path)
+print(gdb_layers)
+
+#Read shapefile
+belf_streets <- readOGR(dsn = gdb_path,layer="Belfast_Road_Network", verbose = FALSE)
+belf_streets <- spTransform(belf_streets, "+init=epsg:4326")
+leaflet(belf_streets) %>% addTiles() %>% addPolylines() %>% setView(lng = -5.926437 , lat = 54.607868, zoom = 14)
+```
+
+
+```{r}
+gdb_path <- paste0(dir_path, "/Belfast OS")
+gdb_layers <- ogrListLayers(gdb_path)
+print(gdb_layers)
+
+#Read shapefile
+belfast_os <- readOGR(dsn = gdb_path,layer="Belfast_Road_Network", verbose = FALSE)
+belfast_os <- spTransform(belf_streets, "+init=epsg:4326")
+leaflet(belf_streets) %>% addTiles() %>% addPolylines() %>% setView(lng = -5.926437 , lat = 54.607868, zoom = 14)
+```
+
+
+
+
+
+
+
+
+
+
+
+
 > Belfast road network changed to 20mph
 
 ```{r ,echo=FALSE, warning=FALSE, message=FALSE, comment=FALSE}
 #Road data 
 belfast_road_data <- read_belf_road(dir_path)
-leaflet(belfast_road_data) %>% addTiles() %>% addPolygons() %>% setView(lng = -5.926437 , lat = 54.607868, zoom = 14)
+leaflet(belfast_road_data) %>% addTiles() %>% addPolylines() %>% setView(lng = -5.926437 , lat = 54.607868, zoom = 14)
 ```
 
 > Belfast city center implementation zone
@@ -83,18 +121,39 @@ time_plot_belf(belf_data)
 
 ```{r,echo=FALSE, warning=FALSE,message=FALSE}
 #Nearest line
-merged <- nearest_line_belf(belf_data,belfast_road_data)
-total <- merged
+belf_data <- rename(belf_data,c("X" = "Longitude","Y" = "Latitude"))
+belfast_road_data <- read_belf_road(dir_path)
+belfast_road_data@data <- rowid_to_column(belfast_road_data@data, "ID")
+```
 
-#leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines( ) %>%
-#  setView(lng = -5.926437 , lat = 54.607868, zoom = 11) %>%
-#  addMarkers(data = total,lng = total$X,lat=total$Y)
 
+
+
+```{r,echo=FALSE, warning=FALSE,message=FALSE}
+nearest <- nearest_line_belf(belf_data,belfast_road_data)
+nearest <- spTransform(nearest,"+init=epsg:4326")
+
+#Merge the dataframes based on the ID of the nearest line in order to connect geoinformation
+merged <- merge(data.frame(nearest), belfast_road_data@data,by.x = "nearest_line_id" ,by.y = "ID")
+
+id <- c("A100978","A97138","A96949","A106306","A105068","A102782","A106190","A105096","A112355",
+        "A113006","A108795","A121238","A120492","A121992","B3728","B774","B2201","B6654","B6025","B7093")
+merged_filter <- merged %>% filter(merged$a_ID %in% id  )
+
+#a <- merged_filter[,c(1,25,37)]
+#leaflet_map_belf(belfast_road_data,merged_filter)
+#write.csv(merged_filter, file = paste0(dir_path, "/Belfast/Belf_junctions.csv"),row.names = FALSE)
+
+#b <- belfast_road_data@data[,c(1,6)]
+leaflet(belfast_road_data) %>% addTiles() %>%  addPolylines( popup = belfast_road_data@data$NAME) %>%
+  setView(lng = -5.926437 , lat = 54.607868, zoom = 14) %>%
+  addMarkers(data = merged,lng = merged$Longitude,lat=merged$Latitude,popup = paste(merged$NAME))
 ```
 
 > Mapping accidents with roads: 2013
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
 leaflet_map_belf(belfast_road_data, merged[merged$year == "2013", ])
 belcount(merged[merged$year == "2013", ])
 ```
@@ -180,7 +239,9 @@ total_zones$a_type [total_zones$a_type  == 3] <- "Slight collision"
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$a_date >="2013-01-01" & total_zones$a_date <= "2013-12-31", ]
-belf_leaflet_zones(belf_impl_zones_out,total)
+#belf_leaflet_zones(belf_impl_zones_out,total)
+not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% merged$a_ID),],"a_ID")
+leaflet_map_belf(belfast_road_data,not_changed)
 s_13 <- nrow(buffer_data(total,belf_impl_zones_out))
 ```
 
@@ -188,7 +249,9 @@ s_13 <- nrow(buffer_data(total,belf_impl_zones_out))
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$a_date >="2014-01-01" & total_zones$a_date <= "2014-12-31", ]
-belf_leaflet_zones(belf_impl_zones_out,total)
+#belf_leaflet_zones(belf_impl_zones_out,total)
+not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% total$a_ID),],"a_ID")
+belf_leaflet_zones(belfast_road_data,not_changed)
 s_14 <- nrow(total)
 ```
 
@@ -196,7 +259,9 @@ s_14 <- nrow(total)
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$a_date >="2015-01-01" & total_zones$a_date <= "2015-12-31", ]
-belf_leaflet_zones(belf_impl_zones_out,total)
+#belf_leaflet_zones(belf_impl_zones_out,total)
+not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% total$a_ID),],"a_ID")
+belf_leaflet_zones(belfast_road_data,not_changed)
 s_15 <- nrow(buffer_data(total,belf_impl_zones_out))
 ```
 
@@ -204,7 +269,9 @@ s_15 <- nrow(buffer_data(total,belf_impl_zones_out))
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$a_date >="2016-01-01" & total_zones$a_date <= "2016-12-20", ]
-belf_leaflet_zones(belf_impl_zones_out,total)
+#belf_leaflet_zones(belf_impl_zones_out,total)
+not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% total$a_ID),],"a_ID")
+belf_leaflet_zones(belfast_road_data,not_changed)
 s_16 <- nrow(buffer_data(total,belf_impl_zones_out))
 ```
 
@@ -212,7 +279,9 @@ s_16 <- nrow(buffer_data(total,belf_impl_zones_out))
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$a_date >="2018-03-06" & total_zones$a_date <= "2018-12-31", ]
-belf_leaflet_zones(belf_impl_zones_out,total)
+#belf_leaflet_zones(belf_impl_zones_out,total)
+not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% total$a_ID),],"a_ID")
+belf_leaflet_zones(belfast_road_data,not_changed)
 s_18 <- nrow(buffer_data(total,belf_impl_zones_out))
 ```
 
@@ -220,7 +289,9 @@ s_18 <- nrow(buffer_data(total,belf_impl_zones_out))
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 total <- total_zones[total_zones$year == "2019", ]
-belf_leaflet_zones(belf_impl_zones_out,total)
+#belf_leaflet_zones(belf_impl_zones_out,total)
+not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% total$a_ID),],"a_ID")
+belf_leaflet_zones(belfast_road_data,not_changed)
 s_19 <- nrow(buffer_data(total,belf_impl_zones_out))
 ```
 
