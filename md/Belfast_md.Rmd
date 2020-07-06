@@ -193,7 +193,7 @@ head(merged[,c(25,13,36,37,41)])
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #Link every accident with a zone
 belf_data <- rename(belf_data,c("X" = "Longitude","Y" = "Latitude"))
-total_zones <- buffer_data(belf_data ,belf_metr_area)
+total_zones <- buffer_data(belf_data , belf_impl_zones_out)
 total_zones <- cbind(Zone_info = "Implementation zone", total_zones)
 total_zones <- delete_na(total_zones,c("X_COORD" ,"Y_COORD"))
 total_zones$a_type <- as.character(total_zones$a_type )
@@ -268,17 +268,18 @@ s_19 <- nrow(buffer_data(total,belf_metr_area))
 s_13 + s_14 + s_15 + s_16 + s_18 + s_19 
 ```
 
-> Table: Average annual road traffic collision rates in the metropolitan area of Belfast
-
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-belf_annual_table(total_zones,merged,pre,post)
-```
-
 > Table: Average annual road traffic collision rates in the city centre of Belfast
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
+belf_annual_table(total_zones,merged,pre,post)
+```
 
-total_zones <- buffer_data(belf_data ,belf_impl_zones_out)
+
+> Table: Average annual road traffic collision rates in the metropolitan area of Belfast
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+total_zones <- buffer_data(belf_data , belf_metr_area)
 total_zones <- cbind(Zone_info = "Implementation zone", total_zones)
 total_zones <- delete_na(total_zones,c("X_COORD" ,"Y_COORD"))
 total_zones$a_type <- as.character(total_zones$a_type )
@@ -287,11 +288,10 @@ total_zones$a_type [total_zones$a_type  == 2] <- "Serious collision"
 total_zones$a_type [total_zones$a_type  == 3] <- "Slight collision"
 
 
-
-
 belf_annual_table(total_zones,merged,pre,post)
-
 ```
+
+
 
 
 
