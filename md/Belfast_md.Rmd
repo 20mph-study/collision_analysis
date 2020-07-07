@@ -1,6 +1,6 @@
 ---
 title: "Belfast_md"
-author: "edin"
+author: 
 date: "7/2/2020"
 output: html_document
 ---
@@ -40,20 +40,6 @@ source('../functions/buffer_data.R')
 source('../functions/belf_leaflet_zones.R')
 # Define network dir path
 dir_path <- "../data"
-```
-
-
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-#Belfast Road Network
-#Belfast SA
-#Belfast OA
-#gdb_path <- paste0(dir_path, "/Belfast Road Network")
-#gdb_layers <- ogrListLayers(gdb_path)
-
-#Read shapefile
-#belf_streets <- readOGR(dsn = gdb_path,layer="Belfast_Road_Network", verbose = FALSE)
-#belf_streets <- spTransform(belf_streets, "+init=epsg:4326")
-#leaflet(belf_streets) %>% addTiles() %>% addPolylines() %>% setView(lng = -5.926437 , lat = 54.607868, zoom = 14)
 ```
 
 > Belfast road network changed to 20mph
@@ -193,71 +179,71 @@ head(merged[,c(25,13,36,37,41)])
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #Link every accident with a zone
 belf_data <- rename(belf_data,c("X" = "Longitude","Y" = "Latitude"))
-total_zones <- buffer_data(belf_data , belf_impl_zones_out)
-total_zones <- cbind(Zone_info = "Implementation zone", total_zones)
-total_zones <- delete_na(total_zones,c("X_COORD" ,"Y_COORD"))
-total_zones$a_type <- as.character(total_zones$a_type )
-total_zones$a_type [total_zones$a_type  == 1] <- "fatal collision"
-total_zones$a_type [total_zones$a_type  == 2] <- "Serious collision"
-total_zones$a_type [total_zones$a_type  == 3] <- "Slight collision"
+total_mzones <- buffer_data(belf_data , belf_metr_area)
+total_mzones <- cbind(Zone_info = "Implementation zone", total_mzones)
+total_mzones <- delete_na(total_mzones,c("X_COORD" ,"Y_COORD"))
+total_mzones$a_type <- as.character(total_mzones$a_type )
+total_mzones$a_type [total_mzones$a_type  == 1] <- "fatal collision"
+total_mzones$a_type [total_mzones$a_type  == 2] <- "Serious collision"
+total_mzones$a_type [total_mzones$a_type  == 3] <- "Slight collision"
 ```
 
-> Mapping accidents with zones: 2013
+> Mapping accidents with zones( metropolitan area) : 2013
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-total <- total_zones[total_zones$a_date >="2013-01-01" & total_zones$a_date <= "2013-12-31", ]
+total <- total_mzones[total_mzones$a_date >="2013-01-01" & total_mzones$a_date <= "2013-12-31", ]
 #belf_leaflet_zones(belf_impl_zones_out,total)
-not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% merged$a_ID),],"a_ID")
+not_changed <- delete_na(total[!(total$a_ID %in% merged$a_ID),],"a_ID")
 leaflet_map_belf(belfast_road_data,not_changed)
 s_13 <- nrow(buffer_data(total,belf_metr_area))
 ```
 
-> Mapping accidents with zones: 2014
+> Mapping accidents with zones ( metropolitan area): 2014
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-total <- total_zones[total_zones$a_date >="2014-01-01" & total_zones$a_date <= "2014-12-31", ]
+total <- total_mzones[total_mzones$a_date >="2014-01-01" & total_mzones$a_date <= "2014-12-31", ]
 #belf_leaflet_zones(belf_impl_zones_out,total)
-not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% total$a_ID),],"a_ID")
+not_changed <- delete_na(total[!(total$a_ID %in% merged$a_ID),],"a_ID")
 belf_leaflet_zones(belfast_road_data,not_changed)
 s_14 <- nrow(buffer_data(total,belf_metr_area))
 ```
 
-> Mapping accidents with zones: 2015
+> Mapping accidents with zones ( metropolitan area) : 2015
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-total <- total_zones[total_zones$a_date >="2015-01-01" & total_zones$a_date <= "2015-12-31", ]
+total <- total_mzones[total_mzones$a_date >="2015-01-01" & total_mzones$a_date <= "2015-12-31", ]
 #belf_leaflet_zones(belf_impl_zones_out,total)
-not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% total$a_ID),],"a_ID")
+not_changed <- delete_na(total[!(total$a_ID %in% merged$a_ID),],"a_ID")
 belf_leaflet_zones(belfast_road_data,not_changed)
 s_15 <- nrow(buffer_data(total,belf_metr_area))
 ```
 
-> Mapping accidents with zones: 2016
+> Mapping accidents with zones ( metropolitan area) : 2016
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-total <- total_zones[total_zones$a_date >="2016-01-01" & total_zones$a_date <= "2016-12-20", ]
+total <- total_mzones[total_mzones$a_date >="2016-01-01" & total_mzones$a_date <= "2016-12-20", ]
 #belf_leaflet_zones(belf_impl_zones_out,total)
-not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% total$a_ID),],"a_ID")
+not_changed <- delete_na(total[!(total$a_ID %in% merged$a_ID),],"a_ID")
 belf_leaflet_zones(belfast_road_data,not_changed)
 s_16 <- nrow(buffer_data(total,belf_metr_area))
 ```
 
-> Mapping accidents with zones: 2018
+> Mapping accidents with zones ( metropolitan area) : 2018
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-total <- total_zones[total_zones$a_date >="2018-03-06" & total_zones$a_date <= "2018-12-31", ]
+total <- total_mzones[total_mzones$a_date >="2018-03-06" & total_mzones$a_date <= "2018-12-31", ]
 #belf_leaflet_zones(belf_impl_zones_out,total)
-not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% total$a_ID),],"a_ID")
+not_changed <- delete_na(total[!(total$a_ID %in% merged$a_ID),],"a_ID")
 belf_leaflet_zones(belfast_road_data,not_changed)
 s_18 <- nrow(buffer_data(total,belf_metr_area))
 ```
 
-> Mapping accidents with zones: 2019
+> Mapping accidents with zones ( metropolitan area) : 2019
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-total <- total_zones[total_zones$year == "2019", ]
+total <- total_mzones[total_mzones$year == "2019", ]
 #belf_leaflet_zones(belf_impl_zones_out,total)
-not_changed <- delete_na(total_zones[!(total_zones$a_ID %in% total$a_ID),],"a_ID")
+not_changed <- delete_na(total[!(total$a_ID %in% merged$a_ID),],"a_ID")
 belf_leaflet_zones(belfast_road_data,not_changed)
 s_19 <- nrow(buffer_data(total,belf_metr_area))
 ```
@@ -268,18 +254,18 @@ s_19 <- nrow(buffer_data(total,belf_metr_area))
 s_13 + s_14 + s_15 + s_16 + s_18 + s_19 
 ```
 
-> Table: Average annual road traffic collision rates in the city centre of Belfast
+> Table: Average annual road traffic collision rates in the metropolitan area of Belfast
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-belf_annual_table(total_zones,merged,pre,post)
+belf_annual_table(total_mzones,merged,pre,post)
 ```
 
 
-> Table: Average annual road traffic collision rates in the metropolitan area of Belfast
+> Table: Average annual road traffic collision rates in the city centre of Belfast
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 
-total_zones <- buffer_data(belf_data , belf_metr_area)
+total_zones <- buffer_data(belf_data , belf_impl_zones_out )
 total_zones <- cbind(Zone_info = "Implementation zone", total_zones)
 total_zones <- delete_na(total_zones,c("X_COORD" ,"Y_COORD"))
 total_zones$a_type <- as.character(total_zones$a_type )
@@ -290,10 +276,6 @@ total_zones$a_type [total_zones$a_type  == 3] <- "Slight collision"
 
 belf_annual_table(total_zones,merged,pre,post)
 ```
-
-
-
-
 
 > Effect estimate ( GIS )
 
@@ -352,13 +334,12 @@ nrow(control_data_df)
 head(total_zones[,c(25,13,34)])
 ```
 
-> Updated dataset for Belfast city
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
 merged_1 <- merged[,-c(1,29:35,38:40,42:47)]
 merged_1$a_time <- as.character(merged_1$a_time)
 merged_1 <- rename(merged_1,c("X" = "Longitude","Y" = "Latitude"))
-total_zones_1 <- total_zones[,-c(28:32)]
+total_zones_1 <- total_mzones[,-c(28:32)]
 total_zones_1$a_time <- as.character(total_zones_1$a_time)
 updated_dataset <- rbind.fill(merged_1,total_zones_1)
 control_data_df$a_time <- as.character(control_data_df$a_time)
@@ -367,3 +348,4 @@ final_df <- rbind.fill(updated_dataset,control_data_df)
 final_df <- final_df[,-c(32,34:37)]
 #Create new csv file with the cleaned data
 write.csv(final_df, file = paste0(dir_path, "/Belfast/final_Belfast_data.csv"),row.names = FALSE)
+```
