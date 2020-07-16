@@ -177,9 +177,16 @@ head(merged[,c(25,13,36,37,41)])
 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
+#merged+ rest of belf data
+not_changed_belf <- delete_na(belf_data[!(belf_data$a_ID %in% merged$a_ID),],"a_ID")
+belf <- rbind.fill(not_changed_belf, merged)
+```
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 #Link every accident with a zone
 belf_data <- rename(belf_data,c("X" = "Longitude","Y" = "Latitude"))
-total_mzones <- buffer_data(belf_data , belf_metr_area)
+total_mzones <- buffer_data(belf , belf_metr_area)
 total_mzones <- cbind(Zone_info = "Implementation zone", total_mzones)
 total_mzones <- delete_na(total_mzones,c("X_COORD" ,"Y_COORD"))
 total_mzones$a_type <- as.character(total_mzones$a_type )
@@ -264,8 +271,7 @@ belf_annual_table(total_mzones,merged,pre,post)
 > Table: Average annual road traffic collision rates in the city centre of Belfast
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-
-total_zones <- buffer_data(belf_data , belf_impl_zones_out )
+total_zones <- buffer_data(belf , belf_impl_zones_out )
 total_zones <- cbind(Zone_info = "Implementation zone", total_zones)
 total_zones <- delete_na(total_zones,c("X_COORD" ,"Y_COORD"))
 total_zones$a_type <- as.character(total_zones$a_type )
@@ -277,9 +283,50 @@ total_zones$a_type [total_zones$a_type  == 3] <- "Slight collision"
 belf_annual_table(total_zones,merged,pre,post)
 ```
 
-> Effect estimate ( GIS )
+> Effect estimate in all accidents ( metropolitan area )
 
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
+a <- c(nrow(total_mzones[total_mzones$a_date >= "2013-02-01" & total_mzones$a_date <= "2014-01-31", ]))
+b <- c(nrow(total_mzones[total_mzones$a_date >= "2014-02-01" & total_mzones$a_date <= "2015-01-31", ]))
+c <- c(nrow(total_mzones[total_mzones$a_date >= "2015-02-01" & total_mzones$a_date <= "2016-01-31", ]))
+e <- c(nrow(total_mzones[total_mzones$a_date >= "2016-02-02" & total_mzones$a_date <= "2017-01-31", ]))
+d <- c(nrow(total_mzones[total_mzones$a_date >= "2017-02-01" & total_mzones$a_date <= "2018-01-31", ]))
+h <- c(nrow(total_mzones[total_mzones$a_date >= "2018-02-01" & total_mzones$a_date <= "2019-01-31", ]))
+k <- c(nrow(total_mzones[total_mzones$a_date >= "2019-02-01" & total_mzones$a_date <= "2019-12-31", ]))
+sum1 <- (a+b+c)/3
+sum2 <- (d + e + h + k) / 3.9 
+unadjusted_estimate <-  (sum1 - sum2 ) / sum1  
+trend_a <- (a-b) / a 
+trend_b <- (b-c)/ b
+secular_trend <- (trend_a + trend_b) / 2
+f <- ( unadjusted_estimate - secular_trend ) * 100
+Y_2013_14 <- c(a,round(a, digits = 2)," ",round(f,digits = 2))
+Y_2014_15 <- c(b,b," "," ")
+Y_2015_16 <- c(c,c," "," ")
+Y_2016_17 <- c(e,round(e,digits = 2)," "," ")
+Y_2017_18 <- c(d,round(d ,digits = 2)," "," ")
+Y_2018_19 <- c(h,round(h  ,digits = 2)," "," ")
+Y_2019_20 <- c(k,round(k / 0.9 ,digits = 2)," "," ")
+Tax_year <- c("Annual number of collisions in roads changed to 20mph","Rate per year"," ","% reduction in collisions ")
+df <- data.frame(Tax_year,Y_2013_14,Y_2014_15,Y_2015_16,Y_2016_17,Y_2017_18,Y_2018_19,Y_2019_20)
+colnames(df)=c("Tax year", "2013/14","2014/15","2015/16","2016/17","2017/18", "2018/19", "2019/20")
+kable(df,caption = "Effect estimate") %>% kable_styling(bootstrap_options = c("striped", "hover"))
+
+
+
+calculations <- c("A + B + C / 3 "," D + E / 3.9 ", "A - B / A", "B - C / B", "Unadjusted_estimate", "Secular_trend" )
+column <- c(round(sum1,digits = 2),round(sum2,digits = 2),round(trend_a,digits = 2) * 100, round(trend_b,digits = 2) * 100, round(unadjusted_estimate,digits = 2) *100,round(secular_trend, digits = 2 ) * 100)
+
+df_cal <- data.frame(calculations,column)
+colnames(df_cal) <-  c("Calculations", " ")
+kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic","hover","striped"),font_size = 15 )%>%  
+    footnote(general = " ", number =c("A : accidents 2013/14 ( 1 year )","B : accidents 2014/15 ( 1 year ) ","C : accidents 2015/16 ( 1 year )","D : accidents 2018/19 ( 1 year )","E : accidents 2019/20 ( 11 months )"))
+
+```
+
+> Effect estimate in all accidents ( on the roads that changed to 20mph )
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
 a <- c(nrow(total_zones[total_zones$a_date >= "2013-02-01" & total_zones$a_date <= "2014-01-31", ]))
 b <- c(nrow(total_zones[total_zones$a_date >= "2014-02-01" & total_zones$a_date <= "2015-01-31", ]))
 c <- c(nrow(total_zones[total_zones$a_date >= "2015-02-01" & total_zones$a_date <= "2016-01-31", ]))
@@ -315,8 +362,9 @@ df_cal <- data.frame(calculations,column)
 colnames(df_cal) <-  c("Calculations", " ")
 kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic","hover","striped"),font_size = 15 )%>%  
     footnote(general = " ", number =c("A : accidents 2013/14 ( 1 year )","B : accidents 2014/15 ( 1 year ) ","C : accidents 2015/16 ( 1 year )","D : accidents 2018/19 ( 1 year )","E : accidents 2019/20 ( 11 months )"))
-
 ```
+
+
 
 > Count accidents in Control Zone : City Center --> Central ( Ards )
 
@@ -324,6 +372,7 @@ kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic
 belf_control_data <- rename(belf_control_data,c("X" = "Longitude","Y" = "Latitude"))
 control_data_df <- buffer_data(belf_control_data,belf_control_zones)
 control_data_df <- cbind(Zone_info = "Control zone", control_data_df)
+
 leaflet(belf_control_zones) %>% addTiles() %>% addPolygons() %>% addMarkers(lng = control_data_df$Longitude,  lat = control_data_df$Latitude) %>% setView(lng = -5.69092, lat = 54.59236, zoom = 13)
 nrow(control_data_df)
 ```
@@ -336,16 +385,14 @@ head(total_zones[,c(25,13,34)])
 
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
-merged_1 <- merged[,-c(1,29:35,38:40,42:47)]
-merged_1$a_time <- as.character(merged_1$a_time)
-merged_1 <- rename(merged_1,c("X" = "Longitude","Y" = "Latitude"))
-total_zones_1 <- total_mzones[,-c(28:32)]
-total_zones_1$a_time <- as.character(total_zones_1$a_time)
-updated_dataset <- rbind.fill(merged_1,total_zones_1)
-control_data_df$a_time <- as.character(control_data_df$a_time)
+total_zones_1 <- total_mzones[,-c(29:36,39:41,43:48)]
+total_zones_1 <- rename(total_zones_1,c("X" = "Longitude","Y" = "Latitude"))
+#total_zones_1$a_time <- as.character(total_zones_1$a_time)
+
 #final_dataset
-final_df <- rbind.fill(updated_dataset,control_data_df)
-final_df <- final_df[,-c(32,34:37)]
+final_df <- rbind.fill(total_zones_1,control_data_df)
+final_df <- final_df[,-c(34:39)]
+
 #Create new csv file with the cleaned data
 write.csv(final_df, file = paste0(dir_path, "/Belfast/final_Belfast_data.csv"),row.names = FALSE)
 ```
