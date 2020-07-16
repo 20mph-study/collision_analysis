@@ -361,7 +361,7 @@ column <- c(round(sum1,digits = 2),round(sum2,digits = 2),round(trend_a,digits =
 df_cal <- data.frame(calculations,column)
 colnames(df_cal) <-  c("Calculations", " ")
 kable(df_cal) %>% kable_styling(position = "center",bootstrap_options = c("basic","hover","striped"),font_size = 15 )%>%  
-    footnote(general = " ", number =c("A : accidents 2013/14 ( 1 year )","B : accidents 2014/15 ( 1 year ) ","C : accidents 2015/16 ( 1 year )","D : accidents 2018/19 ( 1 year )","E : accidents 2019/20 ( 11 months )"))
+    footnote(general = " ", number =c("A : accidents 2013/14 ( 1 year )","B : accidents 2014/15 ( 1 year ) ","C : accidents 2015/16 ( 1 year )","D : accidents 2018/19 ( 1 year )","E : accidents 2019/20 ( 11 months )")) 
 ```
 
 
