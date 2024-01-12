@@ -1,0 +1,374 @@
+---
+title: "GAM plots"
+author: "Kelly"
+date: "2022-08-30"
+output: html_document
+---
+
+
+```{r pressure, echo=FALSE}
+
+
+library(dplyr)
+library(zoo)
+library(tidyverse)
+# This is where the data folder is
+setwd("C://Users//Kyriaki Kokka//Desktop//20mph study collisions//20mph study casualties//")
+
+load("C:/Users/Kyriaki Kokka/Desktop/20mph study collisions/Data_for_261_Months.RData")
+#load("C:/Users/Kyriaki Kokka/Desktop/updated work Dec 2021/Data_for_261_Months.RData")
+
+
+d1 <- as.data.frame(dall)
+d2 <- as.data.frame(dall_d)
+d3 <- as.data.frame(mpdl261)
+#------------------------------------------------------------------
+# Reading accident and casualties data for all of Scotland from STATS19 files 1996: 2017
+#------------------------------------------------------------------
+
+csC = read.csv("Casualties1979to2004.csv", header = TRUE)# Casualties 1979 to 2004
+tpC <- csC[,c(1,7) ]
+csA = read.csv("collisions1979to2004.csv", header = TRUE)# accidents 1979 to 2004
+tpA = csA[,c(1,2,3,4,5,7,9,10,11,12,13,17,18,25:27,30)]
+colnames(tpC)[colnames(tpC) == 'Acc_Index'] <- 'Accident_Index'
+cs <- tpC %>% full_join(tpA, by = "Accident_Index")
+
+cs1C = read.csv("Casualties2005to2014.csv",header = TRUE)# Casualties 2005-2014
+tp1C <- cs1C[,c(1,7) ]
+cs1A = read.csv("collisions2005to2014.csv",header = TRUE)# accidents 2005-2014
+tp1A = cs1A[,c(1,2,3,4,5,7,9,10,11,12,13,17,18,25:27,30)]
+cs1 <- tp1C %>% full_join(tp1A, by = "Accident_Index")
+
+cs2C = read.csv("Casualties2015.csv",header = TRUE)# Casualties 2015
+tp2C <- cs2C[,c(1,7) ]
+cs2A = read.csv("collisions2015.csv",header = TRUE)# accidents 2015
+tp2A = cs2A[,c(1,2,3,4,5,7,9,10,11,12,13,17,18,25:27,30)]
+cs2 <- tp2C %>% full_join(tp2A, by = "Accident_Index")
+
+cs3C = read.csv("Casualties2016.csv",header = TRUE)# Casualties 2016
+tp3C <- cs3C[,c(1,7) ]
+cs3A = read.csv("collisions2016.csv",header = TRUE)# accidents 2016
+tp3A = cs3A[,c(1,2,3,4,5,7,9,10,11,12,13,17,18,25:27,30)]
+cs3 <- tp3C %>% full_join(tp3A, by = "Accident_Index")
+
+cs5C = read.csv("Casualties2017.csv",header=TRUE)# Casualties 2017
+tp5C <- cs5C[,c(1,7) ]
+cs5A = read.csv("collisions2017.csv",header=TRUE)# accidents 2017
+tp5A = cs5A[,c(1,2,3,4,5,7,9,10,11,12,13,17,18,25:27,30)]
+cs5 <- tp5C %>% full_join(tp5A, by = "Accident_Index")
+
+
+
+#do not read 2018 data
+cs6C <- read.csv("Casualties2018.csv", header = TRUE) # Casualties 2018
+tp6C <- cs6C[,c(1,7) ]
+cs6A <- read.csv("collisions2018.csv", header = TRUE) # Acccidents 2018
+tp6A <- cs6A[,c(1,2,3,4,5,7,9,10,11,12,13,17,18,25:27,30)]
+cs6 <- tp6C %>% full_join(tp6A, by = "Accident_Index")
+
+colnames(cs1) = colnames(cs)
+colnames(cs2) = colnames(cs) 
+colnames(cs3) = colnames(cs)
+colnames(cs2) = colnames(cs)
+colnames(cs5) = colnames(cs)
+
+alluk = rbind(cs,cs1,cs2,cs3,cs5)
+
+#not run this
+#colnames(cs6) = colnames(cs)
+#alluk = rbind(cs,cs1,cs2,cs3,cs5,cs6)
+
+
+rm(csA, cs1A, cs2A, cs3A, cs5A, cs6A, csC, cs1C, cs2C, cs3C, cs5C, cs6C, tp1A, tp2A, tp3A, tpA, tp5A, tp6A, tp1C, tp2C, tp3C, tpC, tp5C, tp6C)
+#rm(cs, cs1, cs2, cs3, cs5, cs6)
+
+
+edim = alluk[alluk$Local_Authority_.District. == "923",] # selecting out Edinburgh
+edim$year = format(as.Date(edim$Date, format = "%d/%m/%Y"), "%Y")
+#edim$yearmonth=format(as.Date(edim$Date, format="%d/%m/%Y"),"%m/%Y")
+edim$yearmonth <- as.yearmon(as.Date(edim$Date, format = "%d/%m/%Y"))
+
+a = (strsplit(as.character(edim$Time), ":"))
+edim$time = as.numeric(as.character(sapply(a, "[[", 1)))
+edim$time = ifelse(edim$time < 12, "morning", ifelse(edim$time > 12 & edim$time < 15, "afternoon", "evening"))
+edim$Severity = ifelse(edim$Casualty_Severity == 1|edim$Casualty_Severity == 2, "Severe", "Slight")
+
+edim$year = as.numeric(edim$year)
+##############################################################################################
+
+# Creating monthly data
+
+months <- unique(edim$yearmonth)
+months <- sort(months)
+
+N <- length(months)
+
+YMacc2018 <- data.frame(matrix(NA, nrow = N, ncol = 2))
+colnames(YMacc2018) <- c("Month", "Counts")
+for(i in 1:N){
+  my<-which(edim$yearmonth == months[i])
+  YMacc[i,]<-c(format(as.Date(months[i],format="%m/%Y"),"%m/%Y"),length(my))
+  YMacc2018[i,] <- c(months[i], length(my))
+}
+
+head(YMacc2018)
+# The data for March 1996 is suspicious so I will remove it
+YMacc2018 <- YMacc2018[-1,]
+
+
+#rm(alluk)
+```
+
+
+#GAM
+
+```{r}
+require(mgcv)
+
+# Data
+#C:\Users\Kyriaki Kokka\Desktop\20mph study collisions
+
+#dall <- edim # all data
+n <- nrow(YMacc2018)
+
+t <- 1:n
+const <- rep(1,n)
+acc <- YMacc2018$Counts 
+df <- data.frame(acc,t, const)
+df$sin <- sin(2*pi*t/12)
+df$cos <- cos(2*pi*t/12)
+
+#df <- as.matrix(df)
+
+dall <- df
+t1 <- rep(0,n)
+sin1 <- rep(0,n)
+cos1 <- rep(0,n)
+df2 <- data.frame(t1,sin1,cos1)
+dall_d <- cbind(dall,df2)
+colnames(dall_d)[6:8] <- c("t","sin","cos")
+
+
+#dall_d <- as.list(dall_d)
+
+#dall_d <- as.matrix(dall_d)
+
+# Fitting GAMs
+dafr_dall_d <- data.frame(cbind(dall_d, mpdl261, c(4:12, rep(1:12,21))))
+colnames(dafr_dall_d)[6:10] <- c("t_dummy","sin_dummy","cos_dummy","days", "nMonth")
+head(dafr_dall_d)
+
+# Without time change
+fgam_nb_no_20 <- gam(acc ~ offset(log(days)) + s(nMonth, bs="cc",k = 12) + s(t), family = nb(), data = dafr_dall_d)
+summary(fgam_nb_no_20)
+
+# With time change
+dafr_dall_dd <- cbind(dafr_dall_d, c(rep(0,243), rep(1,18)))
+colnames(dafr_dall_dd)[11] <- "d"
+fgam_by_20 <- gam(acc ~ offset(log(days)) + s(nMonth, bs="cc",k = 12) + s(t) + s(t,by=d), family = nb(), data=dafr_dall_dd)
+
+
+summary(fgam_by_20)
+
+AIC(fgam_nb_no_20); AIC(fgam_by_20)
+
+# Diagnostics
+rs <- residuals(fgam_by_20)
+
+layout(matrix(c(1,1,2,3), ncol = 2, byrow = TRUE))
+
+par(mar = c(4,4,2,1))
+plot(fgam_by_20, ylim = c(-0.4,0.4), select = 2)
+plot(fgam_by_20, select = 1, ylim = c(-0.2,0.2), xlab = "Month")
+plot(fgam_by_20, select = 3, xlim = c(244,261))
+
+layout(matrix(1:4, ncol = 2))
+
+gam.check(fgam_by_20)
+layout(1)
+
+qqnorm(rs)
+qqline(rs,col = "red")
+
+# autocorrelation
+layout(matrix(1:2, ncol = 2))
+par(mar = c(5,4,4,2) + 0.5)
+acf(rs, main = "");pacf(rs, ylim = c(-0.2,1), main = "")
+layout(1)
+
+```
+
+
+
+```{r}
+
+#NOTE: in order to run this code we need data from 2018 too.
+
+setwd("C://Users//Kyriaki Kokka//Desktop//20mph study collisions//20mph study casualties//")
+
+# read 2018 data
+cs6C <- read.csv("Casualties2018.csv", header = TRUE) # Casualties 2018
+tp6C <- cs6C[,c(1,7) ]
+cs6A <- read.csv("collisions2018.csv", header = TRUE) # Acccidents 2018
+tp6A <- cs6A[,c(1,2,3,4,5,7,9,10,11,12,13,17,18,25:27,30)]
+cs6 <- tp6C %>% full_join(tp6A, by = "Accident_Index")
+
+#not run this
+colnames(cs6) = colnames(cs)
+alluk = rbind(cs,cs1,cs2,cs3,cs5,cs6)
+
+dir_path <- "C://Users//Kyriaki Kokka//Desktop//20mph study collisions//20mph study casualties//"
+
+#write.csv(alluk, file = paste0(dir_path, "/alluk.csv"),row.names = FALSE)
+write.csv(dafr_dall_dd, file = paste0(dir_path, "/dafr_dall_dd.csv"),row.names = FALSE)
+
+#alluk <- read_csv(paste0(dir_path, "/alluk.csv"))
+dafr_dall_dd <- read_csv(paste0(dir_path, "/dafr_dall_dd.csv"))
+
+edim = alluk[alluk$Local_Authority_.District. == "923",] # selecting out Edinburgh
+
+write.csv(edim, file = paste0(dir_path, "/edim.csv"),row.names = FALSE)
+
+
+dir_path <- "C://Users//Kyriaki Kokka//Desktop//20mph study collisions//20mph study casualties//"
+edim <- read_csv(paste0(dir_path, "/edim.csv"))
+dafr_dall_dd <- read_csv(paste0(dir_path, "/dafr_dall_dd.csv"))
+
+YMacc <- data.frame("Month","Counts")
+
+edim$year = format(as.Date(edim$Date, format = "%d/%m/%Y"), "%Y")
+#edim$yearmonth=format(as.Date(edim$Date, format="%d/%m/%Y"),"%m/%Y")
+edim$yearmonth <- as.yearmon(as.Date(edim$Date, format = "%d/%m/%Y"))
+
+a = (strsplit(as.character(edim$Time), ":"))
+edim$time = as.numeric(as.character(sapply(a, "[[", 1)))
+edim$time = ifelse(edim$time < 12, "morning", ifelse(edim$time > 12 & edim$time < 15, "afternoon", "evening"))
+edim$Severity = ifelse(edim$Casualty_Severity == 1|edim$Casualty_Severity == 2, "Severe", "Slight")
+
+edim$year = as.numeric(edim$year)
+##############################################################################################
+
+# Creating monthly data
+
+months <- unique(edim$yearmonth)
+months <- sort(months)
+
+N <- length(months)
+
+YMacc2018 <- data.frame(matrix(NA, nrow = N, ncol = 2))
+colnames(YMacc2018) <- c("Month", "Counts")
+for(i in 1:N){
+  my<-which(edim$yearmonth == months[i])
+  YMacc[i,]<-c(format(as.Date(months[i],format="%m/%Y"),"%m/%Y"),length(my))
+  YMacc2018[i,] <- c(months[i], length(my))
+}
+
+head(YMacc2018)
+# The data for March 1996 is suspicious so I will remove it
+YMacc2018 <- YMacc2018[-1,]
+
+
+library("tidyverse")
+library("ggplot2")
+
+
+#c <- as.data.frame(YMacc2018[262:273,2]) 
+
+tsv <- 262:273
+ms <- c(31,28,31,30,31,30,31,31,30,31,30,31)
+dat2018 <- cbind(YMacc2018[262:273,2], rep(1,12), tsv, cos(2*pi*tsv/12), sin(2*pi*tsv/12), tsv, ms, 1:12)
+colnames(dat2018) <- colnames(dafr_dall_dd)[c(1,3,2,4:6,9,10)]
+
+#c <- as.data.frame(dat2018) 
+#xx <- as.data.frame(dafr_dall_dd[,c(1:6,9,10)])
+
+dat_2 <- rbind(dafr_dall_dd[,c(1:6,9,10)], dat2018)
+
+dafr_06 <- dafr_dall_dd[1:243, ]
+fgam_06 <- gam(acc ~ offset(log(days)) + s(nMonth, bs = "cc",k = 12) + s(t), family = nb(), data = dafr_06)
+
+#df <-  dat_2[244:273, c(7,8,2)]
+
+
+gampr06 <- predict(fgam_06, newdata = dat_2[244:273, c(7,8,2)], type = "response")
+
+gampr6 <- as.data.frame(gampr06)
+
+# plot the prediction and the observed values after the intervention
+YMacc_pr <- cbind(YMacc2018, c(rep(0,243), gampr06))
+colnames(YMacc_pr)[3] <- "gampredictions"
+
+
+#zz <- YMacc_pr[47:47,]
+
+YMacc_pr[46:48,3] <- 0
+#YMacc_pr[48,2] <- 251
+YMacc_pr$gampredictions <- as.integer(YMacc_pr$gampredictions)
+#YMacc_pr$Month <- as.numeric(YMacc_pr$Month)
+#typeof(YMacc_pr$Month)
+
+ggplot(YMacc_pr, aes(Month, Counts)) + geom_line(size = 1,col = "blue")+
+  geom_vline(xintercept=2016.500, size = 1, colour = "brown") + 
+  geom_line(aes(y = gampredictions), col = "red",  size = 1) +
+  theme( text = element_text(size = 20)) + ylim(0,250)+
+  theme(plot.margin = unit(c(1,1,0.4, 0.4), "cm")) +
+  xlab("Time")
+
+
+ggplot(YMacc_pr, aes(Month, Counts)) + geom_line(size = 1,col = "blue")+
+  geom_vline(xintercept=2016.500, size = 1, colour = "brown")+ 
+  geom_line(aes(y = gampredictions), col = "red",  size = 1) +
+  theme( text = element_text(size = 20)) + ylim(0,250)+
+  theme(plot.margin = unit(c(1,1,0.4, 0.4), "cm")) +
+  xlab("Time")
+
+
+#############################################################################
+#  2) Get predictions with confidence intervals
+
+
+# predictions on the lin scale  
+gampreci <-  predict(fgam_06, newdata = dat_2[244:273, c(7,8,2)], type = "link", se.fit = TRUE)
+
+CImat <- cbind(gampreci$fit, (gampreci$fit - (2*gampreci$se.fit)), (gampreci$fit + (2*gampreci$se.fit)))
+colnames(CImat) <- c("Prediction", "Lower", "Upper")
+# get teh values on the response scale
+CImat <- exp(CImat) # in general you can use fgam_06$family$linkinv(CImat)
+
+YMacc_pr <- cbind(YMacc2018, rbind(matrix(0,243,3), CImat))
+colnames(YMacc_pr) [3:5] <- colnames(CImat)
+
+YMacc_pr$Prediction <- as.numeric(YMacc_pr$Prediction)
+
+
+ggplot(YMacc_pr, aes(Month,Counts)) + geom_line(size = .6,col = "blue") +
+  geom_vline(xintercept = 2016.500, size = 0.6, colour = "brown") + 
+  geom_line(aes(y = Prediction), col="red",  size = 1.2) +
+  geom_line(aes(y = Lower), col = "cornsilk4", linetype = "dashed", size = 1) +
+  geom_line(aes(y = Upper), col = "cornsilk4", linetype = "dashed", size = 1) +
+  theme( text = element_text(size = 20)) + ylim(0,310) +
+  theme(plot.margin = unit(c(1,1,0.4, 0.4), "cm")) +
+  xlab("Time")
+
+
+#zoom in
+ggplot(YMacc_pr[244:273,], aes(Month,Counts)) + geom_line(size = .6,col = "blue") +
+  geom_vline(xintercept = 2016.500, size = 1, colour = "black",  linetype = "dashed") + 
+  geom_line(aes(y = Prediction), col="red",  size = 1.2) +
+  geom_line(aes(y = Lower), col = "cornsilk4", linetype = "dashed", size = 1) +
+  geom_line(aes(y = Upper), col = "cornsilk4", linetype = "dashed", size = 1) +
+  theme( text = element_text(size = 20)) + ylim(0,250) +
+  theme(plot.margin = unit(c(1,1,0.4, 0.4), "cm")) +
+  xlab("Time")
+
+
+#rm(cs, cs1, cs2, cs3, cs5, cs6)
+#rm(alluk)
+```
+
+
+  
+  
+  
+  
+
