@@ -1,0 +1,364 @@
+---
+title: "CIs"
+author: "Kelly"
+date: "2024-01-12"
+output: html_document
+---
+
+
+Confidence intervals with exact poisson distribution for rates
+Exact Poisson
+
+
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+poisson.test(1082, conf.level = 0.95 )$conf.int
+
+```
+
+Normal approximation
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+R_pre = 167
+SE_pre = sqrt(R_pre)
+
+k = 1.96
+ci_lwr_pre = round(R_pre - (k*SE_pre),0)
+ci_upr_pre = round(R_pre + (k*SE_pre),0)
+
+
+```
+
+
+CI for diff(rates), normal approximation
+
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+R_pre = 705   
+R_post = 923  
+
+time_pre <- 
+time_post <- 
+
+SE_pre = sqrt(R_pre/time_pre)
+SE_post = sqrt(R_post/time_post)
+
+R_diff = R_post - R_pre
+s = (SE_pre^2) + (SE_post^2)
+SE_R_diff = sqrt(s)
+
+
+k = 1.96
+ci_lwr_pre = round(R_diff - (k*SE_R_diff),0)
+ci_upr_pre = round(R_diff + (k*SE_R_diff),0)
+
+ci_lwr_pre
+ci_upr_pre
+```
+
+
+CI for diff(rates), normal approximation
+
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+R_obs = 1082 
+R_pred = 1306
+
+time <- 
+
+SE_obs = sqrt(R_obs/time)
+SE_pred = sqrt(R_pred/time)
+
+R_diff = R_pred - R_obs
+s = (SE_obs^2) + (SE_pred^2)
+SE_R_diff = sqrt(s)
+
+
+k = 1.96
+ci_lwr_pre = round(R_diff - (k*SE_R_diff),0)
+ci_upr_pre = round(R_diff + (k*SE_R_diff),0)
+
+R_diff
+ci_lwr_pre
+ci_upr_pre
+```
+
+
+
+delta method to find variance of  %diff
+
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+R_pre = 144 #90 #rate pre  #observed
+R_post = 112  #109 #rate post   #predicted
+
+#roads
+#post 3.42
+
+#zones
+#post  
+#1a/1b: 3.42
+#2/3: 2.83
+#4/5: 2.63
+#6: 1.83
+
+time_pre <- 3   # always 3
+time_post <- 2.83
+
+R_diff = ((R_post-R_pre)/R_pre) * 100
+#R_diff = ((R_post-R_pre)/R_post) * 100
+R = R_pre ^2
+#R = R_post ^2
+
+Var_1 = R_pre / time_pre
+Var_2 = R_post / time_post
+
+A = Var_1 * (((100*R_post)/R)^2)
+B = Var_2 * ((100/R_pre)^2)
+
+Var_diff = A + B
+SE_R_diff = sqrt(Var_diff) 
+
+k = 1.96
+ci_lwr = round(R_diff - (k*SE_R_diff),0)
+ci_upr = round(R_diff + (k*SE_R_diff),0)
+
+R_diff
+ci_lwr
+ci_upr
+```
+
+delta method to find variance of  %diff in GAM predicted vs observed
+
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+R_obs = 90
+R_pred = 109  
+
+
+R_diff = ((R_pred-R_obs)/R_pred) * 100
+R = R_pred^2
+
+Var_1 = R_obs
+Var_2 = R_pred
+
+A = Var_1 * (((100*R_obs)/R)^2)
+B = Var_2 * ((100/R_pred)^2)
+
+Var_diff = A + B
+SE_R_diff = sqrt(Var_diff) 
+
+k = 1.96
+ci_lwr = round(R_diff - (k*SE_R_diff),0)
+ci_upr = round(R_diff + (k*SE_R_diff),0)
+
+R_diff
+ci_lwr
+ci_upr
+```
+
+delta method to find variance of dif %diff  pre and post 20mph
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+library(readxl)
+df = read_excel('C:/Users/Kyriaki Kokka/Desktop/EDINBURGH/20mph_tables_data.xlsx')
+
+R_pre_imp = df$Rate_pre_imp
+R_post_imp = df$Rate_post_imp
+time_pre <- df$time_pre
+
+R_pre_con =   df$Rate_pre_con
+R_post_con = df$Rate_post_con
+time_post <- df$time_post
+
+df$diff_imp = 100 * (R_post_imp - R_pre_imp) / R_pre_imp
+df$diff_con =  100 * (R_post_con - R_pre_con) / R_pre_con
+
+df$D_diff = df$diff_imp - df$diff_con
+#D_diff = diff_imp - diff_con
+
+Var_1 = R_pre_imp / time_pre
+Var_2 = R_post_imp / time_post
+
+SE_D = sqrt(Var_1 + Var_2)
+k = 1.96
+D = R_post_imp - R_pre_imp 
+df$ci_lwr_D = D - (k*SE_D)
+df$ci_upr_D = D + (k*SE_D)
+
+R_imp = R_pre_imp ^2
+
+A_imp = Var_1 * (((100*R_post_imp)/R_imp)^2)
+B_imp = Var_2 * ((100/R_pre_imp)^2)
+
+Var_diff_imp = A_imp + B_imp
+SE_R_diff_imp = sqrt(Var_diff_imp) 
+
+k = 1.96
+df$ci_lwr_dif_imp = diff_imp - (k*SE_R_diff_imp)
+df$ci_upr_dif_imp = diff_imp + (k*SE_R_diff_imp)
+
+
+#control
+Var_3 = R_pre_con / time_pre
+Var_4 = R_post_con / time_post
+R_con = R_pre_con ^2
+
+A_con = Var_3 * (((100*R_post_con)/R_con)^2)
+B_con = Var_4 * ((100/R_pre_con)^2)
+
+Var_diff_con = A_con + B_con
+SE_R_diff_con = sqrt(Var_diff_con) 
+
+df$ci_lwr_dif_con = diff_con - (k*SE_R_diff_con)
+df$ci_upr_dif_con = diff_con + (k*SE_R_diff_con)
+
+
+SE_D_diff = sqrt(Var_diff_con + Var_diff_imp)
+
+
+D 
+df$ci_lwr_D = round(df$ci_lwr_D, 0)
+df$ci_upr_D = round(df$ci_upr_D,0)
+
+
+k = 1.96
+df$ci_lwr_D_diff = round(D_diff - (k*SE_D_diff), 0)
+df$ci_upr_D_diff = round(D_diff + (k*SE_D_diff), 0)
+
+df$diff_imp = round(df$diff_imp, 0)
+df$ci_lwr_dif_imp = round(df$ci_lwr_dif_imp, 0) 
+df$ci_upr_dif_imp  = round(df$ci_upr_dif_imp ,0)
+
+df$diff_con = round(df$diff_con,0)
+df$ci_lwr_dif_con = round(df$ci_lwr_dif_con,0) 
+df$ci_upr_dif_con = round(df$ci_upr_dif_con ,0)
+
+df$D_diff = round(D_diff,0)
+df$ci_lwr_D_diff = round(df$ci_lwr_D_diff,0)
+df$ci_upr_D_diff = round(df$ci_upr_D_diff,0)
+
+
+round(D_diff,0)
+round(df$ci_lwr_D_diff,0)
+round(df$ci_upr_D_diff,0)
+
+
+write.csv(df, file = "C:/Users/Kyriaki Kokka/Desktop/EDINBURGH/20mph_tables_data_CIs.csv",row.names = FALSE)
+
+
+head(df)
+```
+
+for when you don't have a fixed total time
+pre vs post
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+R_pre = 1022
+L_pre = 960
+U_pre = 1087
+
+R_post = 705 
+L_post = 654
+U_post = 759
+
+Dif = R_post - R_pre
+diff = 100 * (R_post - R_pre) / R_pre
+
+
+SE_pre = ( U_pre - L_pre ) / 3.92
+SE_post = ( U_post - L_post ) / 3.92
+
+Var_pre = SE_pre ^ 2
+Var_post = SE_post ^ 2
+
+SE = sqrt(Var_pre + Var_post)
+
+ci_lwr_D = Dif - (k*SE)
+ci_upr_D = Dif + (k*SE)
+
+R = R_pre ^ 2
+
+Var_1 <- SE_pre ^ 2
+Var_2 <- SE_post ^ 2
+
+A = Var_1 * (((100*R_post)/R)^2)
+B = Var_2 * ((100/R_pre)^2)
+
+
+Var_diff = A + B
+SE_R_diff = sqrt(Var_diff) 
+
+k = 1.96
+ci_lwr_dif = diff - (k*SE_R_diff)
+ci_upr_dif = diff + (k*SE_R_diff)
+
+Dif
+ci_lwr_D
+ci_upr_D
+
+diff
+ci_lwr_dif
+ci_upr_dif
+
+#Var_diff
+
+```
+
+
+for when you don't have a fixed total time
+obs vs pred
+
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+R_obs = 4.7
+L_obs = 2
+U_obs = 13
+
+R_pred =  4.9 
+L_pred = 2
+U_pred = 12
+
+Dif = R_pred - R_obs
+diff = 100 * (R_pred - R_obs) / R_pred
+
+
+SE_obs = ( U_obs - L_obs ) / 3.92
+SE_pred = ( U_pred - L_pred ) / 3.92
+
+Var_obs = SE_obs ^ 2
+Var_pred = SE_pred ^ 2
+
+k = 1.96
+
+SE_dif = sqrt(Var_obs + Var_pred)
+
+ci_lwr_D = Dif - (k*SE_dif)
+ci_upr_D = Dif + (k*SE_dif)
+
+R = R_pred ^ 2
+
+
+A = Var_pred * (((100*R_obs)/R)^2)
+B = Var_obs * ((100/R_pred)^2)
+
+
+Var_diff = A + B
+SE_R_diff = sqrt(Var_diff) 
+
+k = 1.96
+ci_lwr_dif = diff - (k*SE_R_diff)
+ci_upr_dif = diff + (k*SE_R_diff)
+
+Dif
+ci_lwr_D
+ci_upr_D
+
+diff
+ci_lwr_dif
+ci_upr_dif
+```
+
